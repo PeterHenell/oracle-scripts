@@ -1,0 +1,24 @@
+-- get sql_id of your query
+SELECT
+        DBID
+      , SQL_ID
+      , SQL_TEXT
+    FROM
+        dba_hist_sqltext
+    WHERE
+        sql_text LIKE ‘%your query%’;
+
+--DBA_HIST_SQLSTAT (Snaphost of SQL runtime statistics)
+SELECT
+        -- Snapshot Id
+        SNAP_ID
+        -- Sql Id
+      , SQL_ID
+      , SUM( CPU_TIME_DELTA ) CPU_TIME
+      , SUM( ELAPSED_TIME_DELTA ) ELAPSED_TIME
+      , SUM( EXECUTIONS_DELTA ) EXECUTIONS_DELTA
+    FROM
+        DBA_HIST_SQLSTAT
+    GROUP BY
+        SNAP_ID
+      , SQL_ID;

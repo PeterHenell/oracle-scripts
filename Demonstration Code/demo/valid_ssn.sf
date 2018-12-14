@@ -1,0 +1,19 @@
+CREATE OR REPLACE FUNCTION valid_ssn (ssn_in IN VARCHAR2)
+   RETURN BOOLEAN
+IS
+   numval NUMBER;
+   retval BOOLEAN := TRUE;
+BEGIN
+   BEGIN
+      numval := TRANSLATE (ssn_in,  'A-',  'A');
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         retval := FALSE;
+   END;
+
+   retval :=     retval
+             AND ssn_in LIKE '___-__-____';
+   RETURN retval;
+END;
+/

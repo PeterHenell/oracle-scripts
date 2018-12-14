@@ -1,0 +1,64 @@
+CREATE OR REPLACE PACKAGE fileio
+IS
+   FUNCTION file_length (dir_in IN VARCHAR2, file_in IN VARCHAR2)
+      RETURN PLS_INTEGER;
+
+   FUNCTION fexists (dir_in IN VARCHAR2, file_in IN VARCHAR2)
+      RETURN BOOLEAN;
+
+   FUNCTION block_size (dir_in IN VARCHAR2, file_in IN VARCHAR2)
+      RETURN BOOLEAN;
+END fileio;
+/
+
+CREATE OR REPLACE PACKAGE BODY fileio
+IS
+   TYPE fgetattr_t IS RECORD (
+                         fexists       BOOLEAN
+                       , file_length   PLS_INTEGER
+                       , block_size    PLS_INTEGER
+                      );
+
+   FUNCTION file_length (dir_in IN VARCHAR2, file_in IN VARCHAR2)
+      RETURN PLS_INTEGER
+   IS
+      fgetattr_rec   fgetattr_t;
+   BEGIN
+      UTL_FILE.fgetattr (location      => dir_in
+                       , filename      => file_in
+                       , fexists       => fgetattr_rec.fexists
+                       , file_length   => fgetattr_rec.file_length
+                       , block_size    => fgetattr_rec.block_size
+                        );
+      RETURN fgetattr_rec.file_length;
+   END file_length;
+
+   FUNCTION fexists (dir_in IN VARCHAR2, file_in IN VARCHAR2)
+      RETURN BOOLEAN
+   IS
+      fgetattr_rec   fgetattr_t;
+   BEGIN
+      UTL_FILE.fgetattr (location      => dir_in
+                       , filename      => file_in
+                       , fexists       => fgetattr_rec.fexists
+                       , file_length   => fgetattr_rec.file_length
+                       , block_size    => fgetattr_rec.block_size
+                        );
+      RETURN fgetattr_rec.fexists;
+   END fexists;
+
+   FUNCTION block_size (dir_in IN VARCHAR2, file_in IN VARCHAR2)
+      RETURN PLS_INTEGER
+   IS
+      fgetattr_rec   fgetattr_t;
+   BEGIN
+      UTL_FILE.fgetattr (location      => dir_in
+                       , filename      => file_in
+                       , fexists       => fgetattr_rec.fexists
+                       , file_length   => fgetattr_rec.file_length
+                       , block_size    => fgetattr_rec.block_size
+                        );
+      RETURN fgetattr_rec.block_size;
+   END block_size;
+END fileio;
+/

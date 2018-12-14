@@ -1,0 +1,95 @@
+CREATE OR REPLACE PACKAGE sf_timer
+/*
+   Elapsed Time Calculator Utility
+
+   Author: Steven Feuerstein, steven@stevenfeuerstein.com
+
+   Enhanced to use SYSTIMESTAMP by Elic.
+*/
+IS
+   PROCEDURE start_timer;
+
+   PROCEDURE show_elapsed_time (message_in IN VARCHAR2 := NULL);
+
+   /* Backward compatibility with "max" API */
+   PROCEDURE set_factor (factor_in IN NUMBER);
+END sf_timer;
+/
+
+CREATE OR REPLACE PACKAGE BODY sf_timer
+IS
+   last_timing   TIMESTAMP := NULL;
+
+   PROCEDURE start_timer
+   IS
+   BEGIN
+      last_timing := SYSTIMESTAMP;
+   END;
+
+   PROCEDURE show_elapsed_time (message_in IN VARCHAR2 := NULL)
+   IS
+      current_time   TIMESTAMP := SYSTIMESTAMP;
+   BEGIN      
+      DBMS_OUTPUT.put_line (
+            CASE
+               WHEN message_in IS NULL THEN 'Completed in:'
+               ELSE '"' || message_in || '" completed in: '
+            END
+         || REGEXP_SUBSTR (current_time - last_timing,
+                           '([1-9][0-9:]*|0)\.\d{3}')
+         || ' seconds');
+
+      /* Reset timer */
+      start_timer;
+   END;
+
+   PROCEDURE set_factor (factor_in IN NUMBER)
+   IS
+   BEGIN
+      NULL;
+   END;
+   
+/*
+Explanation of regular expression provided by Vitaliy Lyanchevskiy (Elic): 
+
+This RE (I extended it a bit for generality) is intended
+to remove insignificant digits (and punctuations) from
+both the left (a sign, zeroes and separators) and the right:
+
+( match non zero digit followed by any number of digits or separators
+    (colon between time parts or space after days)
+  or
+  match just the zero (if interval is less than a second, because I dislike
+    numbers starting with a point :) )
+) followed by decimal point and exactly 3 digits.
+
+As result we have string representation of an interval in compact form.
+I ignore a sign since we know that our intervals could not be negative.
+
+And I use only 3 digits after decimal point since on Windows, where I do
+most of testing, it is highest possible precision.
+
+
+SQL> col i for a30
+SQL> select i, lpad(regexp_substr(i, '([1-9][0-9: ]*|0)\.\d{3}'), 20) as ii
+  2    from
+  3    ( select interval '12345' second * power(9, level - 7) as i
+  4        from dual
+  5        connect by level <= 10
+  6    );
+
+I                              II
+------------------------------ --------------------
++000000000 00:00:00.023229295                 0.023
++000000000 00:00:00.209063659                 0.209
++000000000 00:00:01.881572931                 1.881
++000000000 00:00:16.934156379                16.934
++000000000 00:02:32.407407407              2:32.407
++000000000 00:22:51.666666667             22:51.666
++000000000 03:25:45.000000000           3:25:45.000
++000000001 06:51:45.000000000        1 06:51:45.000
++000000011 13:45:45.000000000       11 13:45:45.000
++000000104 03:51:45.000000000      104 03:51:45.000
+*/    
+END sf_timer;
+/

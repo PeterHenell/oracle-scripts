@@ -1,0 +1,35 @@
+CREATE OR REPLACE PACKAGE emplookup
+IS
+   FUNCTION empname (id IN INTEGER)
+   RETURN VARCHAR2;
+END;
+/
+CREATE OR REPLACE PACKAGE BODY emplookup
+IS
+   TYPE names_tabtype IS TABLE OF VARCHAR2(120) 
+      INDEX BY BINARY_INTEGER;
+      
+   empnames_table names_tabtype;
+
+   FUNCTION empname (id IN INTEGER)
+   RETURN VARCHAR2
+   IS
+   BEGIN
+      RETURN empnames_table (id);
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         RETURN NULL;
+   END;
+   
+BEGIN
+   FOR rec IN (SELECT ename, empno FROM emp)
+   LOOP
+      empnames_table (rec.empno) := rec.ename;
+   END LOOP;
+END;
+/
+
+
+ 
+      

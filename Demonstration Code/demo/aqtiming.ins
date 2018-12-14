@@ -1,0 +1,20 @@
+CREATE TYPE sale_t IS OBJECT  
+   (product VARCHAR2(30),
+    sales_price NUMBER
+   );
+/
+DECLARE
+   c_qtable CONSTANT aq.name_type := 'sale_qtable';
+   c_queue CONSTANT aq.name_type := 'sale_queue';
+   c_exc_queue CONSTANT aq.name_type := 'sale_exc_queue';
+   
+BEGIN
+   /* Create the queue table and queue as necessary. */
+   aq.create_queue (c_qtable, 'sale_t', c_queue);
+
+   /* Create a special exception queue for expired sales listings. */
+   aq.create_queue (c_qtable, 'sale_t', c_exc_queue, 
+      qtype => DBMS_AQADM.EXCEPTION_QUEUE);
+END sale;
+/ 
+

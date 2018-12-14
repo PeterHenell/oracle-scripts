@@ -1,0 +1,143 @@
+SQL> 
+SQL> CONNECT SYSTEM/MANAGER
+Connected.
+SQL> 
+SQL> GRANT CREATE TABLE TO SCOTT;
+
+Grant succeeded.
+
+SQL> 
+SQL> CONNECT SCOTT/TIGER
+Connected.
+SQL> 
+SQL> create or replace PROCEDURE runddl (ddl_in in VARCHAR2)
+  2  IS
+  3  	cur INTEGER;
+  4  	fdbk INTEGER;
+  5  BEGIN
+  6  	cur := DBMS_SQL.OPEN_CURSOR;
+  7  	DBMS_SQL.PARSE (cur, ddl_in, DBMS_SQL.NATIVE);
+  8  
+  9  	fdbk := DBMS_SQL.EXECUTE (cur);
+ 10  
+ 11  	DBMS_SQL.CLOSE_CURSOR (cur);
+ 12  EXCEPTION -- TVP 5/2001
+ 13  	WHEN OTHERS
+ 14  	THEN
+ 15  	   p.l (SQLERRM);
+ 16  	   p.l (ddl_in);
+ 17  	   DBMS_SQL.CLOSE_CURSOR (cur);
+ 18  	   RAISE;
+ 19  END;
+ 20  /
+
+Procedure created.
+
+SQL> 
+SQL> GRANT EXECUTE ON runddl TO PUBLIC;
+
+Grant succeeded.
+
+SQL> 
+SQL> CONNECT demo/demo
+Connected.
+SQL> 
+SQL> DROP TABLE demo_table;
+DROP TABLE demo_table
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist
+
+
+SQL> 
+SQL> DESC demo_table
+ERROR:
+ORA-04043: object demo_table does not exist
+
+
+SQL> 
+SQL> exec scott.runddl ('CREATE TABLE demo_table (col1 DATE)');
+BEGIN scott.runddl ('CREATE TABLE demo_table (col1 DATE)'); END;
+
+*
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+ORA-06512: at "SCOTT.RUNDDL", line 18
+ORA-06512: at line 1
+
+
+SQL> 
+SQL> DESC demo_table
+ERROR:
+ORA-04043: object demo_table does not exist
+
+
+SQL> 
+SQL> CONNECT SCOTT/TIGER
+Connected.
+SQL> 
+SQL> DESC demo_table
+ Name                                                              Null?    Type
+ ----------------------------------------------------------------- -------- --------------------------------------------
+ COL1                                                                       DATE
+
+SQL> 
+SQL> CONNECT demo/demo
+Connected.
+SQL> 
+SQL> exec scott.runddl ('CREATE TABLE demo.demo_table (col1 DATE)');
+BEGIN scott.runddl ('CREATE TABLE demo.demo_table (col1 DATE)'); END;
+
+*
+ERROR at line 1:
+ORA-01031: insufficient privileges
+ORA-06512: at "SCOTT.RUNDDL", line 18
+ORA-06512: at line 1
+
+
+SQL> 
+SQL> DESC demo_table
+ERROR:
+ORA-04043: object demo_table does not exist
+
+
+SQL> 
+SQL> CONNECT SYSTEM/MANAGER
+Connected.
+SQL> 
+SQL> GRANT CREATE ANY TABLE TO SCOTT;
+
+Grant succeeded.
+
+SQL> 
+SQL> CONNECT demo/demo
+Connected.
+SQL> 
+SQL> exec scott.runddl ('CREATE TABLE demo.demo_table (col1 DATE)');
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> DESC demo_table
+ Name                                                              Null?    Type
+ ----------------------------------------------------------------- -------- --------------------------------------------
+ COL1                                                                       DATE
+
+SQL> 
+SQL> CONNECT SYSTEM/MANAGER
+Connected.
+SQL> 
+SQL> REVOKE CREATE ANY TABLE FROM SCOTT;
+
+Revoke succeeded.
+
+SQL> 
+SQL> CONNECT scott/tiger
+Connected.
+SQL> 
+SQL> DROP TABLE demo_table;
+
+Table dropped.
+
+SQL> 
+SQL> SPOOL OFF

@@ -1,0 +1,164 @@
+CREATE OR REPLACE PACKAGE any_pkg
+IS
+   FUNCTION anytostring (adata IN ANYDATA)
+      RETURN VARCHAR2;
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY any_pkg
+IS
+   c_newline   CONSTANT CHAR (1) := CHR (10);
+
+   FUNCTION anytostring (adata IN ANYDATA)
+      RETURN VARCHAR2
+   AS
+      atype                ANYTYPE;
+      retval               VARCHAR2 (32767);
+      result_code          PLS_INTEGER;
+      l_col_type           VARCHAR2 (2000);
+      l_elem_type          VARCHAR2 (2000);
+      l_elem_type_length   NUMBER;
+      l_elem_owner_name    VARCHAR2 (2000);
+      owner_name           VARCHAR2 (2000);
+      l_type_code          VARCHAR2 (2000);
+      sql_str1             VARCHAR2 (32767);
+      sql_str2             VARCHAR2 (32767);
+      sql_str3             VARCHAR2 (32767);
+   BEGIN
+      CASE adata.gettype (atype)
+         WHEN DBMS_TYPES.typecode_number
+         THEN
+            RETURN 'NUMBER: ' || TO_CHAR (adata.accessnumber);
+         WHEN DBMS_TYPES.typecode_varchar2
+         THEN
+            RETURN 'VARCHAR2: ' || adata.accessvarchar2;
+         WHEN DBMS_TYPES.typecode_char
+         THEN
+            RETURN 'CHAR: ' || RTRIM (adata.accesschar);
+         WHEN DBMS_TYPES.typecode_date
+         THEN
+            RETURN 'DATE: '
+                   || TO_CHAR (adata.accessdate, 'YYYY-MM-DD hh24:mi:ss');
+         WHEN DBMS_TYPES.typecode_object
+         THEN
+            EXECUTE IMMEDIATE
+                  'DECLARE '
+               || '   myobj '
+               || adata.gettypename
+               || '; '
+               || '   myad sys.ANYDATA := :ad; '
+               || 'BEGIN '
+               || '   :res := myad.GetObject(myobj); '
+               || '   :ret := myobj.toString(); '
+               || 'END;'
+               USING IN adata, OUT result_code, OUT retval;
+
+            retval := adata.gettypename || ': ' || retval;
+         WHEN DBMS_TYPES.typecode_namedcollection
+         THEN
+            owner_name :=
+               SUBSTR (adata.gettypename
+                     , 1
+                     , INSTR (adata.gettypename, '.') - 1);
+            l_col_type :=
+               SUBSTR (adata.gettypename, INSTR (adata.gettypename, '.') + 1);
+
+            SELECT elem_type_name, elem_type_owner, LENGTH
+              INTO l_elem_type, l_elem_owner_name, l_elem_type_length
+              FROM all_coll_types
+             WHERE type_name = l_col_type;
+
+            SELECT typecode
+              INTO l_type_code
+              FROM all_types
+             WHERE (type_name = l_col_type AND owner = owner_name)
+                   OR (type_name = l_col_type AND owner IS NULL);
+
+            IF l_elem_type = 'VARCHAR2'
+            THEN
+               l_elem_type := l_elem_type || '(' || l_elem_type_length || ')';
+            END IF;
+
+            sql_str1 :=
+                  'DECLARE '
+               || '   mycol '
+               || l_col_type
+               || '; '
+               || '   myobj '
+               || l_elem_type
+               || '; '
+               || '   myad sys.ANYDATA := :ad; '
+               || '   c_crlf CONSTANT CHAR(2):=chr(13)||chr(10); '
+               || '   v_out VARCHAR2(32767); '
+               || 'BEGIN '
+               || '   :res := myad.GetCollection(mycol); '
+               || 'FOR idx IN mycol.first..mycol.last '
+               || 'LOOP '
+               || '   myobj:=mycol(idx); '
+               || '   v_out:=v_out||''Elem ''||idx||'' is: ''||any_pkg.c_crlf||any_pkg.anyToString(ANYDATA.';
+            sql_str3 :=
+                  '(myObj))||any_pkg.c_crlf;'
+               || 'END LOOP; '
+               || ' :ret:=v_out;'
+               || 'END;';
+
+            CASE l_type_code
+               WHEN 'OBJECT'
+               THEN
+                  sql_str2 := 'convertObject';
+               WHEN 'NUMBER'
+               THEN
+                  sql_str2 := 'convertNumber';
+               WHEN 'VARCHAR2'
+               THEN
+                  sql_str2 := 'convertVarchar2';
+               WHEN 'DATE'
+               THEN
+                  sql_str2 := 'convertDate';
+               WHEN 'COLLECTION'
+               THEN
+                  sql_str2 := 'convertCollection';
+               ELSE
+                  NULL;
+            END CASE;
+
+            EXECUTE IMMEDIATE sql_str1 || sql_str2 || sql_str3
+               USING IN adata, OUT result_code, OUT retval;
+
+            retval := adata.gettypename || ': ' || c_newline || retval;
+         WHEN DBMS_TYPES.typecode_ref
+         THEN
+            EXECUTE IMMEDIATE
+                  'DECLARE '
+               || '   myref '
+               || adata.gettypename
+               || '; '
+               || '   myobj '
+               || SUBSTR (adata.gettypename, INSTR (adata.gettypename, ' '))
+               || '; '
+               || '   myad sys.ANYDATA := :ad; '
+               || 'BEGIN '
+               || '   :res := myad.GetREF(myref); '
+               || '   UTL_REF.SELECT_OBJECT(myref, myobj);'
+               || '   :ret := myobj.toString(); '
+               || 'END;'
+               USING IN adata, OUT result_code, OUT retval;
+
+            retval := adata.gettypename || ': ' || retval;
+         ELSE
+            retval := '<data of type ' || adata.gettypename || '>';
+      END CASE;
+
+      RETURN retval;
+   /*EXCEPTION
+      WHEN OTHERS
+      THEN
+         IF INSTR (SQLERRM, 'component ''TOSTRING'' must be declared') > 0
+         THEN
+            RETURN adata.gettypename || ': <no toString() function>';
+         ELSE
+            RETURN 'Error: ' || SQLERRM;
+         END IF;*/
+   END anytostring;
+END any_pkg;
+/

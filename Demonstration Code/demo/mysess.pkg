@@ -1,0 +1,304 @@
+CREATE OR REPLACE PACKAGE my_session
+-- mysess.pkg 
+/*
+|| Extends some of the functionality of DBMS_SESSION
+|| and provides access to additional session-level
+|| information.
+||
+|| Author:  John Beresniewicz
+|| Created: 07/27/97
+||
+|| Compilation Requirements:
+||
+|| SELECT on sys.v_$session
+|| SELECT on sys.v_$sesstat
+|| SELECT on sys.v_$statname
+||
+|| Execution Requirements:
+||
+|| ALTER SESSION
+*/
+AS
+   /* same as dbms_session.unique_session_id but callable in SQL */
+   FUNCTION unique_id
+      RETURN VARCHAR2;
+
+   PRAGMA RESTRICT_REFERENCES (unique_id, WNDS, WNPS);
+
+   /* returns session id of current session, callable in SQL */
+   FUNCTION SID
+      RETURN NUMBER;
+
+   PRAGMA RESTRICT_REFERENCES (SID, WNDS);
+
+   /* closes any open database links not in use */
+   PROCEDURE close_links (force_with_commit_tf IN BOOLEAN DEFAULT FALSE);
+
+   /* loads session data, should be private but needs to assert purity */
+   PROCEDURE load_my_session_rec;
+
+   PRAGMA RESTRICT_REFERENCES (load_my_session_rec, WNDS);
+
+   /* resets all package states, frees memory and initializes session data */
+   PROCEDURE RESET;
+
+   /* returns current value of statistic from V$SESSTAT for this session */
+   FUNCTION statval (statname_in IN VARCHAR2)
+      RETURN NUMBER;
+
+   /* displays session uga and pga using dbms_output */
+   PROCEDURE MEMORY (
+      pga_only IN BOOLEAN DEFAULT FALSE
+    , compare_to_last IN BOOLEAN DEFAULT TRUE
+   );
+
+   /* turns SQL tracing on/off with tag for file identification */
+   PROCEDURE set_sql_trace (
+      trace_tf IN BOOLEAN
+    , tag_in IN VARCHAR2 DEFAULT USER
+   );
+END my_session;
+/
+
+CREATE OR REPLACE PACKAGE BODY my_session
+AS
+   TYPE mem_t IS RECORD (
+      uga   PLS_INTEGER
+    , pga   PLS_INTEGER
+   );
+
+   g_last_mem       mem_t;
+   /* private global to hold dbms_session.unique_session_id */
+   unique_id_       VARCHAR2 (40);
+
+   /*
+   || my_session_cur and my_session_rec are both declared
+   || to always hold all columns of V$SESSION
+   */
+   CURSOR my_session_cur
+   IS
+      SELECT *
+        FROM SYS.v_$session
+       WHERE audsid = USERENV ('SESSIONID');
+
+   my_session_rec   SYS.v_$session%ROWTYPE;
+
+   /*
+   || returns unique_id_ loaded by call to load_unique_id
+   */
+   FUNCTION unique_id
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      RETURN unique_id_;
+   END unique_id;
+
+   /*
+   || returns the session id of current session
+   */
+   FUNCTION SID
+      RETURN NUMBER
+   IS
+   BEGIN
+      IF my_session_rec.SID IS NULL
+      THEN
+         load_my_session_rec;
+      END IF;
+
+      RETURN my_session_rec.SID;
+   END SID;
+
+   /*
+   || loads unique_session_id into global variable, must be called
+   || prior to using function unique_id
+   */
+   PROCEDURE load_unique_id
+   IS
+   BEGIN
+      unique_id_ := DBMS_SESSION.unique_session_id;
+   END load_unique_id;
+
+   /*
+   || resets all package states, frees memory and initializes
+   || session data
+   */
+   PROCEDURE RESET
+   IS
+   BEGIN
+      DBMS_SESSION.reset_package;
+      DBMS_SESSION.free_unused_user_memory;
+      load_unique_id;
+      load_my_session_rec;
+   END RESET;
+
+   /*
+   || closes all open database links not in use by session,
+   || or all if forced_with_commit_TF is TRUE
+   */
+   PROCEDURE close_links (force_with_commit_tf IN BOOLEAN DEFAULT FALSE)
+   IS
+      /* declare exceptions for ORA errors */
+      dblink_in_use     EXCEPTION;
+      PRAGMA EXCEPTION_INIT (dblink_in_use, -2080);
+      dblink_not_open   EXCEPTION;
+      PRAGMA EXCEPTION_INIT (dblink_not_open, -2081);
+
+      /* cursor of all db links available to user */
+      CURSOR all_links_cur
+      IS
+         SELECT db_link
+           FROM all_db_links;
+   BEGIN
+      /* try all links and close the ones you can */
+      FOR dblink_rec IN all_links_cur
+      LOOP
+         BEGIN
+            DBMS_SESSION.close_database_link (dblink_rec.db_link);
+         EXCEPTION
+            WHEN dblink_not_open
+            THEN
+               NULL;
+            WHEN dblink_in_use
+            THEN
+               IF force_with_commit_tf
+               THEN
+                  COMMIT;
+                  DBMS_SESSION.close_database_link (dblink_rec.db_link);
+               END IF;
+            WHEN OTHERS
+            THEN
+               NULL;
+         END;
+      END LOOP;
+   END close_links;
+
+   /*
+   || loads V$SESSION data into global record for current session
+   */
+   PROCEDURE load_my_session_rec
+   IS
+   BEGIN
+      OPEN my_session_cur;
+
+      FETCH my_session_cur
+       INTO my_session_rec;
+
+      CLOSE my_session_cur;
+   END load_my_session_rec;
+
+   /*
+   || returns current value of statistic from V$SESSTAT for this session
+   */
+   FUNCTION statval (statname_in IN VARCHAR2)
+      RETURN NUMBER
+   IS
+      CURSOR sesstat_cur (statname VARCHAR2, sessid NUMBER)
+      IS
+         SELECT s.VALUE
+           FROM SYS.v_$sesstat s, SYS.v_$statname n
+          WHERE s.statistic# = n.statistic#
+            AND s.SID = sessid
+            AND n.NAME = statname;
+
+      return_temp   NUMBER;
+   BEGIN
+      /* 
+      OPEN sesstat_cur (statname_in, my_session.SID);
+
+      FETCH sesstat_cur
+       INTO return_temp;
+
+      CLOSE sesstat_cur;
+      */
+
+      SELECT s.VALUE
+        INTO return_temp
+        FROM SYS.v_$sesstat s, SYS.v_$statname n
+       WHERE s.statistic# = n.statistic#
+         AND s.SID = my_session.SID
+         AND n.NAME = statname_in;
+
+      RETURN return_temp;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         IF sesstat_cur%ISOPEN
+         THEN
+            CLOSE sesstat_cur;
+         END IF;
+
+         RETURN NULL;
+   END statval;
+
+   /*
+   || displays session uga and pga using dbms_output
+   */
+   PROCEDURE MEMORY (
+      pga_only IN BOOLEAN DEFAULT FALSE
+    , compare_to_last IN BOOLEAN DEFAULT TRUE
+   )
+   IS
+      l_mem   mem_t;
+      l_msg   VARCHAR2 (32767);
+   BEGIN
+      DBMS_OUTPUT.ENABLE;
+      l_mem.uga := statval ('session uga memory');
+      l_mem.pga := statval ('session pga memory');
+
+      IF NOT pga_only
+      THEN
+         l_msg := 'session UGA: ' || l_mem.uga;
+
+         IF compare_to_last
+         THEN
+            l_msg :=
+                  l_msg
+               || ' (delta: '
+               || TO_CHAR (l_mem.uga - NVL (g_last_mem.uga, 0))
+               || ')';
+         END IF;
+
+         DBMS_OUTPUT.put_line (l_msg);
+      END IF;
+
+      l_msg := 'session PGA: ' || l_mem.pga;
+
+      IF compare_to_last
+      THEN
+         l_msg :=
+               l_msg
+            || ' (delta: '
+            || TO_CHAR (l_mem.pga - NVL (g_last_mem.pga, 0))
+            || ')';
+      END IF;
+
+      DBMS_OUTPUT.put_line (l_msg);
+      g_last_mem := l_mem;
+   END MEMORY;
+
+   /*
+   || turns SQL tracing on/off with tag for file identification
+   */
+   PROCEDURE set_sql_trace (
+      trace_tf IN BOOLEAN
+    , tag_in IN VARCHAR2 DEFAULT USER
+   )
+   IS
+      cursor_id   INTEGER;
+   BEGIN
+      DBMS_SESSION.set_sql_trace (trace_tf);
+
+      IF trace_tf
+      THEN
+         cursor_id := DBMS_SQL.open_cursor;
+         DBMS_SQL.parse (cursor_id
+                       , 'SELECT ''' || tag_in || ''' FROM DUAL'
+                       , DBMS_SQL.native
+                        );
+         --
+         DBMS_SQL.close_cursor (cursor_id);
+      END IF;
+   END set_sql_trace;
+--
+END my_session;
+/

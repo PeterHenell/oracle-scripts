@@ -1,0 +1,26 @@
+CREATE OR REPLACE FUNCTION lstrip2 (
+   string_in IN VARCHAR2,
+   substring_in IN VARCHAR2,
+   num_in IN INTEGER := 1)
+   RETURN VARCHAR2
+IS
+   retval VARCHAR2(32767);
+   subnum INTEGER := 0;
+   sublen INTEGER := LENGTH (substring_in);
+   subpos INTEGER;
+BEGIN
+   retval := string_in;
+   WHILE (subnum < num_in)
+   LOOP
+      subpos := INSTR (retval, substring_in, 1);
+      IF (subpos = 1)
+      THEN
+         retval := SUBSTR (retval, sublen + 1);
+         subnum := subnum + 1;
+      ELSE
+         subnum := num_in;
+      END IF;
+   END LOOP;
+   RETURN retval;
+END lstrip2;
+/

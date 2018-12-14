@@ -1,0 +1,608 @@
+PL/SQL procedure successfully completed.
+Table dropped.
+ORA-02449: unique/primary keys in table referenced by foreign keys
+ORA-02449: unique/primary keys in table referenced by foreign keys
+ORA-02449: unique/primary keys in table referenced by foreign keys
+ORA-02449: unique/primary keys in table referenced by foreign keys
+ORA-02449: unique/primary keys in table referenced by foreign keys
+ORA-02449: unique/primary keys in table referenced by foreign keys
+ORA-00955: name is already used by an existing object
+ORA-00955: name is already used by an existing object
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+ORA-00955: name is already used by an existing object
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+ORA-00955: name is already used by an existing object
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+ORA-00955: name is already used by an existing object
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+ORA-00955: name is already used by an existing object
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+Table created.
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+Comment created.
+ORA-00001: unique constraint (QUTE12NEW.REG_ID_PK) violated
+ORA-06512: at line 2
+ORA-00955: name is already used by an existing object
+ORA-00955: name is already used by an existing object
+ORA-00955: name is already used by an existing object
+ORA-00955: name is already used by an existing object
+ORA-00955: name is already used by an existing object
+ORA-00955: name is already used by an existing object
+ORA-00955: name is already used by an existing object
+ORA-00955: name is already used by an existing object
+ORA-00955: name is already used by an existing object
+Index created.
+Index created.
+Index created.
+Index created.
+ORA-00955: name is already used by an existing object
+ORA-00955: name is already used by an existing object
+ORA-00955: name is already used by an existing object
+ORA-00955: name is already used by an existing object
+ORA-00955: name is already used by an existing object
+ORA-02260: table can have only one primary key
+ORA-02260: table can have only one primary key
+ORA-02260: table can have only one primary key
+ORA-02260: table can have only one primary key
+ORA-02264: name already used by an existing constraint
+ORA-02260: table can have only one primary key
+ORA-02261: such unique or primary key already exists in the table
+Table altered.
+Table altered.
+ORA-02275: such a referential constraint already exists in the table
+ORA-02275: such a referential constraint already exists in the table
+ORA-02275: such a referential constraint already exists in the table
+ORA-02275: such a referential constraint already exists in the table
+ORA-02275: such a referential constraint already exists in the table
+ORA-02275: such a referential constraint already exists in the table
+ORA-02275: such a referential constraint already exists in the table
+Table altered.
+Table altered.
+Table altered.
+ORA-02303: cannot drop or replace a type with type or table dependents
+ORA-02303: cannot drop or replace a type with type or table dependents
+ORA-00955: name is already used by an existing object
+ORA-02275: such a referential constraint already exists in the table
+Table truncated.
+PL/SQL procedure successfully completed.
+Package created.
+Package body created.
+Function created.
+Package created.
+Package body created.
+PL/SQL procedure successfully completed.
+Table created.
+PL/SQL procedure successfully completed.
+Procedure created.
+Function created.
+PL/SQL procedure successfully completed.
+Table created.
+PL/SQL procedure successfully completed.
+Procedure created.
+Package created.
+Package body created.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+Procedure created.
+PL/SQL procedure successfully completed.
+PL/SQL procedure successfully completed.
+PL/SQL procedure successfully completed.

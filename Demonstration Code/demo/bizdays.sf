@@ -1,0 +1,24 @@
+/* Formatted by PL/Formatter v.1.1.12 on 1999/01/12 21:17  (09:17 PM) */
+
+CREATE OR REPLACE FUNCTION bizdays_between (
+   start_date IN DATE,
+   end_date IN DATE
+   )
+   RETURN PLS_INTEGER
+IS
+BEGIN
+   RETURN  (end_date -
+          start_date +
+          1 -
+           (NEXT_DAY (start_date - 1, 'SUNDAY') -
+          NEXT_DAY (end_date - 7, 'SUNDAY')
+             ) /
+          7 -
+          1 -
+           (NEXT_DAY (start_date - 1, 'SATURDAY') -
+          NEXT_DAY (end_date - 7, 'SATURDAY')
+             ) /
+          7 -
+          1
+             );
+END;

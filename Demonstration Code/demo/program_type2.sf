@@ -1,0 +1,49 @@
+CREATE OR REPLACE FUNCTION program_type (
+   owner_in     IN   VARCHAR2
+ , package_in   IN   VARCHAR2
+ , program_in   IN   VARCHAR2
+)
+   RETURN VARCHAR2
+   AUTHID CURRENT_USER
+IS
+   c_function_pos   CONSTANT PLS_INTEGER  := 0;
+
+   TYPE overload_aat IS TABLE OF all_arguments.overload%TYPE
+      INDEX BY PLS_INTEGER;
+
+   l_overloads               overload_aat;
+
+   FUNCTION list_to_string (list_in IN overload_aat)
+      RETURN VARCHAR2
+   IS
+      c_delim   CONSTANT CHAR (1)         := ',';
+      l_row              PLS_INTEGER;
+      retval             VARCHAR2 (32767);
+   BEGIN
+      l_row := list_in.FIRST;
+
+      WHILE (l_row IS NOT NULL)
+      LOOP
+         retval := retval || c_delim || list_in (l_row);
+         l_row := list_in.NEXT (l_row);
+      END LOOP;
+
+      RETURN LTRIM (retval, c_delim);
+   END list_to_string;
+BEGIN
+   SELECT DISTINCT (CASE MIN (POSITION)
+                       WHEN c_function_pos
+                          THEN 'FUNCTION'
+                       ELSE 'PROCEDURE'
+                    END
+                   ) AS program_type
+   BULK COLLECT INTO l_overloads
+              FROM all_arguments
+             WHERE owner = owner_in
+               AND package_name = package_in
+               AND object_name = program_in
+          GROUP BY overload;
+
+   RETURN list_to_string (l_overloads);
+END program_type;
+/

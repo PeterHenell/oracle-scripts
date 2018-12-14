@@ -1,0 +1,25 @@
+CREATE OR REPLACE PACKAGE valerr
+IS
+   FUNCTION little_name RETURN VARCHAR2;
+END valerr;
+/
+
+CREATE OR REPLACE PACKAGE BODY valerr
+IS
+   g_name   VARCHAR2 (1) := 'Lu';
+
+   FUNCTION little_name RETURN VARCHAR2
+   IS
+   BEGIN
+      RETURN g_name;
+   END little_name;
+BEGIN
+   DBMS_OUTPUT.put_line ('Before I show you the name...');
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      DBMS_OUTPUT.put_line (   'Trapped the error: '
+                            || DBMS_UTILITY.format_error_stack ()
+                           );
+END valerr;
+/

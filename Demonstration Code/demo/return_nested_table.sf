@@ -1,0 +1,13 @@
+DECLARE
+   TYPE employee_ntt IS TABLE OF employees%ROWTYPE;
+
+   l_employees   employee_ntt;
+BEGIN
+   -- Retrieve all rows matching the possible where clause
+   -- and deposit directly into the collection.
+   EXECUTE IMMEDIATE 'SELECT * FROM EMPLOYEES' 
+      BULK COLLECT INTO l_employees;
+
+   DBMS_OUTPUT.put_line (l_employees.COUNT);
+END allrows_by;
+/

@@ -1,0 +1,24 @@
+CREATE OR REPLACE FUNCTION lstrip1 (
+   string_in IN VARCHAR2,
+   substring_in IN VARCHAR2,
+   num_in IN INTEGER := 1)
+   RETURN VARCHAR2
+IS
+BEGIN
+   IF    num_in < 1
+      OR string_in IS NULL
+      OR substring_in IS NULL
+   THEN
+      RETURN string_in;
+   ELSIF INSTR (string_in, substring_in) = 1
+   THEN
+      RETURN lstrip1 (
+                SUBSTR (string_in, LENGTH (substring_in) + 1),
+                substring_in,
+                num_in - 1
+             );
+   ELSE
+      RETURN string_in;
+   END IF;
+END;
+/

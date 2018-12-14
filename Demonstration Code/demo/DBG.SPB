@@ -1,0 +1,689 @@
+CREATE OR REPLACE PROCEDURE custom_debug_action (msg IN VARCHAR2)
+IS
+BEGIN
+   DBMS_OUTPUT.PUT_LINE (msg);
+END;
+/
+CREATE OR REPLACE PACKAGE BODY dbg 
+IS
+	/*
+	|| The package globals which represent the current session settings. 
+ 	*/
+	-- Name of current session.
+	current_session VARCHAR2 (30) := 'LOCAL';
+
+	-- Boolean to allow creation of initial local session.
+	create_local_session BOOLEAN := TRUE;
+
+	-- Amount of time pipe processes will wait.
+	wait_time INTEGER := 60;
+
+	-- The name of the break point currently being fired.
+	current_break_point VARCHAR2 (100) := NULL;
+
+	-- Output "device" for break message.
+	output_type 	VARCHAR2(20) := 'SCREEN';
+
+	-- Amount of breakpoints to skip before firing.
+	skip_break INTEGER (5) := 0;
+
+	-- Amount of breakpoints to fire before waiting for confirmation.
+	confirm_after INTEGER (5) := 50;
+
+	-- Counter of breakpoints fired; used by skip_break and confirm_after;
+	break_counter INTEGER (5) := 0;
+
+	-- Is program interrupted to allow listener to respond?
+	interrupt_on_break VARCHAR2(1) := 'N';
+
+	-- Are all breaks are active and ready to fire?
+	all_breaks_active	VARCHAR2(1) := 'N';
+
+	-- The time of previous break; used to calculated elapsed time.
+	last_bp_time	 BINARY_INTEGER := NULL;
+
+	/*
+	||--------------------- Public Modules ------------------------------
+--
+	|| These first modules provide a programmatic interface to the above
+	|| package globals. This way a user doesn't ever have to know the 
+names 
+	|| of specific variables, which could well change.
+	||
+	|| The session name "local" is reserved for use by the debugger.
+	||-------------------------------------------------------------------
+---
+	*/
+
+	PROCEDURE new_session (session_in IN VARCHAR2) IS
+	BEGIN
+	IF UPPER (session_in) != 'LOCAL' OR
+		(UPPER (session_in) = 'LOCAL' AND create_local_session)
+	THEN
+		/*
+		|| Change name of current session and then use the various
+		|| public modules to set the appropriate default values for
+		|| the session.
+		*/
+		current_session := session_in;
+		set_wait_time (wait_time);
+		set_noactivate_all;
+		to_screen;
+		set_nointerrupt;
+		set_skip (0);
+		set_confirm (0);
+		/*
+		|| First breakpoint hasn't been fired yet so there is no point of 
+		|| comparison for the elapsed time.
+		*/
+		last_bp_time := NULL;
+		/*
+		|| Create the list of active breakpionts for this session.	
+		*/
+		PS_List.make (current_session);
+	ELSE
+		DBMS_OUTPUT.PUT_LINE (' You cannot create a session named 
+"local".');
+	END IF;
+	END;
+
+	PROCEDURE set_session (session_in IN VARCHAR2) IS
+	BEGIN
+	IF UPPER (session_in) != 'LOCAL'
+	THEN
+		-- Unload everything from named globals into package variables.
+
+		current_session := session_in;
+
+		PS_Global.getval 
+			(current_session||'.'||'activate_all', all_breaks_active);	
+	
+
+		PS_Global.getval 
+			(current_session||'.'||'confirm_after', confirm_after);
+
+		PS_Global.getval 
+			(current_session||'.'||'interrupt', interrupt_on_break);		
+
+		PS_Global.getval 
+			(current_session||'.'||'output', output_type);
+
+		PS_Global.getval 
+			(current_session||'.'||'skip_break', skip_break);
+
+		PS_Global.getval 
+			(current_session||'.'||'wait_time', wait_time);
+	ELSE
+		DBMS_OUTPUT.PUT_LINE (' You cannot set to the local session');
+	END IF;
+	END;
+
+	PROCEDURE halt_session (session_in IN VARCHAR2) IS
+	BEGIN
+	-- You can't halt/remove the default session.
+	IF UPPER (session_in) != 'LOCAL'
+	THEN
+		-- Clear out all the global variables and destroy the list.
+		PS_Global.clrval (session_in||'.'||'activate_all');
+		PS_Global.clrval (session_in||'.'||'break_counter');
+		PS_Global.clrval (session_in||'.'||'confirm_after');
+		PS_Global.clrval (session_in||'.'||'interrupt');
+		PS_Global.clrval (session_in||'.'||'last_bp_time');
+		PS_Global.clrval (session_in||'.'||'output');
+		PS_Global.clrval (session_in||'.'||'skip_break');
+		PS_Global.clrval (session_in||'.'||'wait_time');
+		PS_List.destroy (session_in);
+	ELSE
+		DBMS_OUTPUT.PUT_LINE (' You cannot halt the local session');
+	END IF;
+	END;
+	
+	FUNCTION get_session RETURN VARCHAR2
+	IS
+	BEGIN
+		RETURN current_session;
+	END;
+
+	PROCEDURE pack_session (msg_in IN VARCHAR2) IS
+	/*
+	|| Pack up the session variables, then add the message.
+	*/
+		num_breaks INTEGER := PS_List.nitems(current_session);
+	BEGIN
+	IF UPPER (current_session) != 'LOCAL'
+	THEN
+		-- Make sure there is nothing in the message buffer!
+		DBMS_PIPE.RESET_BUFFER;
+
+		-- Pack it up in alphabetical order...
+		DBMS_PIPE.PACK_MESSAGE (all_breaks_active);
+		DBMS_PIPE.PACK_MESSAGE (confirm_after);
+		DBMS_PIPE.PACK_MESSAGE (interrupt_on_break);
+		DBMS_PIPE.PACK_MESSAGE (output_type);
+		DBMS_PIPE.PACK_MESSAGE (skip_break);
+		DBMS_PIPE.PACK_MESSAGE (wait_time);
+
+		-- If there are any activate break points, include them too.
+		DBMS_PIPE.PACK_MESSAGE (num_breaks);	
+		FOR break_index IN 1 .. num_breaks
+		LOOP
+			DBMS_PIPE.PACK_MESSAGE 
+				(PS_List.getitem (current_session, break_index));
+		END LOOP;
+
+		-- Now add the specific message to the buffer.
+		DBMS_PIPE.PACK_MESSAGE (msg_in);
+	ELSE
+		DBMS_OUTPUT.PUT_LINE (' You cannot pack the local session');
+	END IF;
+	END;
+
+	PROCEDURE unpack_session IS
+	/*
+	|| This procedure is called when there is a message in the pipe.
+	|| The first six message packets or items are the session variables.
+	|| I dump the items directly into the session variables and then
+	|| I set the named globals as well.
+	*/
+		num_breaks INTEGER;
+		breakpoint_name VARCHAR2(100);
+
+		-- Exception to handle the empty pipe.
+		empty_pipe EXCEPTION;
+		PRAGMA EXCEPTION_INIT (empty_pipe, -6556);
+	BEGIN
+	IF UPPER (current_session) != 'LOCAL'
+	THEN
+		DBMS_PIPE.UNPACK_MESSAGE (all_breaks_active);
+		IF get_activate_all
+		THEN
+			activate_all;
+		ELSE
+			set_noactivate_all;
+		END IF;
+
+		DBMS_PIPE.UNPACK_MESSAGE (confirm_after);
+		set_confirm (confirm_after);
+
+		DBMS_PIPE.UNPACK_MESSAGE (interrupt_on_break);
+		IF get_interrupt
+		THEN
+			set_interrupt;
+		ELSE
+			set_nointerrupt;
+		END IF;
+
+		DBMS_PIPE.UNPACK_MESSAGE (output_type);
+		IF output_type = 'SCREEN'
+		THEN
+			to_screen;
+		ELSIF output_type = 'PIPE'
+		THEN
+			to_pipe;
+		END IF;
+
+		DBMS_PIPE.UNPACK_MESSAGE (skip_break);
+		set_skip (skip_break);
+
+		DBMS_PIPE.UNPACK_MESSAGE (wait_time);
+		set_wait_time (wait_time);
+		/*
+		|| When it comes to unpacking and resetting active break
+		|| points, I only want to do this if there are changes. 
+		|| The next item contains the number of breakpoints in
+		|| the message. If it is -1, do nothing. If 0, get rid
+		|| of all active breakpoints, otherwise replace the
+		|| current active breakpoints with the set in the pipe.
+		*/
+		DBMS_PIPE.UNPACK_MESSAGE (num_breaks);
+		deactivate ('ALL');
+		FOR break_index IN 1 .. num_breaks
+		LOOP
+			DBMS_PIPE.UNPACK_MESSAGE (breakpoint_name);
+			activate (breakpoint_name );	
+		END LOOP;
+	ELSE
+		DBMS_OUTPUT.PUT_LINE (' You cannot unpack the local session.');
+	END IF;
+	EXCEPTION
+		WHEN empty_pipe
+		THEN
+			RAISE_APPLICATION_ERROR 
+				(-20000, 'Debug piped message is prematurely empty!');
+	END;
+
+	PROCEDURE set_wait_time (num_in IN NUMBER)
+	IS
+	BEGIN
+		PS_Global.putval 
+			(current_session||'.'||'wait_time', num_in);
+		wait_time := num_in;
+	END;
+
+	FUNCTION get_wait_time RETURN NUMBER
+	IS
+	BEGIN
+		RETURN wait_time;
+	END;
+
+	PROCEDURE activate_all IS
+	BEGIN
+		-- Set both the global variable and the session variable.
+		-- You will see this same pattern repeated below.
+		PS_Global.putval 
+			(current_session||'.'||'activate_all', 'Y');
+		all_breaks_active := 'Y';
+	END;
+
+	FUNCTION get_activate_all RETURN BOOLEAN
+	IS
+	BEGIN
+		RETURN all_breaks_active = 'Y';
+	END;
+
+	PROCEDURE set_noactivate_all IS
+	BEGIN
+		PS_Global.putval 
+			(current_session||'.'||'activate_all', 'N');
+		all_breaks_active := 'N';
+	END;
+
+	PROCEDURE set_interrupt IS
+	BEGIN
+		PS_Global.putval 
+			(current_session||'.'||'interrupt', 'Y');
+		interrupt_on_break := 'Y';
+	END;
+
+	FUNCTION get_interrupt RETURN BOOLEAN
+	IS
+	BEGIN
+		RETURN interrupt_on_break = 'Y';
+	END;
+
+	PROCEDURE set_nointerrupt IS
+	BEGIN
+		PS_Global.putval 
+			(current_session||'.'||'interrupt', 'N');
+		interrupt_on_break := 'N';
+	END;
+
+	PROCEDURE to_screen IS
+	BEGIN
+		PS_Global.putval 
+			(current_session||'.'||'output', 'SCREEN');
+		output_type := 'SCREEN';
+	END;
+
+	PROCEDURE to_pipe IS
+	BEGIN
+		PS_Global.putval 
+			(current_session||'.'||'output', 'PIPE');
+		output_type := 'PIPE';
+	END;
+
+	FUNCTION get_output RETURN VARCHAR2 IS
+	BEGIN
+		RETURN output_type;
+	END;
+
+	PROCEDURE set_skip (num_in IN NUMBER) IS
+	BEGIN
+		-- Set the skip global and reset the break counter.
+		PS_Global.putval 
+			(current_session||'.'||'skip_break', num_in);
+		skip_break := num_in;
+		break_counter := 0;
+	END;
+
+	FUNCTION get_skip RETURN NUMBER IS
+	BEGIN
+		RETURN skip_break;
+	END;
+
+	PROCEDURE set_confirm (num_in IN NUMBER) IS
+	BEGIN
+		-- Set the confirm global and reset the break counter.
+		PS_Global.putval 
+			(current_session||'.'||'confirm_after', num_in);
+		confirm_after := num_in;
+		break_counter := 0;
+	END;
+
+	FUNCTION get_confirm RETURN NUMBER IS
+	BEGIN
+		RETURN confirm_after;
+	END;
+
+	PROCEDURE activate (level_in IN VARCHAR2) IS
+	BEGIN
+		-- Add the break level to the list.
+		PS_List.appenditem (current_session, UPPER (level_in));
+	END;
+
+	PROCEDURE activate (level_in IN NUMBER) IS
+	BEGIN
+		PS_List.appenditem (current_session, UPPER (TO_CHAR (level_in)));
+	END;
+
+	PROCEDURE deactivate (level_in IN VARCHAR2) IS
+	BEGIN
+		-- Get rid of all breakpoints by destroying and recreating the list.
+		IF UPPER (level_in) = 'ALL'
+		THEN
+			PS_List.destroy (current_session);
+			PS_List.make (current_session);
+		ELSE
+			-- Otherwise just remove the specified breakpoint.
+			PS_List.deleteitem (current_session, UPPER(level_in));
+		END IF;
+	END;
+
+	PROCEDURE deactivate (level_in IN NUMBER) IS
+	BEGIN
+		-- Overloaded version to handle deactivating a numeric break level.
+		PS_List.deleteitem (current_session, TO_CHAR (level_in));
+	END;
+
+	/*
+	||----------------- Private Modules --------------------------------
+	|| These three programs are used by the brk procedures to determine
+	|| if the current break level is active and then display the data.
+	||-------------------------------------------------------------------
+	*/
+	FUNCTION active_module RETURN BOOLEAN
+	IS
+		-- Get the call stack to check for active modules.
+		callstack VARCHAR2(2000) := 
+				UPPER (DBMS_UTILITY.FORMAT_CALL_STACK);
+		module_index INTEGER := 1;
+		return_value BOOLEAN := FALSE;
+	BEGIN
+		/*
+		|| Read through the entire list of activated breakpoints to see
+		|| if a module in the call stack is activated for breakpoints.
+		|| This way you can specify that you only want breaks in a certain
+		|| module to display information.
+		*/
+		WHILE module_index <= PS_List.nitems (current_session) AND
+				NOT return_value
+		LOOP
+			-- Use the getitem function to get the Nth item from list and
+			-- then see if it is in the call stack using INSTR.
+			return_value := 
+				INSTR (callstack, 
+						 PS_List.getitem (current_session, module_index)) > 0;
+			module_index := module_index + 1;
+		END LOOP;
+		RETURN return_value;
+	END;
+
+	FUNCTION active_break_point RETURN BOOLEAN IS
+	BEGIN
+		-- The current break point is active if it is in the list.
+		RETURN PS_List.getposition (current_session, current_break_point) 
+> 0;
+	END; 
+
+	FUNCTION fire_breakpoint RETURN BOOLEAN IS
+	/*
+	|| The breakpoint should fire if we have skipped enough breakpoints
+	|| OR if the module is active (a module from list is in the 
+callstack)
+	|| OR the specified break point is in the list. I do this in a 
+sequence
+	|| of ELSIF statements to minimize the amount of processing needed.
+	*/
+	BEGIN
+		IF skip_break > 0 AND skip_break >= break_counter 	
+		THEN 
+			RETURN FALSE;
+		ELSIF get_activate_all 
+		THEN 
+			RETURN TRUE;
+		ELSIF active_break_point
+		THEN 
+			RETURN TRUE;
+		ELSE
+			RETURN active_module;
+		END IF;
+	END;
+
+	PROCEDURE display (msg_in IN VARCHAR2, session_in IN VARCHAR2)
+	/*
+	|| DISPLAY is the program called by the BRK procedures to display the
+	|| debug message. It checks to see whether the current break level is
+	|| active and then either displays the message to the screen or 
+writes
+	|| it to the named pipe. If "interrupt mode" is on (the package 
+variable
+	|| interrupt_on_break is TRUE), then display calls pipe_message to 
+wait
+	|| for the "go-ahead" from the listener process. This program also
+	|| keeps track of the count of breaks fired for the skip and 
+	|| confirm features.
+	*/
+	IS
+		msg VARCHAR2 (1000) := msg_in;
+		pipe_status INTEGER;
+
+		PROCEDURE format_message (msg_inout IN OUT VARCHAR2) IS
+		/*
+		|| Local module which formats the message with the appropriate 
+header
+		|| information. Each message has following format:
+		||		breakpoint_name-HH:MI:SS-9999MS-message_text
+		|| where 9999MS is the number of microseconds which have elapsed 
+		|| since the last breakpoint was fired.
+		*/
+			curr_time BINARY_INTEGER := DBMS_UTILITY.GET_TIME;
+			timestamp VARCHAR2(50) := TO_CHAR (SYSDATE, 'HH:MI:SS');
+		BEGIN
+			IF last_bp_time IS NOT NULL
+			THEN
+				timestamp := 
+					timestamp  || '-' || 
+					TO_CHAR (curr_time - last_bp_time) || 'MS';
+			END IF;
+			msg_inout := current_break_point || '-' || 
+							 timestamp || '-'||
+							 msg_inout;
+			last_bp_time := curr_time;
+		END;
+
+		PROCEDURE respond_to_listener (wait_time_in IN NUMBER) IS
+		/*
+		|| Receive the message, unpack the session variables 
+		|| from listener, and then extract any other items
+		|| in the message and call the custom_debug_action
+		|| stub to act on that message. Has to be VARCHAR2.
+		*/
+		BEGIN
+		IF session_in != 'LOCAL'
+		THEN
+			pipe_status := 
+				DBMS_PIPE.RECEIVE_MESSAGE (session_in, wait_time_in);
+			IF pipe_status = 0 
+			THEN
+				unpack_session;
+				DECLARE
+					-- Exception to handle the empty pipe.
+					empty_pipe EXCEPTION;
+					PRAGMA EXCEPTION_INIT (empty_pipe, -6556);
+				BEGIN
+					LOOP
+						DBMS_PIPE.UNPACK_MESSAGE (msg);
+						custom_debug_action (msg);
+					END LOOP;
+				EXCEPTION 
+					WHEN empty_pipe THEN NULL;
+				END;
+			END IF;
+		END IF;
+		END;
+
+	BEGIN
+		/*
+		|| Regardless of whether this breakpoint is active and will be 
+fired,
+		|| if the debug session is not local, see if there is anything in 
+the
+		|| pipe from a listener program. By doing this, you can modify the
+		|| debugging session (like turn it on) even if the local program 
+		|| itself has not initialized its debug settings in any way.
+		||
+		|| Notice that the wait time is set to zero. I am not going to 
+wait 
+		|| for a message, just see if one is there for me to pick up.
+		*/
+		respond_to_listener (wait_time_in=>0);
+
+		-- Increment the counter if I need to do any counting.
+		IF skip_break > 0 OR confirm_after > 0
+		THEN
+			break_counter := break_counter + 1;
+		END IF;
+	
+		IF fire_breakpoint
+		THEN
+			/*
+			|| Format message with additional timestamp/context 
+information.
+			*/
+			format_message (msg);
+
+			-- Now display message or send to the listener.
+			IF output_type = 'SCREEN'
+			THEN
+				-- Finally, a native call to PUT_LINE!
+				DBMS_OUTPUT.PUT_LINE (msg);
+
+			ELSIF output_type = 'PIPE'
+			THEN
+				-- Pack and send the message.
+				pack_session (msg);
+				pipe_status := DBMS_PIPE.SEND_MESSAGE (session_in, 
+wait_time);
+				/*
+				|| Wait for a response if interrupt is turned on OR
+				|| programmer has requested confirmation to continue
+				|| with debug mode turned on.
+				*/
+				IF pipe_status = 0 AND 
+				   (get_interrupt OR confirm_after < break_counter)
+				THEN
+					IF confirm_after < break_counter
+					THEN
+						-- Reset the counter.
+						break_counter := 0;
+					END IF;
+					respond_to_listener (wait_time);
+				END IF;
+			END IF;
+		END IF;
+	END;
+
+	/*
+	||----------------- THE BRK PROCEDURES ------------------------------
+--
+	|| Each of these overloaded programs work the same as in their 
+earlier
+	|| incarnation (as the "pl" program where it displays string or date 
+or 
+	|| number or string-number or string-date combination). In the dbg
+	|| package, the brk procedure first copies the specified breakpoint 
+	|| (if any) to the package global, and then calls the private display 
+	|| procedure, which determines whether the break is active and where 
+the 
+	|| output should go.
+	||-------------------------------------------------------------------
+--
+	*/
+	PROCEDURE brk (date_in IN DATE, 
+						mask_in IN VARCHAR2 := 'Month DD, YYYY - HH:MI:SS PM',
+						bp_in IN VARCHAR2 := NULL,
+						session_in IN VARCHAR2 := get_session) 
+	IS
+	BEGIN
+		current_break_point := bp_in;
+		display (TO_CHAR (date_in, mask_in), session_in);
+	END;
+	
+	PROCEDURE brk (number_in IN NUMBER, 
+						bp_in IN VARCHAR2 := NULL,
+						session_in IN VARCHAR2 := get_session) 
+	IS
+	BEGIN
+		current_break_point := bp_in;
+		display (TO_CHAR (number_in), session_in);
+	END;
+	
+	PROCEDURE brk (char_in IN VARCHAR2, 
+						bp_in IN VARCHAR2 := NULL,
+						session_in IN VARCHAR2 := get_session) 
+	IS
+	BEGIN
+		current_break_point := bp_in;
+		display (char_in, session_in);
+	END;
+	
+	PROCEDURE brk (char_in IN VARCHAR2, number_in IN NUMBER, 
+						bp_in IN VARCHAR2 := NULL,
+						session_in IN VARCHAR2 := get_session) 
+	IS
+	BEGIN
+		current_break_point := bp_in;
+		display (char_in || ': ' || TO_CHAR (number_in), session_in);
+	END;
+	
+	PROCEDURE brk (char_in IN VARCHAR2, 
+						date_in IN DATE,
+						mask_in IN VARCHAR2 := 'Month DD, YYYY - HH:MI:SS PM', 
+						bp_in IN VARCHAR2 := NULL,
+						session_in IN VARCHAR2 := get_session)
+	IS
+	BEGIN
+		current_break_point := bp_in;
+		display (char_in || ': ' || 
+					TO_CHAR (date_in, 'Month DD, YYYY - HH:MI:SS PM'),
+					session_in);
+	END;
+
+	PROCEDURE brk (boolean_in IN BOOLEAN, 
+						bp_in IN VARCHAR2 := NULL,
+						session_in IN VARCHAR2 := get_session)
+	IS
+	BEGIN
+		current_break_point := bp_in;
+		IF boolean_in 
+		THEN
+			display ('TRUE', session_in);
+		ELSE
+			display ('FALSE', session_in);
+		END IF;
+	END;
+	
+	PROCEDURE brk (char_in IN VARCHAR2, boolean_in IN BOOLEAN, 
+						bp_in IN VARCHAR2 := NULL,
+						session_in IN VARCHAR2 := get_session)
+	IS
+	BEGIN
+		current_break_point := bp_in;
+		IF boolean_in 
+		THEN
+			display (char_in || ' ' || 'TRUE', session_in);
+		ELSE
+			display (char_in || ' ' || 'FALSE', session_in);
+		END IF;
+	END;
+
+BEGIN
+	/*
+	|| The initialization section of the package. Here I set up the
+	|| local debug session and then make sure that no one else can
+	|| can do so.
+	*/
+	new_session ('LOCAL');
+	create_local_session := FALSE;
+END dbg;
+/

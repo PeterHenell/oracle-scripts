@@ -1,0 +1,24 @@
+CREATE OR REPLACE PACKAGE thisuser
+IS
+   cname CONSTANT all_users.username%TYPE DEFAULT USER;
+   
+   cname2 CONSTANT all_users.username%TYPE DEFAULT 
+      SYS_CONTEXT ('USERENV', 'CURRENT_USER');
+
+   FUNCTION NAME
+      RETURN VARCHAR2;
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY thisuser
+IS
+   g_user CONSTANT all_users.username%TYPE := USER;
+
+   FUNCTION NAME
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      RETURN g_user;
+   END;
+END;
+/

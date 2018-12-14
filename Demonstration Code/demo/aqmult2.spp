@@ -1,0 +1,91 @@
+CREATE OR REPLACE PACKAGE conc_pkg
+IS
+   PROCEDURE add_reviewer (name_in IN VARCHAR2);
+    
+   PROCEDURE change_it_again 
+      (student_in IN VARCHAR2, new_conc_in IN VARCHAR2);
+
+   PROCEDURE show_changers_to (curious_in IN VARCHAR2);
+END conc_pkg;
+/ 
+CREATE OR REPLACE PACKAGE BODY conc_pkg
+IS
+   c_qtable CONSTANT aq.name_type := 'conc_qtable';
+   c_queue CONSTANT aq.name_type := 'conc_queue';
+   
+   g_msgid aq.msgid_type;
+
+   PROCEDURE add_reviewer (name_in IN VARCHAR2)
+   IS
+      l_sub SYS.AQ$_AGENT := SYS.AQ$_AGENT (name_in, 'conc_q', NULL);
+   BEGIN
+      DBMS_AQADM.ADD_SUBSCRIBER
+         (queue_name => c_queue, subscriber => l_sub);
+   END;
+    
+   PROCEDURE change_it_again 
+      (student_in IN VARCHAR2, new_conc_in IN VARCHAR2)
+   IS
+      queueopts DBMS_AQ.ENQUEUE_OPTIONS_T;
+      msgprops DBMS_AQ.MESSAGE_PROPERTIES_T;
+      conc_obj student_conc_t;
+   BEGIN
+      /* Update the database table. */
+      UPDATE student_intention
+         SET conc_study = new_conc_in
+       WHERE name = student_in;
+
+      /* Put a message on the queue so that everyone is
+         properly notified. Notice I will coordinate visibility
+         of this message with a COMMIT of the entire transaction.*/
+      queueopts.visibility := DBMS_AQ.ON_COMMIT;
+
+      /* Populate the object. */
+      conc_obj := student_conc_t (student_in, new_conc_in);
+
+      DBMS_AQ.ENQUEUE (c_queue, queueopts, msgprops, conc_obj, g_msgid);
+   END;
+
+   PROCEDURE show_changers_to (curious_in IN VARCHAR2)
+   IS
+      obj student_conc_t;
+      v_msgid aq.msgid_type;
+
+      queueopts DBMS_AQ.DEQUEUE_OPTIONS_T;
+      msgprops DBMS_AQ.MESSAGE_PROPERTIES_T;
+
+      first_dequeue BOOLEAN := TRUE;
+   BEGIN
+      queueopts.consumer_name := curious_in;
+
+      /* Loop through the contents of the queue looking for
+         matches on the specified recipient name. */
+      LOOP
+         /* Non-destructive dequeue */
+         queueopts.wait := DBMS_AQ.NO_WAIT;
+         queueopts.navigation := DBMS_AQ.FIRST_MESSAGE;
+         queueopts.visibility := DBMS_AQ.IMMEDIATE;
+
+         DBMS_AQ.DEQUEUE (queue_name => c_queue,
+            dequeue_options => queueopts,
+            message_properties => msgprops,
+            payload => obj,
+            msgid => v_msgid);
+
+         IF first_dequeue
+         THEN
+            DBMS_OUTPUT.PUT_LINE ('Changed Majors on ' || TO_CHAR (SYSDATE-1));
+            first_dequeue := FALSE;
+         END IF;
+
+         DBMS_OUTPUT.PUT_LINE (obj.student || ' changed major to ' || obj.major);
+      END LOOP;
+
+   EXCEPTION
+      WHEN aq.dequeue_timeout
+      THEN
+         NULL;
+   END;
+END conc_pkg;
+/ 
+

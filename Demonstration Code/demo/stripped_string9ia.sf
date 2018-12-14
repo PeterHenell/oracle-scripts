@@ -1,0 +1,19 @@
+CREATE OR REPLACE FUNCTION stripped_string (
+   string_in             IN   VARCHAR2
+  ,strip_characters_in   IN   VARCHAR2
+)
+   RETURN VARCHAR2
+IS
+   c_workaround CHAR (1) := CHR (1);
+BEGIN
+   IF strip_characters_in IS NULL
+   THEN
+      RETURN string_in;
+   ELSE
+      RETURN TRANSLATE (string_in
+                       , c_workaround || strip_characters_in
+                       ,c_workaround
+                       );
+   END IF;
+END stripped_string;
+/

@@ -1,0 +1,67 @@
+CREATE OR REPLACE FUNCTION infile 
+	(loc_in IN VARCHAR2,
+     file_in IN VARCHAR2, 
+	 text_in IN VARCHAR2, 
+	 occurrence_in IN INTEGER := 1,
+	 start_line_in IN INTEGER := 1,
+	 end_line_in IN INTEGER := 0,
+	 ignore_case_in IN BOOLEAN := TRUE)
+RETURN INTEGER
+/*
+|| An "INSTR" for operating system files. Returns the line number of
+|| a file in which a text string was found.
+*/
+IS
+	/* Handle to the file. Only will open if arguments are valid. */
+	file_handle UTL_FILE.FILE_TYPE;
+
+	/* Use local variable to hold this information. */
+	ignore_case BOOLEAN := ignore_case_in;
+
+	/* Holds a line of text from the file. */
+	line_of_text VARCHAR2(1000);
+
+	text_loc INTEGER;
+	found_count INTEGER := 0;
+
+	/* Boolean to determine if there are more values to read */
+	no_more_lines BOOLEAN := FALSE;
+
+	/* Function return value */
+	return_value INTEGER := 0;
+BEGIN
+	/* Assert valid arguments. If any fail, return NULL. */
+	IF loc_in IS NULL OR
+      file_in IS NULL OR
+		text_in IS NULL OR
+		occurrence_in <= 0 OR
+		start_line_in < 1 OR
+		end_line_in < 0
+	THEN
+		return_value := NULL;
+	ELSE
+		/* All arguments are fine. Open and read through the file. */
+		file_handle := UTL_FILE.FOPEN (loc_in, file_in, 'R');
+		LOOP
+			/* Get next line and exit if at end of file. */
+			UTL_FILE.GET_LINE (file_handle, line_of_text);
+
+			/* Have another line from file. */
+			return_value := return_value + 1;
+		END LOOP;
+	END IF;
+
+	IF no_more_lines
+	THEN
+		/* read through whole file without success. */
+		return_value := NULL;
+	END IF;
+
+	RETURN return_value;
+EXCEPTION   
+  -- Normal completion of program
+  WHEN NO_DATA_FOUND
+  THEN
+		UTL_FILE.FCLOSE (file_handle);     
+END;
+/

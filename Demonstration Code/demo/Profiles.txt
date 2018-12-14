@@ -1,0 +1,13 @@
+[Begin]AllLogons
+
+[Begin]LogonInfo = local
+LogonInfo.ConnectionString = local
+LogonInfo.ConnectionType = 3
+LogonInfo.CurrentFilter = 
+LogonInfo.CurrentOptions = 
+LogonInfo.LogonName = local
+LogonInfo.UserId = scott
+[End]LogonInfo = local
+
+
+[End]AllLogons

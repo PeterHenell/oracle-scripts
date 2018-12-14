@@ -1,0 +1,532 @@
+SQL> @fgac
+SQL> /*
+DOC>   Year 2010, National Healthcare System!
+DOC>   Doctors can only see those patients who are assigned to their clinic.
+DOC>   Regulators can only see those patients who reside in the same state.
+DOC>   Patients can only see information about themselves.
+DOC>
+DOC>   NOTE: if your SYSTEM logon trigger fails after creation, you will find
+DOC>	     yourself unable to log in. Instead you will get this error:
+DOC>
+DOC>	     ORA-04045: errors during recompilation/revalidation of SYSTEM.SET_ID_ON_LOGON
+DOC>
+DOC>	     In this case, connect INTERNAL (default password ORACLE) and then
+DOC>	     drop the trigger:
+DOC>
+DOC>	     DROP TRIGGER SYSTEM.SET_ID_ON_LOGON;
+DOC>*/
+SQL> 
+SQL> CONNECT sys/sys as sysdba;
+Connected.
+SQL> /* Avoid recursive errors on login. */
+SQL> DROP TRIGGER SYSTEM.set_id_on_logon;
+SQL> 
+SQL> CONNECT sys/sys as sysdba;
+Connected.
+SQL> 
+SQL> /* Let SCOTT create system contexts. */
+SQL> GRANT CREATE ANY CONTEXT TO SCOTT;
+SQL> GRANT CREATE PUBLIC SYNONYM TO SCOTT;
+SQL> GRANT EXECUTE_CATALOG_ROLE TO SCOTT;
+SQL> 
+SQL> DROP CONTEXT patient_restriction;
+SQL> 
+SQL> DROP USER csilva;
+SQL> DROP USER efeuerstein;
+SQL> DROP USER mfwalsh;
+SQL> DROP USER ddeurso;
+SQL> DROP USER swallace;
+SQL> DROP USER rgoldmisal;
+SQL> DROP USER arodriguez;
+SQL> DROP USER png;
+SQL> DROP USER jhalloway;
+SQL> DROP USER shaximo;
+SQL> 
+SQL> DROP PUBLIC SYNONYM patient;
+SQL> DROP PUBLIC SYNONYM doctor;
+SQL> DROP PUBLIC SYNONYM regulator;
+SQL> DROP PUBLIC SYNONYM clinic;
+SQL> 
+SQL> DROP PUBLIC SYNONYM nhc_pkg;
+SQL> 
+SQL> CONNECT scott/tiger
+Connected.
+SQL> 
+SQL> DROP TABLE patient;
+SQL> DROP TABLE doctor;
+SQL> DROP TABLE regulator;
+SQL> DROP TABLE clinic;
+SQL> 
+SQL> DROP PACKAGE nhc_pkg;
+SQL> 
+SQL> CREATE TABLE patient  (
+  2  	patient_id NUMBER,
+  3  	schema_name VARCHAR2(30),
+  4  	last_name VARCHAR2(100),
+  5  	first_name VARCHAR2(100),
+  6  	dob DATE,
+  7  	home_clinic_id INTEGER,
+  8  	state CHAR(2)
+  9  	);
+SQL> 
+SQL> CREATE TABLE doctor (
+  2  	doctor_id NUMBER,
+  3  	schema_name VARCHAR2(30),
+  4  	last_name VARCHAR2(100),
+  5  	first_name VARCHAR2(100),
+  6  	home_clinic_id INTEGER
+  7  	);
+SQL> 
+SQL> CREATE TABLE regulator (
+  2  	regulator_id NUMBER,
+  3  	schema_name VARCHAR2(30),
+  4  	last_name VARCHAR2(100),
+  5  	first_name VARCHAR2(100),
+  6  	state CHAR(2)
+  7  	);
+SQL> 
+SQL> CREATE TABLE clinic (
+  2  	clinic_id INTEGER,
+  3  	name VARCHAR2(100),
+  4  	state CHAR(2)
+  5  	);
+SQL> 
+SQL> GRANT ALL ON patient TO PUBLIC;
+SQL> GRANT ALL ON doctor TO PUBLIC;
+SQL> GRANT ALL ON regulator TO PUBLIC;
+SQL> GRANT ALL ON clinic TO PUBLIC;
+SQL> CREATE PUBLIC SYNONYM patient FOR patient;
+SQL> CREATE PUBLIC SYNONYM doctor FOR doctor;
+SQL> CREATE PUBLIC SYNONYM regulator FOR regulator;
+SQL> CREATE PUBLIC SYNONYM clinic FOR clinic;
+SQL> 
+SQL> INSERT INTO clinic VALUES (10, 'Argyle Health Center', 'IL');
+SQL> INSERT INTO clinic VALUES (15, 'Rogers Park Health Center', 'IL');
+SQL> INSERT INTO clinic VALUES (12, 'Queens Health Center', 'NY');
+SQL> INSERT INTO clinic VALUES (13, 'Somers Health Center', 'NY');
+SQL> 
+SQL> INSERT INTO patient VALUES (
+  2  	100, 'CSILVA', 'Silva', 'Chris', '20-MAR-72', 10, 'IL');
+SQL> INSERT INTO patient VALUES (
+  2  	100, 'VSILVA', 'Silva', 'Veva', '10-JUN-56', 10, 'IL');
+SQL> INSERT INTO patient VALUES (
+  2  	101, 'EFEUERSTEIN', 'Feuerstein', 'Eli', '01-OCT-86', 15, 'IL');
+SQL> INSERT INTO patient VALUES (
+  2  	105, 'MFWALSH', 'Walsh', 'Markus Finnbar', '24-APR-98', 12, 'NY');
+SQL> INSERT INTO patient VALUES (
+  2  	112, 'DDEURSO', 'DeUrso', 'Danielle', '01-JAN-94', 13, 'NY');
+SQL> INSERT INTO doctor VALUES (
+  2  	1060, 'SWALLACE', 'Wallace', 'Sandira', 10);
+SQL> INSERT INTO doctor VALUES (
+  2  	2134, 'RGOLDMISAL', 'Goldmisal', 'Rijard', 15);
+SQL> INSERT INTO doctor VALUES (
+  2  	6478, 'ARODRIGUEZ', 'Rodriguez', 'Angel', 12);
+SQL> INSERT INTO doctor VALUES (
+  2  	9024, 'PNG', 'Ng', 'Paula', 13);
+SQL> INSERT INTO regulator VALUES (
+  2  	540, 'JHALLOWAY', 'Halloway', 'John', 'IL');
+SQL> INSERT INTO regulator VALUES (
+  2  	542, 'SHAXIMO', 'Maximo', 'Suni', 'NY');
+SQL> 
+SQL> CREATE CONTEXT patient_restriction USING nhc_pkg;
+SQL> 
+SQL> @@nhc.pkg
+SQL> /* Formatted on 2002/02/11 10:08 (Formatter Plus v4.6.0) */
+SQL> CREATE OR REPLACE PACKAGE nhc_pkg
+  2  IS
+  3  	g_context_set		      BOOLEAN	    := FALSE ;
+  4  	c_context	     CONSTANT VARCHAR2 (30) := 'patient_restriction';
+  5  	c_person_type_attr   CONSTANT VARCHAR2 (30) := 'person_type';
+  6  	c_person_id_attr     CONSTANT VARCHAR2 (30) := 'person_id';
+  7  	c_patient	     CONSTANT CHAR (7)	    := 'PATIENT';
+  8  	c_doctor	     CONSTANT CHAR (6)	    := 'DOCTOR';
+  9  	c_regulator	     CONSTANT CHAR (9)	    := 'REGULATOR';
+ 10  
+ 11  	PROCEDURE set_context;
+ 12  
+ 13  	PROCEDURE show_context;
+ 14  
+ 15  	FUNCTION person_predicate (schema_in VARCHAR2, name_in VARCHAR2)
+ 16  	   RETURN VARCHAR2;
+ 17  END nhc_pkg;
+ 18  /
+SQL> CREATE OR REPLACE PACKAGE BODY nhc_pkg
+  2  IS
+  3  	PROCEDURE show_context
+  4  	IS
+  5  	BEGIN
+  6  	   DBMS_OUTPUT.put_line (   'Context Information for "'
+  7  				 || USER
+  8  				 || '":');
+  9  	   DBMS_OUTPUT.put_line (
+ 10  		 '   Type: '
+ 11  	      || SYS_CONTEXT (c_context, c_person_type_attr)
+ 12  	   );
+ 13  	   DBMS_OUTPUT.put_line (
+ 14  		 '     ID: '
+ 15  	      || SYS_CONTEXT (c_context, c_person_id_attr)
+ 16  	   );
+ 17  	   DBMS_OUTPUT.put_line ('   Predicate: ');
+ 18  	   DBMS_OUTPUT.put_line (person_predicate (USER, 'PATIENT'));
+ 19  	END;
+ 20  
+ 21  	PROCEDURE set_context
+ 22  	IS
+ 23  	   CURSOR doc_cur
+ 24  	   IS
+ 25  	      SELECT doctor_id
+ 26  		FROM doctor
+ 27  	       WHERE schema_name = USER;
+ 28  
+ 29  	   CURSOR reg_cur
+ 30  	   IS
+ 31  	      SELECT regulator_id
+ 32  		FROM regulator
+ 33  	       WHERE schema_name = USER;
+ 34  
+ 35  	   l_person_type   VARCHAR2 (10) := c_patient;
+ 36  	   l_person_id	   INTEGER;
+ 37  
+ 38  	   PROCEDURE set_both (perstype IN VARCHAR2, persid IN VARCHAR2)
+ 39  	   IS
+ 40  	   BEGIN
+ 41  	      DBMS_SESSION.set_context (c_context, c_person_type_attr, perstype);
+ 42  	      DBMS_SESSION.set_context (c_context, c_person_id_attr, persid);
+ 43  	   END;
+ 44  	BEGIN
+ 45  	   IF NOT g_context_set
+ 46  	   THEN
+ 47  	      g_context_set := TRUE ;
+ 48  	      /* If a doctor or regulator, set the ID.*/
+ 49  	      OPEN doc_cur;
+ 50  	      FETCH doc_cur INTO l_person_id;
+ 51  
+ 52  	      IF doc_cur%FOUND
+ 53  	      THEN
+ 54  		 l_person_type := c_doctor;
+ 55  	      ELSE
+ 56  		 OPEN reg_cur;
+ 57  		 FETCH reg_cur INTO l_person_id;
+ 58  
+ 59  		 IF reg_cur%FOUND
+ 60  		 THEN
+ 61  		    l_person_type := c_regulator;
+ 62  		 END IF;
+ 63  
+ 64  		 CLOSE reg_cur;
+ 65  	      END IF;
+ 66  
+ 67  	      set_both (l_person_type, l_person_id);
+ 68  	      CLOSE doc_cur;
+ 69  	   END IF;
+ 70  	END;
+ 71  
+ 72  	FUNCTION person_predicate (schema_in VARCHAR2, name_in VARCHAR2)
+ 73  	   RETURN VARCHAR2
+ 74  	IS
+ 75  	   l_context   VARCHAR2 (100)
+ 76  				    := SYS_CONTEXT (c_context, c_person_type_attr);
+ 77  	   retval      VARCHAR2 (2000);
+ 78  	BEGIN
+ 79  	   IF l_context = 'DOCTOR'
+ 80  	   THEN
+ 81  	      retval :=
+ 82  		       'home_clinic_id IN
+ 83  		    (SELECT home_clinic_id FROM doctor
+ 84  		      WHERE doctor_id = SYS_CONTEXT ('''
+ 85  		    || c_context
+ 86  		    || ''', '''
+ 87  		    || c_person_id_attr
+ 88  		    || '''))';
+ 89  	   ELSIF l_context = 'REGULATOR'
+ 90  	   THEN
+ 91  	      retval :=
+ 92  		       'state IN
+ 93  		    (SELECT state FROM regulator
+ 94  		      WHERE regulator_id = SYS_CONTEXT ('''
+ 95  		    || c_context
+ 96  		    || ''', '''
+ 97  		    || c_person_id_attr
+ 98  		    || '''))';
+ 99  	   ELSIF l_context = 'PATIENT'
+100  	   THEN
+101  	      retval :=    'schema_name = '''
+102  			|| USER
+103  			|| '''';
+104  	   ELSE
+105  	      /* Refuse any access to information. */
+106  	      retval := '1 = 2'; -- TVP 5/2001
+107  	   END IF;
+108  
+109  	   RETURN retval;
+110  	END person_predicate;
+111  END nhc_pkg;
+112  /
+SQL> SHOW ERR
+No errors.
+SQL> 
+SQL> GRANT EXECUTE ON nhc_pkg TO PUBLIC;
+SQL> CREATE PUBLIC SYNONYM nhc_pkg FOR nhc_pkg;
+SQL> 
+SQL> BEGIN
+  2    DBMS_RLS.DROP_POLICY (
+  3  	 'SCOTT', 'patient', 'patient_privacy');
+  4  END;
+  5  /
+BEGIN
+*
+ERROR at line 1:
+ORA-28102: policy does not exist
+ORA-06512: at "SYS.DBMS_RLS", line 308
+ORA-06512: at line 2
+
+
+SQL> 
+SQL> /* Define a policy that invokes the predicate. */
+SQL> BEGIN
+  2  	DBMS_RLS.ADD_POLICY (
+  3  	   OBJECT_SCHEMA    => 'SCOTT',
+  4  	   OBJECT_NAME	    => 'patient',
+  5  	   POLICY_NAME	    => 'patient_privacy',
+  6  	   FUNCTION_SCHEMA  => 'SCOTT',
+  7  	   POLICY_FUNCTION  => 'nhc_pkg.person_predicate',
+  8  	   STATEMENT_TYPES  => 'SELECT,UPDATE,DELETE,INSERT',
+  9  	       UPDATE_CHECK	=> TRUE);
+ 10  END;
+ 11  /
+SQL> 
+SQL> CONNECT system/manager
+Connected.
+SQL> 
+SQL> /* Create a LOGON trigger that automatically sets
+DOC>   the NHC privacy attributes. */
+SQL> 
+SQL> CREATE OR REPLACE TRIGGER set_id_on_logon
+  2  AFTER logon ON DATABASE
+  3  BEGIN
+  4  	nhc_pkg.set_context;
+  5  EXCEPTION
+  6  	WHEN OTHERS
+  7  	THEN
+  8  	   DBMS_OUTPUT.PUT_LINE (
+  9  	      'Error ' || SQLCODE || ' setting context for ' || USER);
+ 10  END;
+ 11  /
+SQL> 
+SQL> /* Create test schemas. */
+SQL> CONNECT system/manager
+Connected.
+SQL> 
+SQL> CREATE USER csilva  IDENTIFIED BY	    csilva;
+SQL> CREATE USER efeuerstein IDENTIFIED BY  efeuerstein;
+SQL> CREATE USER mfwalsh IDENTIFIED BY	    mfwalsh;
+SQL> CREATE USER ddeurso IDENTIFIED BY	    ddeurso;
+SQL> CREATE USER swallace  IDENTIFIED BY    swallace;
+SQL> CREATE USER rgoldmisal IDENTIFIED BY   rgoldmisal;
+SQL> CREATE USER arodriguez IDENTIFIED BY   arodriguez;
+SQL> CREATE USER png IDENTIFIED BY	    png;
+SQL> CREATE USER jhalloway IDENTIFIED BY    jhalloway;
+SQL> CREATE USER shaximo IDENTIFIED BY	    shaximo;
+SQL> 
+SQL> GRANT CONNECT,RESOURCE TO csilva;
+SQL> GRANT CONNECT,RESOURCE TO efeuerstein IDENTIFIED BY  efeuerstein;
+SQL> GRANT CONNECT,RESOURCE TO mfwalsh IDENTIFIED BY	  mfwalsh;
+SQL> GRANT CONNECT,RESOURCE TO ddeurso IDENTIFIED BY	  ddeurso;
+SQL> GRANT CONNECT,RESOURCE TO swallace  IDENTIFIED BY	  swallace;
+SQL> GRANT CONNECT,RESOURCE TO rgoldmisal IDENTIFIED BY   rgoldmisal;
+SQL> GRANT CONNECT,RESOURCE TO arodriguez IDENTIFIED BY   arodriguez;
+SQL> GRANT CONNECT,RESOURCE TO png IDENTIFIED BY	  png;
+SQL> GRANT CONNECT,RESOURCE TO jhalloway IDENTIFIED BY	  jhalloway;
+SQL> GRANT CONNECT,RESOURCE TO shaximo IDENTIFIED BY	  shaximo;
+SQL> 
+SQL> CONNECT csilva/csilva
+Connected.
+SQL> @@ssoo
+SQL> Set serveroutput on size 1000000 format wrapped
+SQL> exec p.set_prefix (NULL);
+SQL> exec dbms_java.SET_OUTPUT (1000000);
+SQL> set linesize 120
+SQL> set pagesize 999
+SQL> set trimspool on
+SQL> 
+SQL> PROMPT
+
+SQL> PROMPT Connected as CSILVA - A Patient
+Connected as CSILVA - A Patient
+SQL> PROMPT
+
+SQL> @@showpatients
+SQL> exec nhc_pkg.show_context
+Context Information for "CSILVA":
+   Type: PATIENT
+     ID:
+   Predicate:
+schema_name = 'CSILVA'
+SQL> BEGIN
+  2  	DBMS_OUTPUT.PUT_LINE (
+  3  	   'Patients Visible to "' || USER || '":');
+  4  	FOR rec IN
+  5  	     (SELECT schema_name,
+  6  		     first_name || ' ' || last_name name,
+  7  		     state
+  8  		FROM patient) -- Unqualified query against base table
+  9  	LOOP
+ 10  	   DBMS_OUTPUT.PUT_LINE (
+ 11  	      rec.schema_name || ' - ' || rec.name || ' - ' || rec.state);
+ 12  	END LOOP;
+ 13  END;
+ 14  /
+Patients Visible to "CSILVA":
+CSILVA - Chris Silva - IL
+SQL> 
+SQL> CONNECT swallace/swallace
+Connected.
+SQL> @@ssoo
+SQL> Set serveroutput on size 1000000 format wrapped
+SQL> exec p.set_prefix (NULL);
+SQL> exec dbms_java.SET_OUTPUT (1000000);
+SQL> set linesize 120
+SQL> set pagesize 999
+SQL> set trimspool on
+SQL> 
+SQL> PROMPT
+
+SQL> PROMPT Connected as SWALLACE - A Doctor
+Connected as SWALLACE - A Doctor
+SQL> PROMPT
+
+SQL> @@showpatients
+SQL> exec nhc_pkg.show_context
+Context Information for "SWALLACE":
+   Type: DOCTOR
+     ID: 1060
+   Predicate:
+home_clinic_id IN
+               (SELECT home_clinic_id FROM doctor
+                 WHERE doctor_id = SYS_CONTEXT ('pat
+ient_restriction', 'person_id'))
+SQL> BEGIN
+  2  	DBMS_OUTPUT.PUT_LINE (
+  3  	   'Patients Visible to "' || USER || '":');
+  4  	FOR rec IN
+  5  	     (SELECT schema_name,
+  6  		     first_name || ' ' || last_name name,
+  7  		     state
+  8  		FROM patient) -- Unqualified query against base table
+  9  	LOOP
+ 10  	   DBMS_OUTPUT.PUT_LINE (
+ 11  	      rec.schema_name || ' - ' || rec.name || ' - ' || rec.state);
+ 12  	END LOOP;
+ 13  END;
+ 14  /
+Patients Visible to "SWALLACE":
+CSILVA - Chris Silva - IL
+VSILVA - Veva Silva - IL
+SQL> 
+SQL> BEGIN
+  2  	-- Try to insert a patient in another clinic.
+  3  	-- SWALLACE practices in IL, clinic 12 is in NY, 10 in IL.
+  4  	BEGIN
+  5  	   INSERT INTO patient
+  6  		VALUES (1901, 'BRILEY', 'Riley', 'Brillo', '01-OCT-86', 12, 'NY');
+  7  	EXCEPTION
+  8  	   WHEN OTHERS
+  9  	   THEN
+ 10  	      DBMS_OUTPUT.put_line (   'NY: '
+ 11  				    || SQLERRM);
+ 12  	END;
+ 13  
+ 14  	INSERT INTO patient
+ 15  	     VALUES (1901, 'BRILEY', 'Riley', 'Brillo', '01-OCT-86', 10, 'IL');
+ 16  
+ 17  	DBMS_OUTPUT.put_line ('IL: Brillo added!');
+ 18  END;
+ 19  
+ 20  /
+NY: ORA-28115: policy with check option violation
+IL: Brillo added!
+SQL> 
+SQL> CONNECT shaximo/shaximo
+Connected.
+SQL> @@ssoo
+SQL> Set serveroutput on size 1000000 format wrapped
+SQL> exec p.set_prefix (NULL);
+SQL> exec dbms_java.SET_OUTPUT (1000000);
+SQL> set linesize 120
+SQL> set pagesize 999
+SQL> set trimspool on
+SQL> 
+SQL> PROMPT
+
+SQL> PROMPT Connected as SHAXIMO - A Regulator
+Connected as SHAXIMO - A Regulator
+SQL> PROMPT
+
+SQL> @@showpatients
+SQL> exec nhc_pkg.show_context
+Context Information for "SHAXIMO":
+   Type: REGULATOR
+     ID: 542
+   Predicate:
+state IN
+               (SELECT state FROM regulator
+                 WHERE regulator_id = SYS_CONTEXT ('patient_restric
+tion', 'person_id'))
+SQL> BEGIN
+  2  	DBMS_OUTPUT.PUT_LINE (
+  3  	   'Patients Visible to "' || USER || '":');
+  4  	FOR rec IN
+  5  	     (SELECT schema_name,
+  6  		     first_name || ' ' || last_name name,
+  7  		     state
+  8  		FROM patient) -- Unqualified query against base table
+  9  	LOOP
+ 10  	   DBMS_OUTPUT.PUT_LINE (
+ 11  	      rec.schema_name || ' - ' || rec.name || ' - ' || rec.state);
+ 12  	END LOOP;
+ 13  END;
+ 14  /
+Patients Visible to "SHAXIMO":
+MFWALSH - Markus Finnbar Walsh - NY
+DDEURSO - Danielle DeUrso - NY
+SQL> 
+SQL> CONNECT scott/tiger
+Connected.
+SQL> @@ssoo
+SQL> Set serveroutput on size 1000000 format wrapped
+SQL> exec p.set_prefix (NULL);
+SQL> exec dbms_java.SET_OUTPUT (1000000);
+SQL> set linesize 120
+SQL> set pagesize 999
+SQL> set trimspool on
+SQL> 
+SQL> SET FEEDBACK OFF
+SQL> PROMPT
+
+SQL> PROMPT Connected as SCOTT - A Former HMO CEO
+Connected as SCOTT - A Former HMO CEO
+SQL> PROMPT
+
+SQL> @@showpatients
+SQL> exec nhc_pkg.show_context
+Context Information for "SCOTT":
+   Type: PATIENT
+     ID:
+   Predicate:
+schema_name = 'SCOTT'
+SQL> BEGIN
+  2  	DBMS_OUTPUT.PUT_LINE (
+  3  	   'Patients Visible to "' || USER || '":');
+  4  	FOR rec IN
+  5  	     (SELECT schema_name,
+  6  		     first_name || ' ' || last_name name,
+  7  		     state
+  8  		FROM patient) -- Unqualified query against base table
+  9  	LOOP
+ 10  	   DBMS_OUTPUT.PUT_LINE (
+ 11  	      rec.schema_name || ' - ' || rec.name || ' - ' || rec.state);
+ 12  	END LOOP;
+ 13  END;
+ 14  /
+Patients Visible to "SCOTT":
+SQL> spool off

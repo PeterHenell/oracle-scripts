@@ -1,0 +1,40 @@
+CREATE OR REPLACE PACKAGE emplu1
+IS
+   FUNCTION onerow (
+      employee_id_in IN employee.employee_id%TYPE
+   )
+      RETURN employee%ROWTYPE;
+END;
+/
+
+
+CREATE OR REPLACE PACKAGE BODY emplu1
+IS
+   FUNCTION onerow (
+      employee_id_in IN employee.employee_id%TYPE
+   )
+      RETURN employee%ROWTYPE
+   IS
+      onerow_rec   employee%ROWTYPE;
+   BEGIN
+      SELECT *
+        INTO onerow_rec
+        FROM employee
+       WHERE employee_id = employee_id_in;
+
+      RETURN onerow_rec;
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         RETURN NULL;
+      WHEN TOO_MANY_ROWS
+      THEN
+         --log_error;
+         RAISE;
+      WHEN OTHERS
+      THEN
+         --log_error;
+         RAISE;
+   END;
+END;
+/

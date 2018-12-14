@@ -1,0 +1,52 @@
+CREATE OR REPLACE PACKAGE hr_compensation
+IS
+   PROCEDURE adjust_salaries (department_id_in IN employees_tp.department_id_t);
+END hr_compensation;
+/
+
+CREATE OR REPLACE PACKAGE BODY hr_compensation
+IS
+   PROCEDURE report_and_adjust (
+      fullname_in IN employee_rp.fullname_t
+    , employee_id_in IN employee_tp.employee_id_t
+    , salary_in IN employee_tp.salary_t
+   )
+   IS
+   BEGIN
+      /* Enough already! Just a dummy placeholder, OK? */
+      NULL;
+   END report_and_adjust;
+
+   PROCEDURE adjust_salaries (department_id_in IN employees_tp.department_id_t)
+   IS
+      c_listname   CONSTANT tb_strings.list_name_t    := 'adjust_salaries';
+      l_employees           employees_tp.employees_tc;
+      l_fullnames           employees_rp.fullname_aat;
+   BEGIN
+      tb_strings.create_list (c_listname);
+      /* Retrieve the "raw" data. */
+      l_employees := employees_qp.ar_emp_dept_fk (department_id_in);
+
+      /* Construct the fullname for each employee. */
+      FOR indx IN 1 .. l_employees.COUNT
+      LOOP
+         l_fullnames (indx) :=
+            employee_rp.fullname (l_employees (indx).first_name
+                                , l_employees (indx).last_name
+                                 );
+         tb_strings.mark_as_used (c_listname, l_fullnames (indx));
+      END LOOP;
+
+      /* Adjust the salary, pass fullname for reporting purposes. */
+      FOR indx IN 1 .. l_employees.COUNT
+      LOOP
+         report_and_adjust (l_fullnames (indx)
+                          , l_employees (indx).employee_id
+                          , l_employees (indx).salary
+                           );
+      END LOOP;
+
+      employees_xp.update_salaries (l_employees);
+   END adjust_salaries;
+END hr_compensation;
+/

@@ -1,0 +1,333 @@
+/* $Id: ut_any_pkg_pkg.sql,v 1.1 2004/05/31 17:54:06 ainyushin Exp $ */
+
+CREATE OR REPLACE PACKAGE ut_any_pkg
+IS
+   -- Author  : AINYUSHIN
+   -- Created : 27/5/2004 19:58:24
+   -- Purpose : Unit test package for any_pkg.
+   -- Dependencies: utPLSQL v.2.1.1 recommended, please download it from
+   --          http://utplsql.sourceforge.net
+   --               dynamic type creation required to have CREATE ANY TYPE PERMISSION
+   PROCEDURE ut_setup;
+
+   PROCEDURE ut_teardown;
+
+   PROCEDURE ut_1_anytostring;
+END ut_any_pkg;
+/
+
+CREATE OR REPLACE PACKAGE BODY ut_any_pkg
+IS
+   -- GRANT CREATE ANY TYPE needed to create types dynamically.
+   PROCEDURE sp_create_object_type
+   IS
+      sql_str1   VARCHAR2 (32767);
+      sql_str2   VARCHAR2 (32767);
+      sql_str3   VARCHAR2 (32767);
+      sql_str4   VARCHAR2 (32767);
+      sql_str5   VARCHAR2 (32767);
+      sql_str6   VARCHAR2 (32767);
+      sql_str7   VARCHAR2 (32767);
+   BEGIN
+      sql_str1 :=
+            '	CREATE TYPE UT_TERRITORY_T AS OBJECT ( '
+         || '	TERRITORY_CD VARCHAR2(8), '
+         || '	JOB_CLASS VARCHAR2(3), '
+         || '	JOB_LEVEL VARCHAR2(16), '
+         || '	CITY VARCHAR2(32), '
+         || '	STATE VARCHAR2(6), '
+         || '	DESCRIPTION VARCHAR2(64), '
+         || '	REPORT_TO VARCHAR2(8), '
+         || '	TRAINEE VARCHAR2(1), '
+         || '	VACANT VARCHAR2(1), '
+         || '	MEMBER FUNCTION toString RETURN VARCHAR2 '
+         || '	) ;  ';
+      sql_str2 :=
+            '	CREATE TYPE BODY UT_TERRITORY_T AS '
+         || '	MEMBER FUNCTION toString RETURN VARCHAR2 '
+         || '	IS '
+         || '	  BEGIN '
+         || '	  return ''TERRITORY_CD=''||self.TERRITORY_CD|| '
+         || '	   ''; JOB_CLASS=''||self.JOB_CLASS|| '
+         || '	   ''; JOB_LEVEL=''||self.JOB_LEVEL|| '
+         || '	   ''; CITY=''||self.CITY|| '
+         || '	   ''; STATE=''||self.STATE|| '
+         || '	   ''; DESCRIPTION=''||self.DESCRIPTION|| '
+         || '	   ''; REPORT_TO=''||self.REPORT_TO|| '
+         || '	   ''; TRAINEE=''||self.TRAINEE|| '
+         || '	   ''; VACANT=''||self.VACANT; '
+         || '	  END toString; '
+         || '	END; ';
+      sql_str3 := 'CREATE TYPE UT_TERRITORY_C IS TABLE OF UT_TERRITORY_T';
+      sql_str4 := 'CREATE TYPE UT_NUMBER_C IS TABLE OF NUMBER';
+      sql_str5 := 'CREATE TYPE UT_VARCHAR2_C IS TABLE OF VARCHAR2(2)';
+      sql_str6 := 'CREATE TYPE UT_CHAR_C IS TABLE OF CHAR(2)';
+      sql_str7 := 'CREATE TYPE UT_DATE_C IS TABLE OF DATE';
+
+      EXECUTE IMMEDIATE sql_str1;
+
+      EXECUTE IMMEDIATE sql_str2;
+
+      EXECUTE IMMEDIATE sql_str3;
+
+      EXECUTE IMMEDIATE sql_str4;
+
+      EXECUTE IMMEDIATE sql_str5;
+
+      EXECUTE IMMEDIATE sql_str6;
+
+      EXECUTE IMMEDIATE sql_str7;
+   END sp_create_object_type;
+
+   PROCEDURE sp_drop_object_type
+   IS
+      -- local procedure sp_drop
+      PROCEDURE sp_drop_type (i_tname IN VARCHAR2)
+      IS
+      BEGIN
+         EXECUTE IMMEDIATE 'DROP TYPE ' || i_tname || ' FORCE';
+      EXCEPTION
+         WHEN OTHERS
+         THEN
+            NULL;
+      END sp_drop_type;
+   BEGIN
+      sp_drop_type ('UT_TERRITORY_C');
+      sp_drop_type ('UT_TERRITORY_T');
+      sp_drop_type ('UT_NUMBER_C');
+      sp_drop_type ('UT_VARCHAR2_C');
+      sp_drop_type ('UT_CHAR_C');
+      sp_drop_type ('UT_DATE_C');
+   END sp_drop_object_type;
+
+   PROCEDURE ut_setup
+   IS
+   BEGIN
+      utresult.include_successes;
+      ut_teardown;
+      sp_create_object_type;
+   END ut_setup;
+
+   PROCEDURE ut_teardown
+   IS
+   BEGIN
+      sp_drop_object_type;
+   END ut_teardown;
+
+   FUNCTION sf_get_object_instance
+      RETURN ANYDATA
+   IS
+      sql_str   VARCHAR2 (32767);
+      adata     ANYDATA;
+   BEGIN
+      sql_str :=
+            ' BEGIN '
+         || ' 	:adata:=ANYDATA.convertobject( '
+         || '          ut_territory_t (territory_cd      => ''ACLD'', '
+         || '                       job_class         => ''5'', '
+         || '                       job_level         => ''job1evel'', '
+         || '                       city              => ''St-Peter'', '
+         || '                       state             => ''NY'', '
+         || '                       description       => ''Fuc'', '
+         || '                       report_to         => ''Manager'', '
+         || '                       trainee           => ''Y'', '
+         || '                       vacant            => ''N'' '
+         || '                      )); '
+         || '     END;';
+
+      EXECUTE IMMEDIATE sql_str
+                  USING OUT adata;
+
+      RETURN adata;
+   END sf_get_object_instance;
+
+   FUNCTION sf_get_collection_instance
+      RETURN ANYDATA
+   IS
+      sql_str   VARCHAR2 (32767);
+      adata     ANYDATA;
+   BEGIN
+      sql_str :=
+            'DECLARE '
+         || '    v_ter_c_el   ut_territory_t; '
+         || '	v_ter_c      ut_territory_c:= ut_territory_c (); '
+         || 'BEGIN '
+         || 'FOR i in 1..2 LOOP '
+         || ' v_ter_c.extend(); '
+         || ' 	v_ter_c_el:= '
+         || '          ut_territory_t (territory_cd      => ''ACLD'', '
+         || '                       job_class         => i, '
+         || '                       job_level         => ''job1evel'', '
+         || '                       city              => ''St-Peter'', '
+         || '                       state             => ''NY'', '
+         || '                       description       => ''Fuc'', '
+         || '                       report_to         => ''Manager'', '
+         || '                       trainee           => ''Y'', '
+         || '                       vacant            => ''N'' '
+         || '                      ); '
+         || '    v_ter_c(i):=v_ter_c_el;'
+         || ' END LOOP;'
+         || ' :adata:=ANYDATA.convertCollection(v_ter_c); '
+         || ' END;';
+
+      EXECUTE IMMEDIATE sql_str
+                  USING OUT adata;
+
+      RETURN adata;
+   END sf_get_collection_instance;
+
+   FUNCTION sf_get_collection_num_instance
+      RETURN ANYDATA
+   IS
+      sql_str   VARCHAR2 (32767);
+      adata     ANYDATA;
+   BEGIN
+      sql_str :=
+            'DECLARE '
+         || '	v_n_c      ut_number_c:= ut_number_c (); '
+         || 'BEGIN '
+         || 'FOR i in 1..2 LOOP '
+         || ' v_n_c.extend(); '
+         || ' 	v_n_c(i):= i; '
+         || ' END LOOP;'
+         || ' :adata:=ANYDATA.convertCollection(v_n_c); '
+         || ' END;';
+
+      EXECUTE IMMEDIATE sql_str
+                  USING OUT adata;
+
+      RETURN adata;
+   END sf_get_collection_num_instance;
+
+   FUNCTION sf_get_collection_vc2_instance
+      RETURN ANYDATA
+   IS
+      sql_str   VARCHAR2 (32767);
+      adata     ANYDATA;
+   BEGIN
+      sql_str :=
+            'DECLARE '
+         || '	v_v_c      ut_varchar2_c:= ut_varchar2_c(); '
+         || 'BEGIN '
+         || 'FOR i in 1..2 LOOP '
+         || ' v_v_c.extend(); '
+         || ' 	v_v_c(i):= i||i; '
+         || ' END LOOP;'
+         || ' :adata:=ANYDATA.convertCollection(v_v_c); '
+         || ' END;';
+
+      EXECUTE IMMEDIATE sql_str
+                  USING OUT adata;
+
+      RETURN adata;
+   END sf_get_collection_vc2_instance;
+
+   FUNCTION sf_get_collection_dat_instance
+      RETURN ANYDATA
+   IS
+      sql_str   VARCHAR2 (32767);
+      adata     ANYDATA;
+   BEGIN
+      sql_str :=
+            'DECLARE '
+         || '	v_d_c      ut_date_c:= ut_date_c (); '
+         || 'BEGIN '
+         || 'FOR i in 1..2 LOOP '
+         || ' v_d_c.extend(); '
+         || ' 	v_d_c(i):= SYSDATE; '
+         || ' END LOOP;'
+         || ' :adata:=ANYDATA.convertCollection(v_d_c); '
+         || ' END;';
+
+      EXECUTE IMMEDIATE sql_str
+                  USING OUT adata;
+
+      RETURN adata;
+   END sf_get_collection_dat_instance;
+
+   PROCEDURE ut_1_anytostring
+   IS
+      l_num_string   NUMBER;
+      l_chararr      DBMS_OUTPUT.chararr;
+   BEGIN
+      utassert.eq ('Normal Usage in NUMBER 9'
+                  ,any_pkg.anytostring (ANYDATA.convertnumber (9))
+                  ,'NUMBER: 9'
+                  );
+      utassert.eq
+              ('Normal Usage in VACRHAR2 This is a test'
+              ,any_pkg.anytostring (ANYDATA.convertvarchar2 ('This is a test'))
+              ,'VARCHAR2: This is a test'
+              );
+      utassert.eq ('Normal Usage in CHAR This is a test'
+                  ,any_pkg.anytostring (ANYDATA.convertchar ('This is a test'))
+                  ,'CHAR: This is a test'
+                  );
+      utassert.eq (   'Normal Usage in DATE '
+                   || TO_CHAR (SYSDATE, 'YYYY-MM-DD hh24:mi:ss')
+                  ,any_pkg.anytostring (ANYDATA.convertdate (SYSDATE))
+                  , 'DATE: ' || TO_CHAR (SYSDATE, 'YYYY-MM-DD hh24:mi:ss')
+                  );
+-- there are problems with comparision of multiple output. method ToString usually provides several strings as result.
+-- so necessary to compare the dbms_output buffer or dbms_output.chararr's
+--dbms_output.put_line(any_pkg.anytostring (sf_get_object_instance));
+--l_num_string:=utOutput.extract(l_chararr,true);
+      utassert.eq
+         ('Normal Usage in Object Type '
+         ,REPLACE (any_pkg.anytostring (sf_get_object_instance)
+                  , CHR (13) || CHR (10)
+                  ,' '
+                  )
+         ,    USER ()
+           || '.UT_TERRITORY_T: TERRITORY_CD=ACLD; JOB_CLASS=5; JOB_LEVEL=job1evel; CITY=St-Peter; STATE=NY; DESCRIPTION=Fuc; REPORT_TO=Manager; TRAINEE=Y; VACANT=N'
+         );
+      utassert.eq
+         ('Normal Usage in Collection Type based on Object Type '
+         ,REPLACE (any_pkg.anytostring (sf_get_collection_instance)
+                  , CHR (13) || CHR (10)
+                  ,' '
+                  )
+         ,    USER ()
+           || '.UT_TERRITORY_C:  Elem 1 is:  '
+           || USER ()
+           || '.UT_TERRITORY_T: TERRITORY_CD=ACLD; JOB_CLASS=1; '
+           || 'JOB_LEVEL=job1evel; CITY=St-Peter; STATE=NY; DESCRIPTION=Fuc; REPORT_TO=Manager; TRAINEE=Y; '
+           || 'VACANT=N Elem 2 is:  '
+           || USER ()
+           || '.UT_TERRITORY_T: TERRITORY_CD=ACLD; JOB_CLASS=2; JOB_LEVEL=job1evel; '
+           || 'CITY=St-Peter; STATE=NY; DESCRIPTION=Fuc; REPORT_TO=Manager; TRAINEE=Y; VACANT=N '
+         );
+      utassert.eq
+               ('Normal Usage in Collection Type based on NUMBER '
+               ,REPLACE (any_pkg.anytostring (sf_get_collection_num_instance)
+                        , CHR (13) || CHR (10)
+                        ,' '
+                        )
+               ,    USER ()
+                 || '.UT_NUMBER_C:  Elem 1 is:  NUMBER: 1 Elem 2 is:  NUMBER: 2 '
+               );
+      utassert.eq
+         ('Normal Usage in Collection Type based on VARCHAR2 '
+         ,REPLACE (any_pkg.anytostring (sf_get_collection_vc2_instance)
+                  , CHR (13) || CHR (10)
+                  ,' '
+                  )
+         ,    USER ()
+           || '.UT_VARCHAR2_C:  Elem 1 is:  VARCHAR2: 11 Elem 2 is:  VARCHAR2: 22 '
+         );
+      utassert.eq
+               ('Normal Usage in Collection Type based on DATE '
+               ,REPLACE (any_pkg.anytostring (sf_get_collection_dat_instance)
+                        , CHR (13) || CHR (10)
+                        ,' '
+                        )
+               ,    USER ()
+                 || '.UT_DATE_C:  Elem 1 is:  DATE: '
+                 || TO_CHAR (SYSDATE, 'YYYY-MM-DD hh24:mi:ss')
+                 || ' Elem 2 is:  DATE: '
+                 || TO_CHAR (SYSDATE, 'YYYY-MM-DD hh24:mi:ss')
+                 || ' '
+               );
+   END ut_1_anytostring;
+END ut_any_pkg;
+/

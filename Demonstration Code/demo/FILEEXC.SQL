@@ -1,0 +1,29 @@
+EXCEPTION
+   WHEN UTL_FILE.INVALID_PATH
+   THEN 
+       DBMS_OUTPUT.PUT_LINE ('invalid_path'); RAISE;
+
+   WHEN UTL_FILE.INVALID_MODE
+   THEN 
+       DBMS_OUTPUT.PUT_LINE ('invalid_mode'); RAISE;
+
+   WHEN UTL_FILE.INVALID_FILEHANDLE
+   THEN 
+       DBMS_OUTPUT.PUT_LINE ('invalid_filehandle'); RAISE;
+
+   WHEN UTL_FILE.INVALID_OPERATION
+   THEN 
+       DBMS_OUTPUT.PUT_LINE ('invalid_operation'); RAISE;
+
+   WHEN UTL_FILE.READ_ERROR
+   THEN  
+       DBMS_OUTPUT.PUT_LINE ('read_error'); RAISE;
+
+   WHEN UTL_FILE.WRITE_ERROR
+   THEN 
+      DBMS_OUTPUT.PUT_LINE ('write_error'); RAISE;
+
+   WHEN UTL_FILE.INTERNAL_ERROR
+   THEN 
+      DBMS_OUTPUT.PUT_LINE ('internal_error'); RAISE;
+END;

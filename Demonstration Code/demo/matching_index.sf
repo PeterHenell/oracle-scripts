@@ -1,0 +1,83 @@
+CREATE OR REPLACE FUNCTION matching_index (
+   collection_in   IN   DBMS_SQL.VARCHAR2S
+ , value_in        IN   VARCHAR2
+ , forward_in      IN   BOOLEAN DEFAULT TRUE
+ , nulls_eq_in     IN   BOOLEAN DEFAULT TRUE
+)
+   RETURN PLS_INTEGER
+/*
+   Program name: matching_index
+
+   Original author: Steven Feuerstein, www.Qnxo.com
+
+   Qnxo Script ID: {A68C85B2-B8FC-4809-B3E4-CBEA589DA543}
+
+   You are granted permission to use this code if it was generated
+   by a licensed user of Qnxo.
+
+   Overview:
+
+   Find and return the index in a collection that contains a value
+   matching the specified input value.
+
+   Parameters:
+
+      collection_in
+         The collection to be searched for the specified value.
+
+      value_in
+         The value to be checked for in the collection.
+
+      forward_in
+         If TRUE find first match going forward through the collection,
+         from the first row. Otherwise start from the end of the collection,
+         as determined by the LAST method.
+
+   Dependencies/Restrictions:
+
+   It checks for equality of collection elements with an = operator.
+   The datatype of the collection must, therefore, support that
+   syntax. This will be true for scalars, for example, but not
+   for records, object types, etc.
+
+   Exceptions raised:
+
+   Modification History:
+
+   >> Generated on July      31, 2005 20:36:36 in schema QNXO_REPOSITORY
+*/
+IS
+   l_index BINARY_INTEGER;
+   l_matching_index BINARY_INTEGER;
+BEGIN
+   -- Set the starting position of the search.
+   IF forward_in THEN
+      l_index := collection_in.FIRST;
+   ELSE
+      l_index := collection_in.LAST;
+   END IF;
+
+   -- Scan through the contents of the collection until we are out
+   -- of elements or we found a match.
+   WHILE (l_index IS NOT NULL AND l_matching_index IS NULL)
+   LOOP
+      IF    collection_in (l_index) = value_in
+         OR (    nulls_eq_in
+             AND collection_in (l_index) IS NULL
+             AND value_in IS NULL
+            )
+      THEN
+         l_matching_index := l_index;
+      END IF;
+
+      -- Go to the next element, in the specified direction.
+      IF forward_in THEN
+         l_index := collection_in.NEXT (l_index);
+      ELSE
+         l_index := collection_in.PRIOR (l_index);
+      END IF;
+   END LOOP;
+
+   RETURN l_matching_index;
+END matching_index;
+/

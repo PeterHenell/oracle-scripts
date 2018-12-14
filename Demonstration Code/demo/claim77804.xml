@@ -1,0 +1,15 @@
+<!-- claim77804.xml -->
+<Claim>
+  <ClaimId>77804</ClaimId>
+  <Policy>12345</Policy>
+  <Settlements>
+    <Payment Approver="JCOX">1000</Payment>
+    <Payment Approver="PSMITH">1850</Payment>
+  </Settlements>
+  <DamageReport>
+    The insured's <Vehicle Make="Volks">Beetle</Vehicle>
+    broke through the guard rail and plummeted into a ravine.
+    The cause was determined to be <Cause>faulty brakes</Cause>.
+    Amazingly there were no casualties.
+  </DamageReport>
+</Claim>

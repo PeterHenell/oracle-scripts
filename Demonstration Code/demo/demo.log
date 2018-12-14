@@ -1,0 +1,9 @@
+Connected.
+DECLARE
+*
+ERROR at line 1:
+ORA-01940: cannot drop a user that is currently connected 
+ORA-06512: at line 9 
+ORA-06512: at line 25 
+
+

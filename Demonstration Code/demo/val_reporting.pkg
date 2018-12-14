@@ -1,0 +1,37 @@
+CREATE OR REPLACE PACKAGE val_reporting
+IS
+   PROCEDURE choices_report;
+   PROCEDURE test_choices_report;
+END val_reporting;
+/
+
+CREATE OR REPLACE PACKAGE BODY val_reporting
+-- Wrap the package body to hide the name of the conditional compilation flag
+IS
+   PROCEDURE choices_report IS BEGIN NULL; END choices_report;
+
+   $IF $$val_testing_enabled_
+   $THEN
+   PROCEDURE int_test_choices_report
+   IS
+   BEGIN
+      choices_report;
+	  
+	  DBMS_OUTPUT.PUT_LINE ('Running tests now!');  
+   END int_test_choices_report;
+   $END
+
+   PROCEDURE test_choices_report
+   IS
+   BEGIN
+   $IF $$val_testing_enabled_
+   $THEN
+      int_test_choices_report;
+   $ELSE
+	  DBMS_OUTPUT.PUT_LINE ('Testing has been disabled!');  
+      RAISE PROGRAM_ERROR;
+   $END
+   END test_choices_report;
+END val_reporting;
+/
+

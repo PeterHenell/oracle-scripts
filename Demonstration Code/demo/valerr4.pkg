@@ -1,0 +1,32 @@
+CREATE OR REPLACE PACKAGE valerr
+IS
+   FUNCTION get
+      RETURN VARCHAR2;
+END valerr;
+/
+
+CREATE OR REPLACE PACKAGE BODY valerr
+IS
+   v   VARCHAR2 (1);
+
+   FUNCTION get
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      RETURN v;
+   END;
+
+   PROCEDURE initialize
+   IS
+   BEGIN
+      v := 'abc';
+   END initialize;
+BEGIN
+   p.l ('Before I show you v....');
+   initialize;
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      p.l ('Trapped the error!');
+END valerr;
+/

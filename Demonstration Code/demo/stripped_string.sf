@@ -1,0 +1,59 @@
+CREATE OR REPLACE FUNCTION stripped_string (
+   string_in             IN   VARCHAR2
+  ,strip_characters_in   IN   VARCHAR2
+)
+   RETURN VARCHAR2
+IS
+/*
+   Name: stripped_string
+   
+   Author: Steven Feuerstein
+   
+   Description:
+   
+   Strip or remove any unwanted characters from the specified string 
+   and close any gaps that leaves in the string. If that string is 
+   NULL, return NULL. If the set of unwanted characters is empty, 
+   then return the string unchanged. If none of the unwanted 
+   characters appear in the string, then return that string unchanged. 
+   Duplicates in the set of unwanted characters are ignored.
+   
+   Parameters
+   
+   string_in - the string from which characters are to be stripped
+   
+   strip_characters_in - a string containing the characters which are to be stripped
+   
+   Exceptions
+   
+   None
+*/
+   c_asterisk   CONSTANT CHAR (1)         := '*';
+   l_strip_characters    VARCHAR2 (32767);
+   l_length              PLS_INTEGER;
+   l_character           VARCHAR2 (2);
+BEGIN
+   l_length := LENGTH (strip_characters_in);
+
+   IF l_length > 0
+   THEN
+      FOR l_index IN 1 .. l_length
+      LOOP
+         l_character := SUBSTR (strip_characters_in, l_index, 1);
+
+		 -- If I am removing * from the string, must escape it first.
+         IF l_character = c_asterisk
+         THEN
+            l_character := '\' || c_asterisk;
+         END IF;
+
+         l_strip_characters :=
+               l_strip_characters
+            || l_character
+            || c_asterisk;
+      END LOOP;
+   END IF;
+
+   RETURN regexp_replace (string_in, l_strip_characters);
+END stripped_string;
+/

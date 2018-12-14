@@ -1,0 +1,102 @@
+CREATE OR REPLACE FUNCTION apex_url (
+   domain_in             IN VARCHAR2
+ , app_id_in             IN VARCHAR2
+ , app_pg_id_in          IN VARCHAR2
+ , app_session_in        IN VARCHAR2
+ , request_in            IN VARCHAR2
+ , debug_in              IN VARCHAR2 DEFAULT 'NO'
+ , cache_in              IN VARCHAR2
+ , page_items_in         IN DBMS_SQL.varchar2a
+ , values_in             IN DBMS_SQL.varchar2a
+ , printer_friendly_in   IN VARCHAR DEFAULT NULL
+ , add_href_in           IN BOOLEAN DEFAULT FALSE
+ , href_name_in          IN VARCHAR2 DEFAULT NULL
+ , external_url_in          BOOLEAN DEFAULT TRUE
+ , open_new_window_in    IN BOOLEAN DEFAULT TRUE
+ , onclick_in            IN VARCHAR2 DEFAULT NULL
+ , image_in              IN VARCHAR DEFAULT NULL
+ , add_ssp_in            IN BOOLEAN DEFAULT FALSE)
+   RETURN VARCHAR2
+IS
+   l_return   VARCHAR2 (32767);
+BEGIN
+   l_return :=
+         'f?p='
+      || app_id_in
+      || ':'
+      || app_pg_id_in
+      || ':'
+      || app_session_in
+      || ':'
+      || request_in
+      || ':'
+      || debug_in
+      || ':'
+      || cache_in
+      || ':';
+
+   IF page_items_in.COUNT = 0
+   THEN
+      l_return := l_return || ':';
+   ELSE
+      FOR indx IN 1 .. page_items_in.COUNT
+      LOOP
+         l_return :=
+               l_return
+            || CASE indx WHEN 1 THEN NULL ELSE ',' END
+            || page_items_in (indx);
+      END LOOP;
+
+      FOR indx IN 1 .. page_items_in.COUNT
+      LOOP
+         l_return :=
+               l_return
+            || CASE indx WHEN 1 THEN ':' ELSE ',' END
+            || values_in (indx);
+      END LOOP;
+   END IF;
+
+   l_return := l_return || ':' || printer_friendly_in;
+
+   l_return :=
+      CASE WHEN add_ssp_in THEN APEX_UTIL.prepare_url (l_return, 'UTF-8', 1 /* Public bookmark */
+                                                                           ) ELSE l_return END;
+
+   /* This step must come after checksum generation */
+   l_return :=
+      CASE
+         WHEN external_url_in THEN 'http://' || domain_in || '/pls/apex/'
+         ELSE NULL
+      END
+      || l_return;
+
+   IF add_href_in AND href_name_in IS NOT NULL
+   THEN
+      l_return :=
+            '<a href="'
+         || l_return
+         || '"'
+         || CASE WHEN open_new_window_in THEN 'target="_blank"' ELSE NULL END
+         || CASE
+               WHEN onclick_in IS NOT NULL
+               THEN
+                     ' onclick="javascript:apex.submit('''
+                  || onclick_in
+                  || ''');"'
+               ELSE
+                  NULL
+            END
+         || '>'
+         || NVL (href_name_in, l_return)
+         || CASE
+               WHEN image_in IS NOT NULL
+               THEN
+                  '<img src="#IMAGE_PREFIX#menu/' || image_in || '" alt="">'
+               ELSE
+                  NULL
+            END
+         || '</a>';
+   END IF;
+
+   RETURN l_return;
+END apex_url;

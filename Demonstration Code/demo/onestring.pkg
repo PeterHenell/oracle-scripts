@@ -1,0 +1,39 @@
+CREATE OR REPLACE PACKAGE fileIO
+IS
+   PROCEDURE setsepchar (str IN VARCHAR2);
+   FUNCTION sepchar RETURN VARCHAR2;
+
+   FUNCTION open (file IN VARCHAR2, filemode IN VARCHAR2)
+      RETURN UTL_FILE.FILE_TYPE;
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY fileIO
+IS
+   g_sepchar CHAR(1) := '/'; /* Unix is, after all, dominant. */
+
+   PROCEDURE setsepchar (str IN VARCHAR2)
+   IS
+   BEGIN
+      g_sepchar := NVL (str, '/');
+   END;
+
+   FUNCTION sepchar RETURN VARCHAR2
+   IS
+   BEGIN
+      RETURN g_sepchar;
+   END;
+
+   FUNCTION open (file IN VARCHAR2, filemode IN VARCHAR2)
+      RETURN UTL_FILE.FILE_TYPE
+   IS
+      v_loc PLS_INTEGER := INSTR (file, g_sepchar, -1);
+      retval UTL_FILE.FILE_TYPE;
+   BEGIN
+      RETURN UTL_FILE.FOPEN 
+         (SUBSTR (file, 1, v_loc-1),
+          SUBSTR (file, v_loc+1),
+          filemode);
+   END;
+END;
+/

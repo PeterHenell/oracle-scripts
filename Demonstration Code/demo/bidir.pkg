@@ -1,0 +1,237 @@
+CREATE OR REPLACE VIEW employee_plus 
+AS
+   SELECT employee.*, TO_NUMBER(NULL) cumsal FROM employee;
+   
+CREATE OR REPLACE PACKAGE bidir
+IS
+   PROCEDURE loadarray;
+   PROCEDURE showmaxsal;
+   PROCEDURE showminsal;
+   PROCEDURE accumulate;
+   PROCEDURE showall;
+   
+   /* Returns data by primary key */
+   FUNCTION rowforID (id_in IN employee.employee_id%TYPE)
+      RETURN employee_plus%ROWTYPE;
+      
+   /*
+   || Returns data in order retrieved (ie, Nth row). 
+   || Direction of +1 means from start, -1 from end.
+   */
+   FUNCTION nthRow (nth IN PLS_INTEGER, direction IN SIGNTYPE := 1)
+      RETURN employee_plus%ROWTYPE;
+      
+   FUNCTION firstRow RETURN employee_plus%ROWTYPE;
+   FUNCTION lastRow RETURN employee_plus%ROWTYPE;
+   
+   /* Iterate through rows in the result set */
+   PROCEDURE setRow (nth IN PLS_INTEGER);
+   FUNCTION getRow RETURN employee_plus%ROWTYPE;
+   PROCEDURE nextRow;
+   PROCEDURE prevRow;
+   
+   PROCEDURE showRows (
+      startRow IN PLS_INTEGER := NULL,
+      endRow IN PLS_INTEGER := NULL);
+   PROCEDURE init;
+END;
+/
+CREATE OR REPLACE PACKAGE BODY bidir
+IS
+   g_currRow PLS_INTEGER := NULL;
+   
+   TYPE employee_tt IS TABLE OF employee_plus%ROWTYPE
+      INDEX BY BINARY_INTEGER;
+   employees employee_tt;
+
+   PROCEDURE loadarray
+   IS
+   BEGIN
+      FOR rec IN  (SELECT *
+                   FROM employee_plus)
+      LOOP
+         employees (rec.employee_id) := rec;
+      END LOOP;
+   END;
+
+   PROCEDURE showmaxsal
+   IS
+      v_row PLS_INTEGER := employees.first;
+      val   NUMBER;
+   BEGIN
+      LOOP
+         EXIT WHEN v_row IS NULL;
+         IF NVL (val, 0) < employees (v_row).salary
+         THEN
+            val := employees (v_row).salary;
+         END IF;
+         v_row := employees.next (v_row);
+      END LOOP;
+      p.l ('Maximum salary', val);
+   END;
+
+   PROCEDURE showminsal
+   IS
+      v_row PLS_INTEGER := employees.first;
+      val   NUMBER;
+   BEGIN
+      LOOP
+         EXIT WHEN v_row IS NULL;
+         IF NVL (val, 999999) > employees (v_row).salary
+         THEN
+            val := employees (v_row).salary;
+         END IF;
+         v_row := employees.next (v_row);
+      END LOOP;
+      p.l ('Minimum salary', val);
+   END;
+
+   PROCEDURE accumulate
+   IS
+      v_row  PLS_INTEGER := employees.first;
+      cumsal NUMBER := 0;
+   BEGIN
+      LOOP
+         EXIT WHEN v_row IS NULL;
+         
+         employees (v_row).cumsal :=
+             cumsal + employees (v_row).salary;
+             
+         cumsal := employees (v_row).cumsal;
+         
+         v_row := employees.next (v_row);
+      END LOOP;
+   END;
+
+   PROCEDURE showall
+   IS
+      v_row  PLS_INTEGER := employees.last;
+      cumsal NUMBER := 0;
+      PROCEDURE pf (val1 IN VARCHAR2, val2 IN VARCHAR2, val3 IN VARCHAR2)
+      IS
+      BEGIN
+         p.l (RPAD (val1, 20) || RPAD (val2, 20) || RPAD (val3, 20));
+      END;
+   BEGIN
+      pf ('Employee ID', 'Salary', 'Cumulative Salary');
+      LOOP
+         EXIT WHEN v_row IS NULL;
+         pf (v_row, employees (v_row).salary, employees (v_row).cumsal);
+         v_row := employees.prior (v_row);
+      END LOOP;
+   END;
+   
+   /* Returns data by primary key */
+   FUNCTION rowforID (id_in IN employee.employee_id%TYPE)
+      RETURN employee_plus%ROWTYPE
+   IS
+   BEGIN
+      RETURN employees (id_in);
+   END;
+      
+   /* Returns data in order retrieved (ie, Nth row). */
+   FUNCTION nthRow (nth IN PLS_INTEGER, direction IN SIGNTYPE := 1)
+      RETURN employee_plus%ROWTYPE
+   IS
+      v_nth PLS_INTEGER := 0;
+      v_row PLS_INTEGER;
+      retval employee_plus%ROWTYPE;
+   BEGIN
+      IF direction = 1
+      THEN
+         v_row := employees.FIRST;
+      ELSE
+         v_row := employees.LAST;
+      END IF;
+      
+      /* Since no prep work was done, do a scan through table. */
+      LOOP
+         EXIT WHEN v_row IS NULL;
+         IF v_nth = nth
+         THEN
+            retval := employees(v_row);
+            EXIT;
+         ELSE
+            v_nth := v_nth + 1;
+            IF direction = 1
+            THEN
+               v_row := employees.NEXT (v_row);
+            ELSE
+               v_row := employees.PRIOR (v_row);
+            END IF;
+         END IF;
+      END LOOP;
+      RETURN retval; 
+   END;
+      
+   FUNCTION firstRow RETURN employee_plus%ROWTYPE
+   IS BEGIN
+      RETURN employees(employees.FIRST);
+   END;
+   
+   FUNCTION lastRow RETURN employee_plus%ROWTYPE
+   IS BEGIN
+      RETURN employees(employees.LAST);
+   END;   
+
+   PROCEDURE init_currRow
+   IS
+   BEGIN
+      IF g_currRow IS NULL
+      THEN
+         g_currRow := 1;
+      END IF;
+   END;
+   
+   PROCEDURE setRow (nth IN PLS_INTEGER)
+   IS
+   BEGIN
+      g_currRow := nth;
+   END;
+   
+   FUNCTION getRow RETURN employee_plus%ROWTYPE
+   IS
+   BEGIN
+      init_currRow;
+      RETURN nthRow(g_currRow);
+   END;
+
+   PROCEDURE nextRow
+   IS
+   BEGIN
+      init_currRow;
+      g_currRow := employees.NEXT (g_currRow);
+   END;
+
+   PROCEDURE prevRow
+   IS
+   BEGIN
+      init_currRow;
+      g_currRow := employees.PRIOR (g_currRow);
+   END;
+
+   PROCEDURE showRows (
+      startRow IN PLS_INTEGER := NULL,
+      endRow IN PLS_INTEGER := NULL)
+   IS
+      rec employee_plus%ROWTYPE;
+      v_start PLS_INTEGER := NVL (startRow, 1);
+      v_end PLS_INTEGER := NVL (endRow, employees.COUNT);
+   BEGIN
+      FOR indx IN v_start .. v_end
+      LOOP
+         setRow (indx);
+         rec := getRow;
+         DBMS_OUTPUT.PUT_line (
+            rec.employee_id || '-' ||
+            rec.last_name);
+      END LOOP;
+   END;
+   
+   PROCEDURE init IS BEGIN NULL; END;
+   
+BEGIN
+   loadArray;   
+END;
+/
+

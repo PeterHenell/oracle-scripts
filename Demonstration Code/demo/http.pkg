@@ -1,0 +1,228 @@
+/* Formatted by PL/Formatter v3.0.5.0 on 2000/05/14 08:23 */
+
+@pl.sp
+
+CREATE OR REPLACE PACKAGE http
+IS
+   /* Returns up to first 32K of specified domain splash page, as in:
+          www.oracle.com
+   */
+   FUNCTION request (
+      url_in IN VARCHAR2,
+      maxsize_in IN PLS_INTEGER := 32767,
+      show_err_in IN BOOLEAN := FALSE
+   )
+      RETURN VARCHAR2;
+
+   /* Returns title from World Wide Web splash page. */
+   FUNCTION www_title (
+      name_in IN VARCHAR2,
+      show_err_in IN BOOLEAN := FALSE
+   )
+      RETURN VARCHAR2;
+      
+   /* Returns string specified in META keywords tag. */
+   FUNCTION keywords (
+      name_in IN VARCHAR2,
+      show_err_in IN BOOLEAN := FALSE
+   )
+      RETURN VARCHAR2;
+      
+   -- Useful enhancement: return index-by table of individual keywords.
+END;
+/
+CREATE OR REPLACE PACKAGE BODY http
+IS
+   FUNCTION request (
+      url_in IN VARCHAR2,
+      maxsize_in IN PLS_INTEGER := 32767,
+      show_err_in IN BOOLEAN := FALSE
+   )
+      RETURN VARCHAR2
+   IS
+      pieces UTL_HTTP.html_pieces;
+      indx PLS_INTEGER;
+      last_piece_indx PLS_INTEGER;
+      url VARCHAR2 (1000) := 'http://' || url_in;
+      retval VARCHAR2 (32767);
+      retval_len PLS_INTEGER;
+   BEGIN
+      -- Can't get more than 32K bytes to pass into a single string.
+      pieces := 
+         UTL_HTTP.REQUEST_PIECES (
+            url, max_pieces => LEAST (17, FLOOR (maxsize_in / 2000)));
+      last_piece_indx := pieces.LAST;
+      indx := pieces.FIRST;
+
+      -- Combine into single return string, from first to last, making
+      -- use of the collection methods and not assuming that the array
+      -- starts on the first row or is densely filled.
+      
+      LOOP
+         EXIT WHEN indx > last_piece_indx OR indx IS NULL;
+
+         -- If the splash page exceeds 32K, trap overflow error
+         -- and grab just the allowable portion from the last piece.
+         BEGIN
+            retval := retval || pieces (indx);
+         EXCEPTION
+            WHEN VALUE_ERROR
+            THEN
+               retval_len := LENGTH (retval);
+               retval :=
+                 retval ||
+                    SUBSTR (pieces (indx), 1, 32767 - retval_len);
+               EXIT;
+         END;
+
+         indx := pieces.NEXT (indx);
+      END LOOP;
+
+      RETURN retval;
+   EXCEPTION
+      -- Error handling: trap the two specific UTL_HTTP errors.
+      -- Convert into a readable string and also provide additional
+      -- diagnostic information if requested.
+      
+      WHEN UTL_HTTP.request_failed
+      THEN
+         IF show_err_in
+         THEN
+            pl (
+               'Request for "' || url || '" failed! ' ||
+                  'Possible reasons: failure of the HTTP daemon, or ' ||
+                  'argument to REQUEST cannot be interpreted as a URL ' ||
+                  'because it is NULL or has non-HTTP syntax.'
+            );
+         END IF;
+
+         RETURN 'ERROR: REQUEST_FAILURE';
+      WHEN UTL_HTTP.init_failed
+      THEN
+         IF show_err_in
+         THEN
+            pl (
+               'Initialization failed for "' || url || '"! ' ||
+                  'HTTP-callout subsystem fails (for environmental ' ||
+                  'reasons, such as lack of available memory).'
+            );
+         END IF;
+
+         RETURN 'ERROR: INIT_FAILURE';
+   END;
+
+   FUNCTION keywords (
+      name_in IN VARCHAR2,
+      show_err_in IN BOOLEAN := FALSE
+   )
+      RETURN VARCHAR2
+   IS
+      keyloc PLS_INTEGER;
+      endkeyloc PLS_INTEGER;
+      searchfor_len PLS_INTEGER;
+      
+      /* I have identified two different formats for the keyword tag. */
+      
+      searchfor1 CONSTANT VARCHAR2 (31)
+               := '<META NAME="KEYWORDS" CONTENT="';
+      searchfor1_len CONSTANT PLS_INTEGER := 31;
+      
+      searchfor2 CONSTANT VARCHAR2 (38)
+               := '<META HTTP-EQUIV="KEYWORDS" CONTENT="';
+      searchfor2_len CONSTANT PLS_INTEGER := 38;
+      
+      no_url_found EXCEPTION;
+      no_keywords_found EXCEPTION;
+      
+      retval VARCHAR2(32767);
+   BEGIN
+      -- Get the entire  page and stop if errors encountered.
+      retval := request (name_in, show_err_in => show_err_in);
+      IF retval LIKE 'ERROR%'
+      THEN
+         RAISE no_url_found;
+      END IF;
+      
+      -- Look for the keywords meta tag.
+      keyloc := INSTR (UPPER (retval), searchfor1);
+      IF keyloc > 0 
+      THEN
+         -- Found a match
+         searchfor_len := searchfor1_len;
+      ELSE
+         -- Try alternative
+         keyloc := INSTR (UPPER (retval), searchfor2); 
+         IF keyloc > 0
+         THEN
+            -- Found a match
+            searchfor_len := searchfor2_len;
+         ELSE
+            RAISE no_keywords_found;
+         END IF;
+      END IF;
+      
+      -- Locate end of keywords list.
+      endkeyloc := INSTR (retval, '>', keyloc);
+      
+      -- Grab just the list from the splash page and return it.
+      retval := 
+          SUBSTR (
+             retval,
+             keyloc + searchfor_len,
+             endkeyloc - (keyloc + searchfor_len) - 1
+          );
+           
+      RETURN retval;
+   EXCEPTION
+      WHEN no_url_found THEN RETURN retval;
+      WHEN no_keywords_found THEN RETURN NULL;
+   END;
+   
+   FUNCTION www_title (
+      name_in IN VARCHAR2,
+      show_err_in IN BOOLEAN := FALSE
+   )
+      RETURN VARCHAR2
+   IS
+      title_loc PLS_INTEGER;
+      end_title_loc PLS_INTEGER;
+      
+      no_url_found EXCEPTION;
+      no_keywords_found EXCEPTION;
+      
+      retval VARCHAR2(32767);
+   BEGIN
+      -- Get the entire  page and stop if errors encountered.
+      retval := request ('www.' || name_in, show_err_in => show_err_in);
+      IF retval LIKE 'ERROR%'
+      THEN
+         RAISE no_url_found;
+      END IF;
+
+      title_loc := 
+         INSTR (UPPER (retval), '<TITLE>');
+         
+      IF title_loc > 0
+      THEN
+         title_loc := title_loc + 7;
+         end_title_loc := 
+            INSTR (
+               UPPER (retval), 
+               '</TITLE>', 
+               title_loc);
+
+         retval := 
+            SUBSTR (
+               retval, 
+               title_loc, 
+               end_title_loc - title_loc);
+      END IF;
+      
+      RETURN retval;
+   EXCEPTION
+      WHEN no_url_found THEN RETURN retval;
+      WHEN no_keywords_found THEN RETURN NULL;
+   END;
+      
+END http;
+/   

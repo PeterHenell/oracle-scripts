@@ -1,0 +1,14 @@
+CREATE OR REPLACE PACKAGE hello
+IS
+   PROCEDURE world;
+END;
+/
+CREATE OR REPLACE PACKAGE hello
+IS
+	PROCEDURE world (
+	IS
+	BEGIN
+	   DBMS_OUTPUT.PUT_LINE ('Hello world!');
+	END;
+END hello;
+/

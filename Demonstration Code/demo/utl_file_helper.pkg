@@ -1,0 +1,88 @@
+CREATE OR REPLACE PACKAGE utl_file_helper
+IS
+   FUNCTION file_length (dir_in IN VARCHAR2, file_in IN VARCHAR2)
+      RETURN PLS_INTEGER;
+
+   FUNCTION fexists (dir_in IN VARCHAR2, file_in IN VARCHAR2)
+      RETURN BOOLEAN;
+
+   FUNCTION block_size (dir_in IN VARCHAR2, file_in IN VARCHAR2)
+      RETURN PLS_INTEGER;
+
+   PROCEDURE get_next_line (file_in IN UTL_FILE.file_type
+                          , line_out   OUT VARCHAR2
+                          , eof_out   OUT BOOLEAN
+                           );
+END utl_file_helper;
+/
+
+CREATE OR REPLACE PACKAGE BODY utl_file_helper
+IS
+   TYPE fgetattr_t IS RECORD (
+                         fexists       BOOLEAN
+                       , file_length   PLS_INTEGER
+                       , block_size    PLS_INTEGER
+                      );
+
+   FUNCTION file_length (dir_in IN VARCHAR2, file_in IN VARCHAR2)
+      RETURN PLS_INTEGER
+   IS
+      fgetattr_rec   fgetattr_t;
+   BEGIN
+      UTL_FILE.fgetattr (location      => dir_in
+                       , filename      => file_in
+                       , fexists       => fgetattr_rec.fexists
+                       , file_length   => fgetattr_rec.file_length
+                       , block_size    => fgetattr_rec.block_size
+                        );
+      RETURN fgetattr_rec.file_length;
+   END file_length;
+
+   FUNCTION fexists (dir_in IN VARCHAR2, file_in IN VARCHAR2)
+      RETURN BOOLEAN
+   IS
+      fgetattr_rec   fgetattr_t;
+   BEGIN
+      UTL_FILE.fgetattr (location      => dir_in
+                       , filename      => file_in
+                       , fexists       => fgetattr_rec.fexists
+                       , file_length   => fgetattr_rec.file_length
+                       , block_size    => fgetattr_rec.block_size
+                        );
+
+
+      RETURN fgetattr_rec.fexists;
+   END fexists;
+
+   FUNCTION block_size (dir_in IN VARCHAR2, file_in IN VARCHAR2)
+      RETURN PLS_INTEGER
+   IS
+      fgetattr_rec   fgetattr_t;
+   BEGIN
+      UTL_FILE.fgetattr (location      => dir_in
+                       , filename      => file_in
+                       , fexists       => fgetattr_rec.fexists
+                       , file_length   => fgetattr_rec.file_length
+                       , block_size    => fgetattr_rec.block_size
+                        );
+
+
+      RETURN fgetattr_rec.block_size;
+   END block_size;
+
+   PROCEDURE get_next_line (file_in IN UTL_FILE.file_type
+                          , line_out   OUT VARCHAR2
+                          , eof_out   OUT BOOLEAN
+                           )
+   IS
+   BEGIN
+      UTL_FILE.get_line (file_in, line_out);
+      eof_out := FALSE;
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         line_out := NULL;
+         eof_out := TRUE;
+   END get_next_line;
+END utl_file_helper;
+/

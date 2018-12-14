@@ -1,0 +1,30 @@
+CREATE OR REPLACE FUNCTION xml_column_value (
+   owner_in IN VARCHAR2
+ , table_in IN VARCHAR2
+ , column_in IN VARCHAR2
+ , where_in IN VARCHAR2
+)
+   RETURN XMLTYPE
+IS
+   l_return   XMLTYPE;
+BEGIN
+   EXECUTE IMMEDIATE    'select '
+                     || column_in
+                     || ' from '
+                     || CASE
+                           WHEN owner_in IS NULL
+                              THEN table_in
+                           ELSE owner_in || '.' || table_in
+                        END
+                     || CASE
+                           WHEN where_in IS NULL
+                              THEN NULL
+                           WHEN UPPER (where_in) LIKE 'WHERE %'
+                              THEN where_in
+                           ELSE ' where ' || where_in
+                        END
+                INTO l_return;
+
+   RETURN l_return;
+END xml_column_value;
+/

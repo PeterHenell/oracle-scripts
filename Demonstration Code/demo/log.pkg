@@ -1,0 +1,184 @@
+DROP TABLE log_table;
+
+CREATE TABLE log_table (
+   logcode INTEGER,
+   logmsg VARCHAR2(4000),
+   callstack VARCHAR2(4000),
+   created_by VARCHAR2(30),
+   created_at DATE
+   );
+
+CREATE OR REPLACE PACKAGE logpkg
+IS
+   PROCEDURE toscreen;
+
+   PROCEDURE topipe;
+
+   PROCEDURE totable;
+
+   PROCEDURE usecs;
+
+   PROCEDURE nousecs;
+
+   FUNCTION using_cs
+      RETURN BOOLEAN;
+
+   PROCEDURE put (code_in IN INTEGER, msg_in IN VARCHAR2);
+
+   PROCEDURE showpipe;
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY logpkg
+IS
+   c_pipe_name   CONSTANT VARCHAR2 (8) := 'log$pipe';
+   c_screen      CONSTANT INTEGER      := 0;
+   c_pipe        CONSTANT INTEGER      := 1;
+   c_table       CONSTANT INTEGER      := 2;
+   g_target               INTEGER      := c_screen;
+   g_cs                   BOOLEAN      := FALSE;
+
+   PROCEDURE pl (
+      str         IN   VARCHAR2
+     ,len         IN   INTEGER := 80
+     ,expand_in   IN   BOOLEAN := TRUE
+   )
+   IS
+      v_len     PLS_INTEGER     := LEAST (len, 255);
+      v_len2    PLS_INTEGER;
+      v_chr10   PLS_INTEGER;
+      v_str     VARCHAR2 (2000);
+   BEGIN
+      IF LENGTH (str) > v_len
+      THEN
+         v_chr10 := INSTR (str, CHR (10));
+
+         IF v_chr10 > 0 AND v_len >= v_chr10
+         THEN
+            v_len := v_chr10 - 1;
+            v_len2 := v_chr10 + 1;
+         ELSE
+            v_len := v_len - 1;
+            v_len2 := v_len;
+         END IF;
+
+         v_str := SUBSTR (str, 1, v_len);
+         DBMS_OUTPUT.put_line (v_str);
+         pl (SUBSTR (str, v_len2), len, expand_in);
+      ELSE
+         DBMS_OUTPUT.put_line (str);
+      END IF;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         IF expand_in
+         THEN
+            DBMS_OUTPUT.ENABLE (1000000);
+            DBMS_OUTPUT.put_line (v_str);
+         ELSE
+            RAISE;
+         END IF;
+   END;
+
+   PROCEDURE toscreen
+   IS
+   BEGIN
+      g_target := c_screen;
+   END;
+
+   PROCEDURE topipe
+   IS
+   BEGIN
+      g_target := c_pipe;
+   END;
+
+   PROCEDURE totable
+   IS
+   BEGIN
+      g_target := c_table;
+   END;
+
+   PROCEDURE usecs
+   IS
+   BEGIN
+      g_cs := TRUE;
+   END;
+
+   PROCEDURE nousecs
+   IS
+   BEGIN
+      g_cs := FALSE;
+   END;
+
+   FUNCTION using_cs
+      RETURN BOOLEAN
+   IS
+   BEGIN
+      RETURN g_cs;
+   END;
+
+   PROCEDURE put (code_in IN INTEGER, msg_in IN VARCHAR2)
+   IS
+      stat   INTEGER;
+      v_cs   VARCHAR2 (4000);
+
+      FUNCTION fullmsg
+         RETURN VARCHAR2
+      IS
+      BEGIN
+         RETURN    ' LOG Time: '
+                || TO_CHAR (sysdate, 'YYYY-MON-DD HH24:MI:SS')
+                || ' Code: '
+                || code_in
+                || ' Msg: '
+                || msg_in
+                || v_cs;
+      END;
+   BEGIN
+      IF using_cs
+      THEN
+         v_cs := ' Callstack: ' || DBMS_UTILITY.format_call_stack;
+      END IF;
+
+      IF g_target = c_screen
+      THEN
+         pl (fullmsg);
+      ELSIF g_target = c_pipe
+      THEN
+         DBMS_PIPE.reset_buffer;
+         DBMS_PIPE.pack_message (fullmsg);
+         stat := DBMS_PIPE.send_message (c_pipe_name, TIMEOUT => 0);
+
+         IF stat != 0
+         THEN
+            pl ('LOG failure to send information to pipe...');
+         END IF;
+      ELSIF g_target = c_table
+      THEN
+         INSERT INTO log_table
+                     (logcode, logmsg, callstack, created_by, created_at
+                     )
+              VALUES (code_in, msg_in, v_cs, USER, SYSDATE
+                     );
+      END IF;
+   END;
+
+   PROCEDURE showpipe
+   IS
+      stat   INTEGER;
+      msg    VARCHAR2(32767);
+   BEGIN
+      IF g_target = c_pipe
+      THEN
+         pl ('Contents of Log Pipe:');
+
+         LOOP
+            stat := DBMS_PIPE.receive_message (c_pipe_name, TIMEOUT => 0);
+            EXIT WHEN stat != 0;
+            DBMS_PIPE.unpack_message (msg);
+            pl (msg);
+         END LOOP;
+      END IF;
+   END;
+END;
+/

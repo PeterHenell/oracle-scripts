@@ -1,0 +1,184 @@
+CREATE OR REPLACE PACKAGE type_table_qp
+IS
+   -- Return a record for one row of data for a primary key
+   FUNCTION onerow (
+      id_in IN type_table.id%Type
+      )
+   RETURN type_table%rowtype;
+
+   -- Return TRUE if a row exists for this primary key
+   FUNCTION row_exists (
+      id_in IN type_table.id%Type
+      )
+   RETURN BOOLEAN;
+
+   -- Return a cursor variable for one row of data for a primary key.
+   FUNCTION onerow_CV (
+      id_in IN type_table.id%Type
+      )
+   RETURN type_table_tp.type_table_rc;
+   -- Return all rows in a collection of records
+   FUNCTION allrows RETURN type_table_tp.type_table_tc;
+
+   -- Return all rows in collections for each column.
+   function allrows_for_category (
+   category_in in type_table.category%type) return 
+      id_out OUT type_table_tp.ID_cc,
+      name_out OUT type_table_tp.NAME_cc,
+      created_on_out OUT type_table_tp.CREATED_ON_cc,
+      created_by_out OUT type_table_tp.CREATED_BY_cc,
+      changed_on_out OUT type_table_tp.CHANGED_ON_cc,
+      changed_by_out OUT type_table_tp.CHANGED_BY_cc,
+      is_default_out OUT type_table_tp.IS_DEFAULT_cc,
+      description_out OUT type_table_tp.DESCRIPTION_cc
+   );
+
+   -- Return all rows in table via ref cursor
+   FUNCTION allrows_CV RETURN type_table_tp.type_table_rc;
+
+   FUNCTION allrows_by_CV (
+      where_clause_in IN VARCHAR2
+     ,column_list_in IN VARCHAR2 DEFAULT NULL) RETURN type_table_tp.weak_refcur;
+
+   -- Close the specified cursor variable, only if it is open.
+   PROCEDURE close_cursor (cursor_variable_in IN type_table_tp.type_table_rc);
+
+   -- Hide calls to cursor attributes behind interface.
+   FUNCTION cursor_is_open (cursor_variable_in IN type_table_tp.weak_refcur) RETURN BOOLEAN;
+   FUNCTION row_found (cursor_variable_in IN type_table_tp.weak_refcur) RETURN BOOLEAN;
+   FUNCTION row_notfound (cursor_variable_in IN type_table_tp.weak_refcur) RETURN BOOLEAN;
+   FUNCTION cursor_rowcount (cursor_variable_in IN type_table_tp.weak_refcur) RETURN PLS_INTEGER;
+
+   -- Use the LIMIT clause to BULK COLLECT N rows through the cursor variable
+   -- The current contents of the collection will be deleted.
+   FUNCTION fetch_rows (
+      cursor_variable_in IN type_table_tp.type_table_rc
+    , limit_in IN PLS_INTEGER DEFAULT 100
+    )
+      RETURN type_table_tp.type_table_tc;
+
+   -- Allrows for specified where clause (using dynamic SQL)
+   FUNCTION allrows_by (where_clause_in IN VARCHAR2)
+      RETURN type_table_tp.type_table_tc;
+
+   -- Get the primary key value for this name
+   FUNCTION ID_for_name (
+      name_in IN type_table_tp.name_t)
+      RETURN type_table.id%Type;
+
+   -- Get the name for this primary key value
+   FUNCTION name_for_ID (
+      id_in IN type_table.id%Type)
+      RETURN type_table_tp.name_t;
+   -- Return collection of all rows for primary key column ID
+   FUNCTION for_ID (
+      id_in IN type_table.id%Type
+   )
+   RETURN type_table_tp.type_table_tc;
+
+   -- Return ref cursor to all rows for primary key column ID
+   FUNCTION for_ID_CV (
+      id_in IN type_table.id%Type
+   )
+   RETURN type_table_tp.type_table_rc;
+
+   -- Return ref cursor to all rows for list of ID values
+   -- in format 'A,B,C,D', to be used in an IN list.
+   FUNCTION in_ID_CV (
+      list_in IN VARCHAR2
+   )
+   RETURN type_table_tp.weak_refcur;
+
+
+   -- Return a record for one row by PK_ENGINE_TYPE value
+   FUNCTION or_PK_ENGINE_TYPE (
+      id_in IN type_table.id%Type
+      )
+      RETURN type_table%rowtype
+      ;
+
+   -- Return a cursor variable for one row by PK_ENGINE_TYPE value
+   FUNCTION or_PK_ENGINE_TYPE_CV (
+      id_in IN type_table.id%Type
+      )
+      RETURN type_table_tp.type_table_rc
+      ;
+
+   -- Return the primary key value for this unique index value
+   FUNCTION pky_PK_ENGINE_TYPE (
+      id_in IN type_table.id%Type
+      )
+      RETURN type_table.id%Type
+      ;
+
+   -- Number of rows for this PK_ENGINE_TYPE value
+   FUNCTION num_PK_ENGINE_TYPE (
+      id_in IN type_table.id%Type
+      )
+      RETURN PLS_INTEGER;
+
+   -- Returns TRUE if at least one row exists for this PK_ENGINE_TYPE value
+   FUNCTION ex_PK_ENGINE_TYPE (
+      id_in IN type_table.id%Type
+      )
+      RETURN BOOLEAN;
+
+   -- Return a record for one row by UN_type_table_NAME value
+   FUNCTION or_UN_type_table_NAME (
+      name_in IN type_table_tp.NAME_t
+      )
+      RETURN type_table%rowtype
+      ;
+
+   -- Return a cursor variable for one row by UN_type_table_NAME value
+   FUNCTION or_UN_type_table_NAME_CV (
+      name_in IN type_table_tp.NAME_t
+      )
+      RETURN type_table_tp.type_table_rc
+      ;
+
+   -- Return the primary key value for this unique index value
+   FUNCTION pky_UN_type_table_NAME (
+      name_in IN type_table_tp.NAME_t
+      )
+      RETURN type_table.id%Type
+      ;
+
+   -- Number of rows for this UN_type_table_NAME value
+   FUNCTION num_UN_type_table_NAME (
+      name_in IN type_table_tp.NAME_t
+      )
+      RETURN PLS_INTEGER;
+
+   -- Returns TRUE if at least one row exists for this UN_type_table_NAME value
+   FUNCTION ex_UN_type_table_NAME (
+      name_in IN type_table_tp.NAME_t
+      )
+      RETURN BOOLEAN;
+
+   -- Number of rows in table
+   FUNCTION tabcount (where_clause_in IN VARCHAR2 := NULL)
+      RETURN PLS_INTEGER;
+   -- Number of rows for this primary key value
+   FUNCTION pkycount (
+      id_in IN type_table.id%Type
+      )
+      RETURN PLS_INTEGER;
+
+   -- Returns TRUE if at least one row exists for this where clause
+   FUNCTION ex_type_table (
+      where_clause_in IN VARCHAR2 := NULL)
+   RETURN BOOLEAN;
+
+   -- Returns TRUE if at least one row exists for this primary key
+   FUNCTION ex_pky (
+      id_in IN type_table.id%Type
+      )
+   RETURN BOOLEAN;
+   FUNCTION default_row RETURN type_table%rowtype;
+   FUNCTION default_row_cv RETURN type_table_tp.type_table_rc;
+   FUNCTION is_default (id_in IN type_table.id%Type) RETURN BOOLEAN;
+   FUNCTION default_name RETURN type_table_tp.name_t;
+   FUNCTION default_id RETURN type_table.id%Type;
+END type_table_qp;
+/

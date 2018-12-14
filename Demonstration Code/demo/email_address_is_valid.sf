@@ -1,0 +1,13 @@
+CREATE OR REPLACE FUNCTION email_address_is_valid ( address_in IN VARCHAR2 )
+   RETURN BOOLEAN
+IS
+   -- From: http://regexlib.com/DisplayPatterns.aspx
+   c_pattern VARCHAR2 ( 1000 )
+      :=    '^([a-zA-Z0-9_\-\.])+@(([0-2]?[0-5]?[0-5]\.'
+         || '[0-2]?[0-5]?[0-5]\.[0-2]?[0-5]?[0-5]\.'
+         || '[0-2]?[0-5]?[0-5])|((([a-zA-Z0-9\-])+\.'
+         || ')+([a-zA-Z\-])+))$';
+BEGIN
+   RETURN NVL ( REGEXP_LIKE ( address_in, c_pattern ), FALSE );
+END email_address_is_valid;
+/

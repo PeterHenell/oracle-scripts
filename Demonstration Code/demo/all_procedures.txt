@@ -1,0 +1,43 @@
+ALL_PROCEDURES
+ALL_PROCEDURES lists all functions and procedures, along with associated properties. For example, ALL_PROCEDURES indicates whether or not a function is pipelined, parallel enabled or an aggregate function. If a function is pipelined or an aggregate function, the associated implementation type (if any) is also identified.
+
+Related Views
+DBA_PROCEDURES lists all functions and procedures, along with associated properties. 
+USER_PROCEDURES lists all functions and procedures, along with associated properties. It does not contain the OWNER column. 
+
+Column Datatype NULL Description 
+OWNER
+ VARCHAR2(30)
+ NOT NULL
+ Owner of the procedure
+ 
+OBJECT_NAME
+ VARCHAR2(30)
+ NOT NULL
+ Name of the object: top-level function, procedure, or package name
+ 
+PROCEDURE_NAME
+ VARCHAR2(30)
+  Name of the procedure
+ 
+AGGREGATE
+ VARCHAR2(3)
+  Indicates whether the procedure is an aggregate function (YES) or not (NO)
+ 
+PIPELINED
+ VARCHAR2(3)
+  Indicates whether the procedure is a pipelined table function (YES) or not (NO)
+ 
+IMPLTYPEOWNER
+ VARCHAR2(30)
+  Name of the owner of the implementation type, if any
+ 
+IMPLTYPENAME
+ VARCHAR2(30)
+  Name of the implementation type, if any
+ 
+PARALLEL
+ VARCHAR2(3)
+  Indicates whether the procedure or function is parallel-enabled (YES) or not (NO)
+ 
+

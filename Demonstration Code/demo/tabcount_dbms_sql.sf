@@ -1,0 +1,26 @@
+CREATE OR REPLACE FUNCTION tabcount (
+   owner_in        IN all_tables.owner%TYPE
+ ,  table_name_in   IN all_tables.table_name%TYPE)
+   RETURN PLS_INTEGER
+   AUTHID CURRENT_USER
+IS
+   cur         INTEGER;
+   ignore_me   INTEGER;
+   l_return    INTEGER;
+BEGIN
+   cur := DBMS_SQL.open_cursor;
+   DBMS_SQL.parse (cur
+                 ,  'SELECT COUNT(*) FROM ' || owner_in || '.' || table_name_in
+                 ,  DBMS_SQL.native);
+   DBMS_SQL.define_column (cur, 1, l_return);
+   ignore_me := DBMS_SQL.execute_and_fetch (cur);
+   DBMS_SQL.COLUMN_VALUE (cur, 1, l_return);
+   DBMS_SQL.close_cursor (cur);
+   RETURN l_return;
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      DBMS_SQL.close_cursor (cur);
+      RAISE;
+END;
+/

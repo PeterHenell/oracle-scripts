@@ -1,0 +1,36 @@
+/* Formatted by PL/Formatter v3.0.5.0 on 2000/06/01 13:56 */
+
+CREATE OR REPLACE FUNCTION tabeq (
+   check_this_in IN VARCHAR2,
+   against_this_in IN VARCHAR2
+)
+   RETURN BOOLEAN
+IS
+   ival PLS_INTEGER;
+BEGIN
+   EXECUTE IMMEDIATE 
+     'DECLARE
+         TYPE cv_t IS REF CURSOR;
+         cv cv_t;
+         rec ' ||
+                     check_this_in ||
+                     '%ROWTYPE;
+      BEGIN     
+         OPEN cv FOR 
+            ''SELECT * FROM ' ||
+                     check_this_in ||
+                     '  MINUS
+             SELECT * FROM ' ||
+                     against_this_in ||
+                     ''';
+         FETCH cv INTO rec;
+         IF cv%FOUND THEN :retval := 1;
+         ELSE :retval := 0;
+         END IF;
+      END;'
+      USING OUT ival;
+      
+   RETURN ival = 0;
+END;
+/
+       

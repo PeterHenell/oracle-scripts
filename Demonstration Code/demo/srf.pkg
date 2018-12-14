@@ -1,0 +1,579 @@
+/*<TOAD_FILE_CHUNK>*/
+CREATE OR REPLACE PACKAGE srf AUTHID CURRENT_USER
+IS
+   PROCEDURE genpkgs (
+      tab_in       IN   VARCHAR2
+     ,sch_in       IN   VARCHAR2 := NULL
+   );
+
+   FUNCTION nrf_value (
+      tab_in      IN   VARCHAR2
+     ,column_in   IN   VARCHAR2 := NULL
+     ,sch_in      IN   VARCHAR2 := NULL
+   )
+      RETURN VARCHAR2;
+END srf;
+/
+/*<TOAD_FILE_CHUNK>*/
+
+CREATE OR REPLACE PACKAGE BODY srf
+IS
+   SUBTYPE identifier_t IS VARCHAR2 (100);
+
+   TYPE pky_rec IS RECORD (
+      NAME          identifier_t
+     ,column_name   identifier_t
+     ,column_type   identifier_t
+     ,array_name    identifier_t
+   );
+
+   TYPE cols_rec IS RECORD (
+      NAME            identifier_t
+     ,TYPE            identifier_t
+     ,aa_index_type   identifier_t
+   );
+
+   TYPE cols_tt IS TABLE OF cols_rec
+      INDEX BY BINARY_INTEGER;
+
+   PROCEDURE display (str IN VARCHAR2, len IN INTEGER := 80)
+   IS
+      v_len   PLS_INTEGER     := LEAST (len, 255);
+      v_str   VARCHAR2 (2000);
+   BEGIN
+      IF LENGTH (str) > v_len
+      THEN
+         v_str := SUBSTR (str, 1, v_len);
+         DBMS_OUTPUT.put_line (v_str);
+         display (SUBSTR (str, len + 1), v_len);
+      ELSE
+         v_str := str;
+         DBMS_OUTPUT.put_line (v_str);
+      END IF;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         DBMS_OUTPUT.ENABLE (1000000);
+         DBMS_OUTPUT.put_line (v_str);
+   END;
+
+   PROCEDURE assert (
+      sch_in         IN   VARCHAR2
+     ,tab_in         IN   VARCHAR2
+     ,condition_in   IN   BOOLEAN
+     ,msg_in         IN   VARCHAR2
+   )
+   IS
+   BEGIN
+      IF NOT condition_in OR condition_in IS NULL
+      THEN
+         display ('SRF Error on ' || sch_in || '.' || tab_in || ': ');
+         display (msg_in);
+         raise_application_error
+            (-20000
+            , 'SRF Error on ' || sch_in || '.' || tab_in || ': ' || msg_in
+            );
+      END IF;
+   END;
+
+   FUNCTION pkg_name (tab_in IN VARCHAR2)
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      RETURN 'SRF_' || tab_in;
+   END;
+
+   FUNCTION subtype_name (col_in IN VARCHAR2)
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      RETURN col_in || '_t';
+   END;
+
+   FUNCTION subtype_declaration (col_in IN VARCHAR2, data_type_in IN VARCHAR2)
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      RETURN 'SUBTYPE ' || subtype_name (col_in) || ' IS ' || data_type_in
+             || ';';
+   END;
+
+   FUNCTION primary_key_name (tab_in IN VARCHAR2, sch_in IN VARCHAR2)
+      RETURN VARCHAR2
+   IS
+      retval   identifier_t;
+   BEGIN
+      SELECT cons.constraint_name
+        INTO retval
+        FROM all_constraints cons
+       WHERE cons.owner = sch_in
+         AND cons.table_name = tab_in
+         AND cons.constraint_type = 'P';
+
+      RETURN retval;
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         RETURN NULL;
+   END;
+
+   -- Retrieve all column info for the specified index.
+   FUNCTION index_columns (
+      tab_in   IN   VARCHAR2
+     ,sch_in   IN   VARCHAR2 := NULL
+     ,ind_in   IN   VARCHAR2
+   )
+      RETURN cols_tt
+   IS
+      retval   cols_tt;
+   BEGIN
+      SELECT   i.column_name
+              ,t.data_type
+              ,DECODE
+                  (t.data_type
+                  ,'INTEGER', 'PLS_INTEGER'
+                  , sch_in || '.' || tab_in || '.' || i.column_name || '%TYPE'
+                  )
+      BULK COLLECT INTO retval
+          FROM all_ind_columns i
+              , (SELECT column_name, data_type
+                   FROM all_tab_columns
+                  WHERE table_name = tab_in AND owner = sch_in) t
+         WHERE i.index_owner = sch_in
+           AND i.table_name = tab_in
+           AND i.table_owner = sch_in
+           AND i.index_name = ind_in
+           AND i.column_name = t.column_name
+      ORDER BY column_position;
+
+      RETURN retval;
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         RETURN retval;
+   END;
+
+   FUNCTION primary_key_columns (
+      tab_in   IN   VARCHAR2
+     ,sch_in   IN   VARCHAR2
+     ,pky_in   IN   VARCHAR2
+   )
+      RETURN cols_tt
+   IS
+   BEGIN
+      RETURN index_columns (tab_in, sch_in, pky_in);
+   END;
+
+   PROCEDURE genpkgs (tab_in IN VARCHAR2, sch_in IN VARCHAR2 := NULL)
+   IS
+      v_tab      identifier_t       := UPPER (tab_in);
+      v_sch      identifier_t       := NVL (UPPER (sch_in), USER);
+      -- Array of code to be compiled.
+      output     DBMS_SQL.varchar2s;
+      pky_info   pky_rec;
+
+      CURSOR srf_cur (o VARCHAR2, t VARCHAR2)
+      IS
+         SELECT *
+           FROM srf_tab_repository
+          WHERE owner LIKE o AND table_name LIKE t;
+
+      CURSOR srf_col_cur (o VARCHAR2, t VARCHAR2)
+      IS
+         SELECT *
+           FROM srf_col_repository
+          WHERE owner = o AND table_name = t;
+
+      -- Now pl simply writes to the array.
+      PROCEDURE pl (str IN VARCHAR2)
+      IS
+      BEGIN
+         output (NVL (output.LAST, 0) + 1) := str;
+      END;
+
+      PROCEDURE compile_output
+      IS
+         cur   BINARY_INTEGER := DBMS_SQL.open_cursor;
+      BEGIN
+         DBMS_SQL.parse
+            (cur, output, output.FIRST, output.LAST, FALSE, DBMS_SQL.native);
+         DBMS_SQL.close_cursor (cur);
+         output.DELETE;
+      EXCEPTION
+         WHEN OTHERS
+         THEN
+            DBMS_SQL.close_cursor (cur);
+            display ('SRF Compile Error "' || SQLERRM || '" on: ');
+
+            FOR indx IN output.FIRST .. output.LAST
+            LOOP
+               display (output (indx));
+            END LOOP;
+      END;
+
+      PROCEDURE validate_and_initialize (
+         rec_in         IN       srf_tab_repository%ROWTYPE
+        ,pky_info_out   IN OUT   pky_rec
+      )
+      IS
+         indx      identifier_t;
+         pkycols   cols_tt;
+      BEGIN
+         -- Set primary key information: just the first row of info!
+         pky_info_out.NAME := primary_key_name (v_tab, v_sch);
+         assert
+            (v_sch
+            ,v_tab
+            ,pky_info_out.NAME IS NOT NULL
+            ,'No primary key available for table or table does not exist.'
+            );
+         pkycols := primary_key_columns (v_tab, v_sch, pky_info_out.NAME);
+         pky_info_out.column_name := pkycols (pkycols.FIRST).NAME;
+         pky_info_out.column_type := pkycols (pkycols.FIRST).TYPE;
+      END;
+
+      PROCEDURE set_type_elements (
+         tab_in             IN       VARCHAR2
+        ,rec_in             IN       srf_col_repository%ROWTYPE
+        ,datatype_out       OUT      VARCHAR2
+        ,subtype_decl_out   OUT      VARCHAR2
+      )
+      IS
+      BEGIN
+         IF rec_in.data_type IS NOT NULL
+         THEN
+            subtype_decl_out :=
+                   subtype_declaration
+                      (rec_in.column_name, rec_in.data_type);
+            datatype_out := subtype_name (rec_in.column_name);
+         ELSE
+            subtype_decl_out := NULL;
+            datatype_out := tab_in || '.' || rec_in.column_name || '%TYPE';
+         END IF;
+      END set_type_elements;
+
+      PROCEDURE gen_package_spec (
+         rec_in        IN   srf_tab_repository%ROWTYPE
+        ,pky_info_in   IN   pky_rec
+      )
+      IS
+         v_pkg       identifier_t := pkg_name (rec_in.table_name);
+         v_fulltab   identifier_t := rec_in.owner || '.' || v_tab;
+
+         PROCEDURE generate_col_functions
+         IS
+            l_subtype_declare   VARCHAR2 (200);
+            l_datatype          VARCHAR2 (200);
+         BEGIN
+            FOR colrec IN srf_col_cur (v_sch, v_tab)
+            LOOP
+               set_type_elements
+                  (v_fulltab, colrec, l_datatype, l_subtype_declare);
+               pl (l_subtype_declare);
+               -- Function for each specified column
+               pl
+                  (   'function '
+                   || colrec.column_name
+                   || ' ( '
+                   || pky_info_in.column_name
+                   || '_in IN '
+                   || v_fulltab
+                   || '.'
+                   || pky_info_in.column_name
+                   || '%TYPE) return '
+                   || l_datatype
+                   || ';'
+                  );
+               pl
+                  (   'function nrf_'
+                   || colrec.column_name
+                   || ' ('
+                   || colrec.column_name
+                   || '_in IN '
+                   || l_datatype
+                   || ') return BOOLEAN;'
+                  );
+            END LOOP;
+         END generate_col_functions;
+      BEGIN
+         pl ('create or replace package ' || v_pkg || ' is ');
+         pl
+            (   'function onerow ( '
+             || pky_info_in.column_name
+             || '_in IN '
+             || v_fulltab
+             || '.'
+             || pky_info_in.column_name
+             || '%TYPE) return '
+             || v_fulltab
+             || '%ROWTYPE;'
+            );
+         pl
+            (   'function nrf (rec_in IN '
+             || v_fulltab
+             || '%ROWTYPE) return BOOLEAN;'
+            );
+         generate_col_functions;
+         pl ('end ' || v_pkg || ';');
+         compile_output;
+      END;
+
+      PROCEDURE gen_package_body (
+         rec_in        IN   srf_tab_repository%ROWTYPE
+        ,pky_info_in   IN   pky_rec
+      )
+      IS
+         v_pkg       identifier_t := pkg_name (rec_in.table_name);
+         v_fulltab   identifier_t := rec_in.owner || '.' || v_tab;
+
+         PROCEDURE gen_retrieval_functions
+         IS
+            PROCEDURE generate_col_functions
+            IS
+               l_subtype_declare   VARCHAR2 (200);
+               l_datatype          VARCHAR2 (200);
+            BEGIN
+               FOR colrec IN srf_col_cur (v_sch, v_tab)
+               LOOP
+                  -- Function for each specified column
+                  set_type_elements
+                     (v_fulltab, colrec, l_datatype, l_subtype_declare);
+                  pl
+                     (   'function '
+                      || colrec.column_name
+                      || ' ( '
+                      || pky_info_in.column_name
+                      || '_in IN '
+                      || v_fulltab
+                      || '.'
+                      || pky_info_in.column_name
+                      || '%TYPE) return '
+                      || l_datatype
+                     );
+                  pl
+                     (   ' is retval '
+                      || l_datatype
+                      || ';'
+                      || ' begin select '
+                      || NVL (colrec.code, colrec.column_name)
+                      || ' into retval'
+                      || ' from '
+                      || v_fulltab
+                     );
+                  pl
+                     (   ' where '
+                      || pky_info_in.column_name
+                      || ' = '
+                      || pky_info_in.column_name
+                      || '_in; RETURN retval;'
+                     );
+                  pl
+                     (   'EXCEPTION
+			      WHEN NO_DATA_FOUND
+				  THEN
+					 RETURN srf.nrf_value ('''
+                      || v_tab
+                      || ''', '''
+                      || colrec.column_name
+                      || ''');'
+                      /* || NVL ('''' || colrec.nrf_value || '''', 'NULL') */
+                      || 'when too_many_rows then '
+                      || RTRIM
+                            (NVL (rec_in.too_many_rows_code, 'RAISE'), ';')
+                      || ';'
+                     );
+                  pl
+                     (   'when others then '
+                      || RTRIM (NVL (rec_in.when_others_code, 'RAISE'), ';')
+                      || ';'
+                      || ' end '
+                      || colrec.column_name
+                      || ';'
+                     );
+                  pl
+                     (   'function nrf_'
+                      || colrec.column_name
+                      || ' ('
+                      || colrec.column_name
+                      || '_in IN '
+                      || l_datatype
+                      || ') return BOOLEAN'
+                     );
+                  pl
+                     (   ' is begin return ('
+                      || colrec.column_name
+                      || '_in IS NULL AND srf.nrf_value ('''
+                      || v_tab
+                      || ''', '''
+                      || colrec.column_name
+                      || ''') IS NULL) OR '
+                      || colrec.column_name
+                      || '_in = srf.nrf_value ('''
+                      || v_tab
+                      || ''', '''
+                      || colrec.column_name
+                      || '''); end nrf_'
+                      || colrec.column_name
+                      || ';'
+                     );
+               END LOOP;
+            END generate_col_functions;
+         BEGIN
+            pl
+               (   'function onerow ( '
+                || pky_info_in.column_name
+                || '_in IN '
+                || v_fulltab
+                || '.'
+                || pky_info_in.column_name
+                || '%TYPE) return '
+                || v_fulltab
+                || '%ROWTYPE'
+               );
+            pl
+               (   ' is retval '
+                || v_fulltab
+                || '%ROWTYPE;'
+                || ' begin select * into retval'
+                || ' from '
+                || v_fulltab
+               );
+            pl
+               (   ' where '
+                || pky_info_in.column_name
+                || ' = '
+                || pky_info_in.column_name
+                || '_in; RETURN retval;'
+               );
+            pl
+               (   'EXCEPTION
+			      WHEN NO_DATA_FOUND
+				  THEN
+				     RETURN retval;'
+                /* V2 srf.nrf_value ('''
+                         || v_tab
+                         || ''');'
+                            V1 || NVL (rec_in.nrf_value, 'NULL')*/
+                || 'when too_many_rows then '
+                || RTRIM (NVL (rec_in.too_many_rows_code, 'RAISE'), ';')
+                || ';'
+               );
+            pl
+               (   'when others then '
+                || RTRIM (NVL (rec_in.when_others_code, 'RAISE'), ';')
+                || ';'
+                || ' end;'
+               );
+            pl
+               (   'function nrf (rec_in IN '
+                || v_fulltab
+                || '%ROWTYPE) return BOOLEAN'
+               );
+            pl
+               (   ' is begin return (rec_in.'
+                || pky_info_in.column_name
+                || ' IS NULL AND srf.nrf_value ('''
+                || v_tab
+                || ''') IS NULL) OR rec_in.'
+                || pky_info_in.column_name
+                || ' = srf.nrf_value ('''
+                || v_tab
+                || '''); end nrf;'
+               );
+            generate_col_functions;
+         END;
+
+         PROCEDURE gen_init_section
+         -- Only used for caching mechanism.
+         IS
+         BEGIN
+            pl ('BEGIN NULL; /*load_arrays;*/');
+         END;
+      BEGIN
+         pl ('create or replace package body ' || v_pkg || ' is ');
+         gen_retrieval_functions;
+         gen_init_section;
+         pl ('end ' || v_pkg || ';');
+         compile_output;
+      END;
+   BEGIN
+      FOR rec IN srf_cur (v_sch, v_tab)
+      LOOP
+         validate_and_initialize (rec, pky_info);
+         gen_package_spec (rec, pky_info);
+         gen_package_body (rec, pky_info);
+      END LOOP;
+   END genpkgs;
+
+   FUNCTION nrf_value (
+      tab_in      IN   VARCHAR2
+     ,column_in   IN   VARCHAR2 := NULL
+     ,sch_in      IN   VARCHAR2 := NULL
+   )
+      RETURN VARCHAR2
+   IS
+      v_tab        identifier_t                        := UPPER (tab_in);
+      v_sch        identifier_t                 := NVL
+                                                     (UPPER (sch_in), USER);
+
+      CURSOR srf_cur
+      IS
+         SELECT nrf_value
+           FROM srf_repository;
+
+      CURSOR srf_tab_cur
+      IS
+         SELECT nrf_value
+           FROM srf_tab_repository
+          WHERE owner = v_sch AND table_name = v_tab;
+
+      CURSOR srf_col_cur
+      IS
+         SELECT nrf_value
+           FROM srf_col_repository
+          WHERE owner = v_sch
+            AND table_name = v_tab
+            AND column_name = UPPER (column_in);
+
+      l_rowfound   BOOLEAN;
+      retval       srf_tab_repository.nrf_value%TYPE;
+   BEGIN
+      IF column_in IS NULL
+      THEN
+         -- Extract SRF repository information for this table.
+         OPEN srf_tab_cur;
+         FETCH srf_tab_cur INTO retval;
+         l_rowfound := srf_tab_cur%FOUND;
+         CLOSE srf_tab_cur;
+
+         IF NOT l_rowfound
+         THEN
+            -- Check for a global setting.
+            OPEN srf_cur;
+            FETCH srf_cur INTO retval;
+            l_rowfound := srf_cur%FOUND;
+            CLOSE srf_cur;
+         END IF;
+      ELSE
+         OPEN srf_col_cur;
+         FETCH srf_col_cur INTO retval;
+         l_rowfound := srf_col_cur%FOUND;
+         CLOSE srf_col_cur;
+      END IF;
+
+      assert
+         (v_sch
+         ,v_tab
+         ,l_rowfound
+         ,    'No SRF repository information for '
+           || v_sch
+           || '.'
+           || v_tab
+           || '.'
+           || column_in
+         );
+      --
+      RETURN retval;
+   END nrf_value;
+END srf;
+/

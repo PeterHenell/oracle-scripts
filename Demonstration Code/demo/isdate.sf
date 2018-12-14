@@ -1,0 +1,19 @@
+/* Formatted by PL/Formatter v3.1.2.1 on 2001/04/04 19:58 */
+
+CREATE OR REPLACE FUNCTION isdate (
+   stg_in    IN   VARCHAR2,
+   mask_in   IN   VARCHAR2
+)
+   RETURN BOOLEAN
+IS
+   val   DATE;
+BEGIN
+   val := TO_DATE (stg_in, mask_in);
+   RETURN TRUE;
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      RETURN FALSE;
+END;
+/
+

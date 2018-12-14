@@ -1,0 +1,14 @@
+CREATE TYPE empobj AS OBJECT (ename VARCHAR2(100), empno INTEGER);
+/
+CREATE TABLE emp OF empobj;
+/
+CREATE TABLE empNew OF empobj OID AS emp
+/
+INSERT INTO empNew en (SYS_NC_OID$, en)
+  SELECT SYS_NC_OID$, VALUE (eo) FROM emp eo
+/
+EXECUTE DBMS_DDL.ALTER_TABLE_REFERENCEABLE ('EMPNEW', USER, USER);
+
+RENAME emp TO empOld;
+
+RENAME empNew TO emp;

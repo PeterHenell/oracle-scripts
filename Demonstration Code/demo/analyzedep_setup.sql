@@ -1,0 +1,117 @@
+/* Author: Steven Feuerstein */
+
+/* Create elements of code required to generate full set of
+   dependencies. */
+   
+connect sys/sys
+GRANT SELECT ON DBA_OBJECT_SIZE TO PUBLIC;
+GRANT SELECT ON DBA_DEPENDENCIES TO PUBLIC;
+
+connect scott/tiger
+
+DROP TABLE alldeps;
+
+CREATE TABLE alldeps (
+   owner VARCHAR2(30),
+   name VARCHAR2(30),
+   toplevel CHAR(1),
+   refowner VARCHAR2(30),
+   refname VARCHAR2(30)
+   );
+grant select,insert,delete on alldeps to public;
+   
+ALTER TABLE alldeps ADD CONSTRAINT alldeps_pk
+   PRIMARY KEY (owner, name, refowner, refname, toplevel);   
+
+CREATE INDEX alldeps_i1 ON alldeps (name, refname);
+
+DROP TABLE depsummary;
+
+CREATE TABLE depsummary (
+   owner VARCHAR2(30),
+   name VARCHAR2(30),
+   numdeps INTEGER,
+   source_size INTEGER,
+   parsed_size INTEGER,
+   code_size INTEGER
+   );
+grant select,insert,delete on depsummary to public;
+
+ALTER TABLE depsummary ADD CONSTRAINT depsummary_pk
+   PRIMARY KEY (owner, name);   
+
+CREATE OR REPLACE PROCEDURE getalldeps (
+   o_name IN VARCHAR2,
+   orig_name IN VARCHAR2 := NULL,
+   sch IN VARCHAR2 := USER,
+   exclude IN VARCHAR2 := NULL)
+IS
+   oname VARCHAR2(30);
+   origname VARCHAR2(30);
+   v_toplevel alldeps.toplevel%TYPE := 'F';
+   v_exclude VARCHAR2(200) := NVL (UPPER (exclude), 'XXXX');
+   
+   CURSOR obj_cur (oname VARCHAR2, sch VARCHAR2)
+   IS
+      SELECT object_name FROM ALL_OBJECTS
+       WHERE owner = sch
+         AND object_name LIKE oname
+         AND object_type NOT IN ('TABLE', 'VIEW', 'SYNONYM', 'INDEX');
+       
+   CURSOR dep_cur (oname VARCHAR2, sch VARCHAR2)
+   IS
+      SELECT referenced_owner, referenced_name 
+        FROM DBA_DEPENDENCIES
+       WHERE owner = sch
+         AND name = oname
+         AND referenced_name != origname
+         AND referenced_owner NOT IN ('SYSTEM', 'SYS')
+         AND referenced_type NOT IN ('SYNONYM', 'NON-EXISTENT')
+       MINUS
+      SELECT refowner, refname
+        FROM alldeps
+       WHERE owner = sch
+         AND name = origname
+         AND v_toplevel = 'F';
+BEGIN
+   oname := UPPER (o_name);
+   origname := NVL (orig_name, oname);
+
+   /* Delete at top level only */
+   IF orig_name IS NULL
+   THEN
+      v_toplevel := 'T';
+      DELETE FROM alldeps 
+       WHERE owner = sch AND name = oname;
+   END IF;
+   
+   FOR obj_r IN obj_cur (oname, sch)
+   LOOP
+      FOR dep_r IN dep_cur (oname, sch)
+      LOOP
+         BEGIN
+            INSERT INTO alldeps VALUES (
+               sch,
+               origname, 
+               v_toplevel,
+               dep_r.referenced_owner,
+               dep_r.referenced_name);
+         EXCEPTION
+            WHEN DUP_VAL_ON_INDEX THEN NULL;
+         END;
+         
+         IF INSTR (v_exclude, dep_r.referenced_name) = 0
+         THEN
+            getalldeps (dep_r.referenced_name, origname, dep_r.referenced_owner); 
+         END IF;
+      END LOOP;
+   END LOOP;
+   COMMIT;
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      DBMS_OUTPUT.PUT_LINE (SQLERRM);
+      RAISE;
+END;
+/
+GRANT EXECUTE ON getalldeps to PUBLIC;

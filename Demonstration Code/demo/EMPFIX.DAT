@@ -1,0 +1,14 @@
+7839 KING      PRESIDENT    November 17, 1981 00:00:00 5000          10    
+7698 BLAKE     MANAGER  7839May 1, 1981 00:00:00       2850          30    
+7782 CLARK     MANAGER  7839June 9, 1981 00:00:00      2450          10    
+7566 JONES     MANAGER  7839April 2, 1981 00:00:00     2975          20    
+7654 MARTIN    SALESMAN 7698September 28, 1981 00:00:001250   1400   30    
+7499 ALLEN     SALESMAN 7698February 20, 1981 00:00:00 1600   300    30    
+7844 TURNER    SALESMAN 7698September 8, 1981 00:00:00 1500   0      30    
+7900 JAMES     CLERK    7698December 3, 1981 00:00:00  950           30    
+7521 WARD      SALESMAN 7698February 22, 1981 00:00:00 1250   500    30    
+7902 FORD      ANALYST  7566December 3, 1981 00:00:00  3000          20    
+7369 SMITH     CLERK    7902December 17, 1980 00:00:00 800           20    
+7788 SCOTT     ANALYST  7566December 9, 1982 00:00:00  3000          20    
+7876 ADAMS     CLERK    7788January 12, 1983 00:00:00  1100          20    
+7934 MILLER    CLERK    7782January 23, 1982 00:00:00  1300          10    

@@ -1,0 +1,194 @@
+-- syscache.pkg
+
+DROP TABLE code;
+
+CREATE TABLE code (
+   codenum INTEGER,
+   codedesc VARCHAR2(80)
+   );
+
+INSERT INTO code VALUES (100, 'PL/SQL');
+INSERT INTO code VALUES (200, 'JAVA');
+INSERT INTO code VALUES (300, 'SQL');
+INSERT INTO code VALUES (400, 'TRANSACT-SQL');
+INSERT INTO code VALUES (500, 'ADA');
+INSERT INTO code VALUES (600, 'FORTRAN');
+
+CREATE OR REPLACE PACKAGE codecache
+/*
+|| Global -- cross-session -- cache of the code table.
+*/
+IS
+   PROCEDURE start_handler (background IN BOOLEAN := TRUE);
+
+   PROCEDURE stop_handler;
+
+   PROCEDURE request_data (codenum_in IN code.codenum%TYPE);
+
+   PROCEDURE receive_data (
+      rec_out IN OUT code%ROWTYPE, stat_out IN OUT INTEGER);
+
+   PROCEDURE handle_request;
+
+   PROCEDURE setwait (wait_in IN INTEGER);
+END codecache;
+/
+
+CREATE OR REPLACE PACKAGE BODY codecache
+IS
+   c_tab CONSTANT VARCHAR2(30) := 'code';
+
+   c_request_pipe CONSTANT CHAR(10) := c_tab || 'cache';
+
+   c_stop CONSTANT CHAR(6) := '*STOP*';
+
+   c_timed_out CONSTANT INTEGER := 1;
+   c_pipe_full CONSTANT INTEGER := 2;
+
+   g_last_codenum code.codenum%TYPE;
+
+   g_wait PLS_INTEGER := .5;
+
+   PROCEDURE start_handler (background IN BOOLEAN := TRUE)
+   IS
+      v_job PLS_INTEGER;
+   BEGIN
+      IF background
+      THEN
+         /* Use DBMS_JOB to spawn a process. */
+         DBMS_JOB.SUBMIT (
+            job => v_job,
+            what => 'BEGIN ' || c_tab || 'cache.handle_request; END;',
+            next_date => SYSDATE,
+            interval => NULL
+            );
+         COMMIT;
+      ELSE
+         handle_request;
+      END IF;
+   END;
+
+   PROCEDURE irequest (pipe_in IN VARCHAR2, codenum_in IN code.codenum%TYPE)
+   IS      
+      stat PLS_INTEGER;
+   BEGIN
+      /* Put a message in the pipe. */
+      DBMS_PIPE.RESET_BUFFER;
+      DBMS_PIPE.PACK_MESSAGE (pipe_in);
+      DBMS_PIPE.PACK_MESSAGE (codenum_in);
+      stat := DBMS_PIPE.SEND_MESSAGE (
+         c_request_pipe, 
+         timeout => 0);
+   END;     
+
+   PROCEDURE stop_handler
+   IS
+   BEGIN
+      irequest (c_stop, NULL);
+   END;
+
+   PROCEDURE request_data (codenum_in IN code.codenum%TYPE)
+   IS      
+      stat PLS_INTEGER;
+   BEGIN
+      irequest (DBMS_PIPE.UNIQUE_SESSION_NAME, codenum_in);
+      g_last_codenum := codenum_in;
+   END;     
+
+   PROCEDURE receive_data (
+      rec_out IN OUT code%ROWTYPE, stat_out IN OUT INTEGER)
+   IS
+   BEGIN
+      /* Set value to return failure. */
+      stat_out := NULL;
+
+      /* Grab the code number and description from the pipe. */
+      stat_out := DBMS_PIPE.RECEIVE_MESSAGE (
+         DBMS_PIPE.UNIQUE_SESSION_NAME, timeout => g_wait);
+
+      IF stat_out = 0
+      THEN
+         DBMS_PIPE.UNPACK_MESSAGE (rec_out.codenum);
+         DBMS_PIPE.UNPACK_MESSAGE (rec_out.codedesc);
+      ELSE
+         /* Get the data from the database. */
+         DECLARE
+            CURSOR code_cur
+            IS
+               SELECT * FROM code WHERE codenum = g_last_codenum;
+         BEGIN
+            p.l ('Retrieving from database...');
+            OPEN code_cur; 
+            FETCH code_cur INTO rec_out;
+            IF code_cur%found 
+            THEN 
+               stat_out := 0;
+				ELSE
+				   stat_out := NULL;
+            END IF;
+            CLOSE code_cur;
+         END;
+      END IF;
+   END;
+
+   PROCEDURE handle_request
+   IS
+      v_code code.codenum%TYPE;
+      v_sess VARCHAR2(128);
+      stat PLS_INTEGER;
+
+      TYPE code_tabtype IS TABLE OF code%ROWTYPE INDEX BY BINARY_INTEGER;
+      codetab code_tabtype;
+
+      PROCEDURE send_data (
+         pipe_in IN VARCHAR2,
+         code_in IN code.codenum%TYPE,
+         desc_in IN code.codedesc%TYPE)
+      IS
+      BEGIN
+         DBMS_PIPE.PACK_MESSAGE (code_in);
+         DBMS_PIPE.PACK_MESSAGE (desc_in);
+
+         DBMS_PIPE.PURGE (pipe_in);
+         stat := DBMS_PIPE.SEND_MESSAGE (pipe_in);
+      END;
+   BEGIN
+      /* Load up the cache with data from the table to be shared. */
+      FOR rec IN (SELECT * FROM code)
+      LOOP
+         codetab (rec.codenum) := rec;
+      END LOOP;
+
+      LOOP
+         /* Check the pipe for a request; use maximum wait. */
+         stat := DBMS_PIPE.RECEIVE_MESSAGE (c_request_pipe);
+
+         IF stat = 0
+         THEN
+            DBMS_PIPE.UNPACK_MESSAGE (v_sess);
+            DBMS_PIPE.UNPACK_MESSAGE (v_code);
+
+            EXIT WHEN v_sess = c_stop;
+
+            /* Fulfill request. */
+            BEGIN
+               DBMS_PIPE.RESET_BUFFER;
+               send_data (v_sess, v_code, codetab(v_code).codedesc);
+            EXCEPTION 
+               WHEN NO_DATA_FOUND
+               THEN
+                  send_data (v_sess, v_code, NULL);
+            END;
+         END IF;
+      END LOOP;
+   END;
+
+   PROCEDURE setwait (wait_in IN INTEGER)
+   IS
+   BEGIN
+      g_wait := wait_in;
+   END;
+
+END codecache;
+/
+

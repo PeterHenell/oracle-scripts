@@ -1,0 +1,52 @@
+CREATE OR REPLACE FUNCTION oraversion
+   RETURN NUMBER
+IS
+   l_v_number     PLS_INTEGER;
+   l_r_number     PLS_INTEGER;
+   l_oraversion   NUMBER;
+   l_version      product_component_version.VERSION%TYPE;
+   l_dotloc       PLS_INTEGER;
+BEGIN
+   /* 1.6.1 Use DBMS_DB_VERSION within dynamic SQL. This will be the most
+      reliable way going forward. If it fails, then fall back on
+      product component_version. */
+   BEGIN
+      EXECUTE IMMEDIATE 'BEGIN :version := DBMS_DB_VERSION.VERSION;
+                 :release := DBMS_DB_VERSION.release;
+           END;'
+                  USING OUT l_v_number, OUT l_r_number;
+
+      l_oraversion := l_v_number + l_r_number / 10;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         -- Get version of PL/SQL specifically.
+         SELECT VERSION
+           INTO l_version
+           FROM product_component_version pcv
+          WHERE RTRIM (LTRIM (UPPER (product))) = 'PL/SQL';
+
+         /*
+         Now, find the second "." and return everything before it as the
+         Oracle version.
+         */
+         l_dotloc := INSTR (l_version, '.', 1, 2);
+
+         IF l_dotloc = 0
+         THEN
+            -- In Europe, "," is the delimiter instead of ".", so check for that.
+            -- There aren't two dots. Return the whole thing.
+            l_dotloc := INSTR (l_version, ',', 1, 2);
+         END IF;
+
+         l_oraversion := TO_NUMBER (SUBSTR (l_version, 1, l_dotloc - 1));
+   END;
+
+   RETURN l_oraversion;
+END oraversion;
+/
+
+BEGIN
+   DBMS_OUTPUT.put_line (oraversion ());
+END;
+/

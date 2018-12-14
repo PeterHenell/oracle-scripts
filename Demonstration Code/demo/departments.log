@@ -1,0 +1,652 @@
+1,Human Resources,Chicago
+2,Information Services,New York
+
+ LOG file opened at 12/12/10 07:49:45
+
+Field Definitions for table DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (20)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 12/12/10 07:49:45
+
+Field Definitions for table DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (20)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 12/12/10 07:50:01
+
+Field Definitions for table DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (20)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 12/12/10 07:51:09
+
+Field Definitions for table DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (20)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+KUP-04021: field formatting error for field DEPARTMENT_NAME
+KUP-04026: field too long for datatype
+KUP-04101: record 1 rejected in file c:\work\demo-seminar\departments.ctl
+KUP-04021: field formatting error for field DEPARTMENT_NAME
+KUP-04026: field too long for datatype
+KUP-04101: record 2 rejected in file c:\work\demo-seminar\departments.ctl
+
+
+ LOG file opened at 12/12/10 07:51:09
+
+Field Definitions for table DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (20)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+KUP-04021: field formatting error for field DEPARTMENT_NAME
+KUP-04026: field too long for datatype
+KUP-04101: record 1 rejected in file c:\work\demo-seminar\departments.ctl
+KUP-04021: field formatting error for field DEPARTMENT_NAME
+KUP-04026: field too long for datatype
+KUP-04101: record 2 rejected in file c:\work\demo-seminar\departments.ctl
+
+
+ LOG file opened at 12/12/10 07:51:21
+
+Field Definitions for table DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (20)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+KUP-04021: field formatting error for field DEPARTMENT_NAME
+KUP-04026: field too long for datatype
+KUP-04101: record 1 rejected in file c:\work\demo-seminar\departments.ctl
+KUP-04021: field formatting error for field DEPARTMENT_NAME
+KUP-04026: field too long for datatype
+KUP-04101: record 2 rejected in file c:\work\demo-seminar\departments.ctl
+
+
+ LOG file opened at 12/12/10 07:51:38
+
+Field Definitions for table DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (20)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+KUP-04021: field formatting error for field DEPARTMENT_NAME
+KUP-04026: field too long for datatype
+KUP-04101: record 1 rejected in file c:\work\demo-seminar\departments.ctl
+KUP-04021: field formatting error for field DEPARTMENT_NAME
+KUP-04026: field too long for datatype
+KUP-04101: record 2 rejected in file c:\work\demo-seminar\departments.ctl
+
+
+ LOG file opened at 12/12/10 07:51:38
+
+Field Definitions for table DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (20)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+KUP-04021: field formatting error for field DEPARTMENT_NAME
+KUP-04026: field too long for datatype
+KUP-04101: record 1 rejected in file c:\work\demo-seminar\departments.ctl
+KUP-04021: field formatting error for field DEPARTMENT_NAME
+KUP-04026: field too long for datatype
+KUP-04101: record 2 rejected in file c:\work\demo-seminar\departments.ctl
+
+
+ LOG file opened at 12/12/10 07:52:35
+
+Field Definitions for table DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (40)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 12/12/10 07:52:35
+
+Field Definitions for table DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (40)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 12/12/10 07:52:35
+
+Field Definitions for table DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (40)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 12/12/10 07:53:01
+
+Field Definitions for table DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (40)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 12/12/10 07:53:08
+
+Field Definitions for table DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (40)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 12/12/10 08:04:28
+
+Field Definitions for table DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (40)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 12/12/10 08:05:18
+
+Field Definitions for table DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (40)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 12/12/10 08:05:31
+
+Field Definitions for table DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (40)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 08/25/11 09:37:01
+
+Field Definitions for table PLCH_DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (40)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 08/25/11 09:37:02
+
+Field Definitions for table PLCH_DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (40)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 08/25/11 09:37:21
+
+Field Definitions for table PLCH_DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (40)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 08/25/11 09:37:21
+
+Field Definitions for table PLCH_DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (40)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 08/25/11 09:37:52
+
+Field Definitions for table PLCH_DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (40)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 08/25/11 09:37:52
+
+Field Definitions for table PLCH_DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (40)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 08/25/11 09:38:52
+
+Field Definitions for table PLCH_DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (40)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 08/25/11 09:38:52
+
+Field Definitions for table PLCH_DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (40)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 12/25/11 08:21:53
+
+Field Definitions for table DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (40)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 12/25/11 09:52:21
+
+Field Definitions for table DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (40)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+
+
+ LOG file opened at 12/25/11 09:52:27
+
+Field Definitions for table DEPARTMENTS_EXT
+  Record format DELIMITED BY NEWLINE
+  Data in file has same endianness as the platform
+  Rows with all null fields are accepted
+
+  Fields in Data Source: 
+
+    DEPARTMENT_ID                   Integer external (6)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_NAME                 CHAR (40)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader
+    DEPARTMENT_LOCATION             CHAR (25)
+      Terminated by ","
+      Enclosed by """ and """
+      Trim whitespace same as SQL Loader

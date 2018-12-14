@@ -1,0 +1,605 @@
+<H1 ALIGN="CENTER"><A NAME="top"></A><FONT SIZE="6" FACE="Arial">Table Encapsulation Package for EMP</FONT></H1>
+<H1><A HREF="tedoc.htm"><FONT SIZE="2" FACE="Arial">Overview</FONT></A></H1>
+<H1><A HREF="#tips"><FONT SIZE="2" FACE="Arial">Tips and Usage Notes</FONT></A></H1>
+<H1><A HREF="#The Fine Print"><FONT SIZE="2" FACE="Arial">The Fine Print</FONT></A></H1>
+<H1><A HREF="#Data Structure Types"><FONT SIZE="2" FACE="Arial">Data Structure Types</FONT></A></H1>
+<H1><A HREF="#Cursors"><FONT SIZE="2" FACE="Arial">Cursors</FONT></A></H1>
+<H1><A HREF="#Validation Programs"><FONT SIZE="2" FACE="Arial">Validation Programs</FONT></A></H1>
+<H1><A HREF="#Retrieval Programs"><FONT SIZE="2" FACE="Arial">Retrieval Programs</FONT></A></H1>
+<H1><A HREF="#Row Count Functions"><FONT SIZE="2" FACE="Arial">Row Count Functions</FONT></A></H1>
+<H1><A HREF="#Insert Programs"><FONT SIZE="2" FACE="Arial">Insert Programs</FONT></A></H1>
+<H1><A HREF="#Update Programs"><FONT SIZE="2" FACE="Arial">Update Programs</FONT></A></H1>
+<H1><A HREF="#Delete Programs"><FONT SIZE="2" FACE="Arial">Delete Programs</FONT></A></H1>
+<H1><A NAME="Overview"></A><FONT SIZE="5" FACE="Arial">Overview</FONT></H1>
+<P>This document provides information on how to use the table encapsulator package named te_emp. This
+package allows you to perform all SQL-related actions against the table, EMP, through a PL/SQL interface
+or API (application programmatic interface).</P>
+<P>Instead of writing an UPDATE SQL statement in your program, for example, you would call the te_emp.upd
+procedure. Instead of writing a SELECT statement to retrieve a row from EMP for a specific primary key, you
+would call the te_emp.onerow function. Why bother with these programs? Why not simply
+access the table directly? By using the table encapsulator package, you will achieve a higher level of performance
+in your application, it will be easier to maintain your code, and you will be able to write your code faster.</P>
+<P>The documentation for the API is broken out into the following categories:</P>
+
+<UL>
+	<LI>Data Structure Types - TYPE statements declaring data structures (mostly record TYPES) which you will use to
+	declare records in your programs.
+	<LI>Cursors - pre-defined cursors which retrieve rows of information from EMP. As a rule, you should never
+	write your own cursors against EMP. Check instead the set of cursors already created for you in te_emp.
+	If the query you need is not present, contact your program administrator to enhance the package.
+	<LI>Cursor Management - procedures to open and close the cursors. You should use these programs rather than issuing
+	your own OPEN and CLOSE statements, because they have additional features built into them.
+</UL>
+
+
+<UL>
+	<LI>Retrieval Programs - a set of functions that you can use to retrieve data from the table for specific primary
+	key and foreign key values.
+</UL>
+
+
+<UL>
+	<LI>Row Count Programs - a set of functions that return the number of rows in the table, the entire table, for
+	a specific primary key, and for foreign key values.
+</UL>
+
+
+<UL>
+	<LI>Insert Programs - one or more procedures to execute an INSERT statement to add rows to EMP.
+	<LI>Update Programs - one or more procedures to execute an UDPATE statement to modify rows in EMP.
+	<LI>Delete Programs - one or more procedures to execute an DELETE statement to remove rows from EMP.
+</UL>
+
+
+<UL>
+	<LI>Memory Management - you can use the pinme procedure to pin the package into shared memory, making sure the
+	code is always available when needed.
+</UL>
+
+<P><A HREF="#top">Return to top</A></P>
+<H1><A NAME="tips"></A><FONT SIZE="5" FACE="Arial">Tips and Usage Notes</FONT></H1>
+<P>1. Referencing Elements of Package: Unless otherwise noted, whenever you use a code element defined in te_emp,
+you must preface that element with &quot;te_emp.&quot;, as in:</P>
+<PRE>te_emp.ins (...);</PRE>
+<P>2. Avoiding System-Assigned Database Object Names: You may encounter package elements with names like &quot;SYS_C00642&quot;.
+This will occur when table constraints (including primary keys, foreign keys and check constraints) are not given
+names at the time they are created. Instead, Oracle assigns a name using a sequential number. Obviously, this is
+not very readable code. There are two ways to get around these undesirable names: ask the DBA to provide informative
+names along with the constraint creation statements or use the PL/Generator aliasing feature (Coding Standards
+screen) to provide names for these constraints which will impact only the generated code.</P>
+<P>The first approach, changing the name of the constraint in the database, is the recommended approach.</P>
+<P>3. Choosing Between Overloaded Programs: Many of the programs in this package are overloaded. That means that
+there are more than one program with the same name. In most cases, the difference between these overloadings is
+that one program relies on passing individual, scalar values as arguments, while others allow you to pass record
+structures.</P>
+<P>Whenever possible, you should rely on parameter lists that pass records, instead of individual values. It is
+quite likely that your table structure will change over time, and with the table encapsulator package. If you always
+work with records, you will keep to an absolute minimum the number of programs already relying on the package's
+API which have to be fixed.</P>
+<P><A HREF="#top">Return to top</A></P>
+<H1><A NAME="The Fine Print"></A><FONT SIZE="5" FACE="Arial">The Fine Print</FONT></H1>
+<P>This document was generated using Quest Software's PL/Generator (www.Quest Software.com) version PRO-2000.2.8.</P>
+<P>Generation date/time: May       09, 2003 16:31:43</P>
+<P><A HREF="#top">Return to top</A></P>
+<H2><A NAME="Data Structure Types"></A><FONT FACE="Arial">Data Structure Types</FONT></H2>
+<P>This section documents the PL/SQL TYPE statements declaring data structures (mostly record TYPES) which you
+will use to declare records in your programs.</P>
+<P>The te_emp.pky_rt record TYPE defines a record structure for the primary key of EMP.
+This record TYPE is used in various programs in the package, including isnullpky and del.</P>
+<PRE>   TYPE te_emp.pky_rt IS RECORD (
+      EMPNO EMP.EMPNO%TYPE,
+      found BOOLEAN,
+      notfound BOOLEAN
+      );</PRE>
+<P>Here is an example of using the primary key record TYPE:</P>
+<PRE>DECLARE
+   pky_rec te_emp.pky_rt;
+BEGIN
+   pky_rec.EMPNO := v_EMPNO; /* set in outer block */
+
+   te_emp.del (
+      pky_rec,
+      v_numrows);
+END;
+/
+</PRE>
+<P><A HREF="#top">Return to top</A></P>
+<P><A NAME="Cursors"></A><FONT SIZE="5" FACE="Arial"><B>Cursors</B></FONT></P>
+<P>This section documents the pre-defined cursors that retrieve rows of information from EMP. As a rule,
+you should never write your own cursors against EMP. Check instead the set of cursors already created for
+you in te_emp. If the query you need is not present, contact your program administrator to enhance
+the package. If you take this approach, you will improve the performance of your application by increasing the
+usage of pre-parsed cursors in the SGA. You will also make it much easier to maintain the application code as the
+underlying table changes.</P>
+<P>The te_emp.allbypky_cur cursor returns the specified columns for all rows, ordered by the
+primary key. Here is the definition of that cursor:</P>
+<PRE>   CURSOR te_emp.allbypky_cur
+   IS
+      SELECT *
+        FROM EMP
+       ORDER BY
+         EMPNO
+      ;
+</PRE>
+<P>The te_emp.allforpky_cur cursor returns the specified columns for a single row identified
+by the primary key. Here is the definition of that cursor:</P>
+<PRE>   CURSOR te_emp.allforpky_cur (
+      empno_in IN EMP.EMPNO%TYPE
+      )
+   IS
+      SELECT *
+        FROM EMP
+       WHERE
+         EMPNO = empno_in
+      ;
+</PRE>
+<P>The te_emp.fk_deptno_all_cur cursor returns the specified columns for a all rows identified by the
+foreign key, fk_deptno. Here is the definition of that cursor:</P>
+<PRE>   CURSOR te_emp.fk_deptno_all_cur (
+      deptno_in IN EMP.DEPTNO%TYPE
+      )
+   IS
+      SELECT *
+        FROM EMP
+       WHERE
+          DEPTNO = deptno_in
+          ;
+</PRE>
+<P><FONT SIZE="5" FACE="Arial"><B>Cursor Management</B></FONT></P>
+<P>This package not only provides you with pre-built cursors, but also offers a set of open and close procedures
+to make it easier for you to work with the cursors. As you will see below, these programs offer some special features
+you are unlikely to code yourself, so you will be much better off relying on the te_emp open and close
+procedures instead of issuing explicit OPEN and CLOSE statements yourself.</P>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Open Cursors</B></I></FONT></P>
+<P>Each cursor defined in the package has a corresponding open procedure. Each of these procedures has a final
+close_if_open parameter. This parameter controls the behavior of the open request in cases when the cursor is already
+open (packaged cursors stay open until you close them explicitly. This is different behavior from locally declared
+cursors, which close automatically when the block in which they were declared terminates).</P>
+<P>If you pass TRUE for this parameter (the default), then the procedure will close the cursor if it is already
+open. If you pass FALSE, then the request to open the cursor is <I>ignored</I> if the cursor is already open. Why
+would you pass FALSE for close_if_open? Your application might be architected so that a particular cursor stays
+open across multiple program calls, allowing you to fetch additional rows from any one of those programs. In this
+case, you will want to make sure the cursor is open before you fetch, but you will not want any of the programs
+to close the cursor prematurely.</P>
+<P>The te_emp.open_allbypky_cur closes the te_emp.allbypky_cur cursor
+documented in the previous section.</P>
+<PRE>   PROCEDURE te_emp.open_allbypky_cur (
+      close_if_open IN BOOLEAN := TRUE
+      );
+</PRE>
+<P>The te_emp.open_allforpky_cur closes the te_emp.allforpky_cur cursor
+documented in the previous section.</P>
+<PRE>PROCEDURE te_emp.open_allforpky_cur (
+      empno_in IN EMP.EMPNO%TYPE,
+      close_if_open IN BOOLEAN := TRUE
+      );
+</PRE>
+<P>The te_emp.open_fk_deptno_all_cur closes the te_emp.fk_deptno_all_cur cursor documented
+in the previous section.</P>
+<PRE>   PROCEDURE te_emp.open_fk_deptno_all_cur (
+      deptno_in IN EMP.DEPTNO%TYPE,
+      close_if_open IN BOOLEAN := TRUE
+      );
+</PRE>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Close Cursors</B></I></FONT></P>
+<P>Each cursor defined in the package has a corresponding close procedure. These procedures will only close their
+respective cursors if they are open at the time the procedures are called. In addition, there is a single procedure,
+te_emp.closeall, which closes any open cursors associated with this
+package.</P>
+<P>The following procedure closes the te_emp.allforpky_cur cursor.</P>
+<PRE>   PROCEDURE te_emp.close_allforpky_cur;
+</PRE>
+<P>The following procedure closes the te_emp.allbypky_cur cursor.</P>
+<PRE>   PROCEDURE te_emp.close_allbypky_cur;
+</PRE>
+<P>The following procedure closes the te_emp.fk_deptno_all_cur cursor.</P>
+<PRE>   PROCEDURE te_emp.close_fk_deptno_all_cur;
+</PRE>
+<P>The following procedure closes any open cursors that are associated with this package.</P>
+<PRE>   PROCEDURE te_emp.closeall;
+</PRE>
+<P><A HREF="#top">Return to top</A></P>
+
+
+<P><A NAME="Validation Programs"></A><FONT SIZE="5" FACE="Arial"><B>Validation Programs</B></FONT></P>
+
+<P>The programs in this section can be used to validate data associated with EMP. These validations may be
+used to confirm the presence of a primary key and check for record equality. If there arecheck constraints stored
+in the database for this table, you will also find functions that validate (mirror) those constraints for values
+you pass to it.</P>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Check for Non-NULL Primary Key</B></I></FONT></P>
+<P>Use the isnullpky function to check easily that all columns in the primary key are not NULL. You
+can use this function to validate that the primary key or the row returned by a call to a function is valid.</P>
+<PRE>   FUNCTION te_emp.isnullpky (
+      rec_in IN EMP%ROWTYPE
+      )
+   RETURN BOOLEAN;
+</PRE>
+<PRE>   FUNCTION te_emp.isnullpky (
+      rec_in IN pky_rt
+      )
+   RETURN BOOLEAN;
+</PRE>
+<P>The following code illustrates how you can put these functions to use.</P>
+<PRE>DECLARE
+   v_row EMP%ROWTYPE;
+BEGIN
+   v_row := te_emp.onerow (
+      v_EMPNO
+      );</PRE>
+
+<PRE>   IF te_emp.isnullpky (v_row)
+   THEN
+      DBMS_OUTPUT.PUT_LINE ('Row not found for specified primary key.');
+   ELSE
+      process_data (v_row);
+   END IF;
+END;
+/</PRE>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Record Equality Checks</B></I></FONT></P>
+<P>PL/SQL does not allow you to perform a record-level comparison of two records for equality. This package, however,
+contains two functions - overloaded as te_emp.recseq - which emulate record-level equality checks.</P>
+<P>You can provide as an argument a records of the following type(s) to the te_emp.recseq function:</P>
+<P>A record defined with EMP%ROWTYPE</P>
+
+<UL>
+	<LI>A record defined with te_emp.pky_rt
+</UL>
+
+<P>The header for the table-record version is:</P>
+<PRE>   FUNCTION recseq (rec1 IN EMP%ROWTYPE, rec2 IN EMP%ROWTYPE)
+      RETURN BOOLEAN;
+</PRE>
+<P>The header for the primary key-record version is:</P>
+<PRE>   FUNCTION recseq (rec1 IN pky_rt, rec2 IN pky_rt) RETURN BOOLEAN;
+</PRE>
+<P>Here is an example of using the recseq function to check equality between two records:</P>
+<PRE>DECLARE
+   rec1 EMP%ROWTYPE;
+   rec2 EMP%ROWTYPE;
+BEGIN
+   rec1 := te_emp.onerow (
+      v_EMPNO
+      );
+   IF te_emp.recseq (rec1, rec2) /* Will return FALSE */
+   THEN
+      ...
+   END IF;
+END;
+/</PRE>
+<P><A HREF="#top">Return to top</A></P>
+<P><A NAME="Retrieval Programs"></A><FONT SIZE="5" FACE="Arial"><B>Retrieval Programs</B></FONT></P>
+<P>The package offers a set of functions that allow you to retrieve values from individual rows stored in EMP.</P>
+<P>The following function retrieves a row of data (all columns) for the specified primary key.</P>
+<PRE>   FUNCTION te_emp.onerow (
+      empno_in IN EMP.EMPNO%TYPE
+      )
+      RETURN EMP%ROWTYPE;
+</PRE>
+<P><A HREF="#top">Return to top</A><BR>
+<H1><A NAME="Row Count Functions"></A><FONT SIZE="5" FACE="Arial"><B>Row Count Functions</B></FONT></H1>
+<P>This API contains functions that return the number of rows (based on various criteria) in the underlying table.</P>
+<H2>Count of All Rows</H2>
+<P>The te_emp.rowcount function returns the count of all rows in the table. The header
+is:</P>
+<PRE>   FUNCTION te_emp.rowcount RETURN INTEGER;</PRE>
+<P>Here is an example of using this function:</P>
+<PRE>BEGIN
+   IF te_emp.rowcount = 0
+   THEN
+      DBMS_OUTPUT.PUT_LINE ('Table is empty!');
+   END IF;
+END;</PRE>
+</PRE>
+<H2>Count of Rows for a Primary Key</H2>
+<P>The te_emp.pkyrowcount function returns the number of rows in the table for a given
+primary key (which may consist of one or more columns). The header for this function is:</P>
+<PRE>   FUNCTION pkyrowcount (
+      empno_in IN EMP.EMPNO%TYPE
+      )
+      RETURN INTEGER;</PRE>
+<P>You can use this function to determine if a row exists in the table for a primary key. You can also determine
+if there is a data integrity issue -- this function should return 0 if the primary is not present and 1 if it is.
+If it returns a number greater than 1, you may have a problem. Here is an example of how you might use this function:</P>
+<PRE>BEGIN
+   IF te_emp.pkyrowcount (pkycolval1, ..., pkycolvalN) = 0
+   THEN
+      DBMS_OUTPUT.PUT_LINE ('No row defined for this primary key!');
+   END IF;
+END;</PRE>
+<H2>Count of Rows for Foreign Key <FONT SIZE="4" FACE="Arial"><B>FK_DEPTNO</B></FONT></H2>
+<P>The te_emp.fk_deptnorowcount function returns the number of rows in the table for a specified
+foreign key value set (one or more columns, as determined by the foreign key definition itself). The header for
+this function is:</P>
+<PRE>   FUNCTION te_emp.fk_deptnorowcount (
+      deptno_in IN EMP.DEPTNO%TYPE
+      )
+      RETURN INTEGER;</PRE>
+<P><A HREF="#top">Return to top</A><BR>
+<H2><A NAME="Insert Programs"></A><FONT FACE="Arial">Insert Programs</FONT></H2>
+<P>Instead of issuing INSERT statements directly in your code, you will call the te_emp.ins
+procedure. This procedure performs error handling and can even convert an INSERT into an UPDATE when it encounters
+a DUP_VAL_ON_INDEX error (if, in other words, the primary key is already present in the database).</P>
+<H3><FONT SIZE="5" FACE="Arial">Record Initialization</FONT></H3>
+<P>You can perform an insert by passing individual column values or by providing a table-based record. If you use
+a record, you may want to call a record initialization program to assign the default values for each column to
+the field in the record.</P>
+<P>You can initialize a record with a function or a procedure as shown in the headers below:</P>
+<PRE>   FUNCTION te_emp.initrec
+      (allnull IN BOOLEAN := FALSE) RETURN EMP%ROWTYPE;
+
+   PROCEDURE te_emp. initrec  (
+      rec_inout IN OUT EMP%ROWTYPE,
+      allnull IN BOOLEAN := FALSE);
+</PRE>
+<P>If you pass TRUE for the allnull argument, then all the fields in the record will be set to NULL. Otherwise,
+the fields will be set to the default values for each column as specified in the table definition (NULL, unless
+overridden with another default value).</P>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Insert Procedures</B></I></FONT></P>
+<P>This package provides more than one procedure with which to insert a row of data.</P>
+</PRE>
+<P><FONT SIZE="4" FACE="Arial"><B>Insert Providing Primary Key and Individual Fields</B></FONT></P>
+<P>This version of ins requires that you pass not only the non-primary key column values, but also
+a previously-generated or acquired primary key value (or values, in the case of multiple primary key columns).</P>
+<P>The upd_on_dup argument controls the behavior of ins when the attempt to INSERT raises
+a DUP_VAL_ON_INDEX error. This error occurs when a row already exists in the table with the same unique index column
+values as the row being inserted.</P>
+<P>If you pass FALSE for this argument (the default), then ins passes the DUP_VAL_ON_INDEX exception
+back to the calling program (or sets the errnum argument if you are using return code exception handling).</P>
+<P>If you pass TRUE for upd_on_dup, then if the INSERT fails with that error, the procedure will attempt
+to perform an update for the row identified by the primary key by calling upd.</P>
+<P>So if the DUP_VAL_ON_INDEX error is caused by a non-primary key unique index, this feature will not operate
+properly.</P>
+<PRE>   PROCEDURE te_emp.ins (
+      empno_in IN EMP.EMPNO%TYPE,
+      ename_in IN EMP.ENAME%TYPE DEFAULT NULL,
+      job_in IN EMP.JOB%TYPE DEFAULT NULL,
+      mgr_in IN EMP.MGR%TYPE DEFAULT NULL,
+      hiredate_in IN EMP.HIREDATE%TYPE DEFAULT NULL,
+      sal_in IN EMP.SAL%TYPE DEFAULT NULL,
+      comm_in IN EMP.COMM%TYPE DEFAULT NULL,
+      deptno_in IN EMP.DEPTNO%TYPE DEFAULT NULL,
+      upd_on_dup IN BOOLEAN := FALSE
+      );
+</PRE>
+<P><FONT SIZE="4" FACE="Arial"><B>Insert with Record, Providing Primary Key</B></FONT></P>
+<P>In this version of ins you provide a table-based record (defined using EMP%ROWTYPE);
+all fields, including those corresponding to the primary key are used in the insert action. This ins
+procedure, in other words, does not generate a primary key. You must provide one all on your own.</P>
+<P>If you want the insert to take advantage of default column values as found in the table definition, you should
+call te_emp.initrec or te_emp.initrec.</P>
+<P>The upd_on_dup argument controls the behavior of ins when the attempt to INSERT raises
+a DUP_VAL_ON_INDEX error. This error occurs when a row already exists in the table with the same unique index column
+values as the row being inserted.</P>
+<P>If you pass FALSE for this argument (the default), then ins passes the DUP_VAL_ON_INDEX exception
+back to the calling program (or sets the errnum argument if you are using return code exception handling).</P>
+<P>If you pass TRUE for upd_on_dup, then if the INSERT fails with that error, the procedure will attempt
+to perform an update for the row identified by the primary key by calling upd.</P>
+<P>So if the DUP_VAL_ON_INDEX error is caused by a non-primary key unique index, this feature will not operate
+properly.</P>
+<PRE>   PROCEDURE te_emp.ins (rec_in IN EMP%ROWTYPE,
+      upd_on_dup IN BOOLEAN := FALSE
+      );
+</PRE>
+<P><A HREF="#top">Return to top</A></P>
+<P><A NAME="Update Programs"></A><FONT SIZE="5" FACE="Arial"><B>Update Programs</B></FONT></P>
+<P>Updating through the package API can be a bit more complex than performing an insert or a delete. This package
+provides a single upd procedure through which you can update all, some or just one column in a table's
+row for a specific primary key.</P>
+<P>The way such a general update procedure works is as follows:</P>
+
+<UL>
+	<LI>You do not have to pass a value for each column. Instead, you provide a value only for those columns whose
+	values you want to change. You are likely to use named notation to single out those columns. This technique is
+	shown in the adjoining examples.
+	<P>
+	<LI>By default, if you pass a NULL value for a column, then upd assumes that you do not want to
+	update that column. In this case, the column value is set to its current value.
+	<P>
+	<LI>If you really do want to set a nullable column to a NULL value, then you will call the &quot;force function&quot;
+	for that column, <I>forcing</I> the assignment of the NULL value. These force functions are explained below in
+	more detail.
+</UL>
+
+<P><FONT SIZE="5" FACE="Arial"><I><B>Impact on Triggers</B></I></FONT></P>
+<P>Since the general update procedure will update all non-primary key columns in the table, regardless of whether
+or not the value has changed, you should make sure that all of your UPDATE triggers employ the WHEN clause. This
+clause will allow you to specify that processing of the trigger only takes place when the value is changed.</P>
+<P>If you do not want to have to insert this code into your triggers, then you should use single-column update
+procedures (which can be generated as a part of this package). Contact your PL/Generator Designer to take this
+action).</P>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Forcing NULL Values in Update</B></I></FONT></P>
+<P>This package contains a PL/SQL record structure that keeps track of the update-if-NULL status of each column
+of the table. It is, in essence, a set of flags. By default, this record says to the update procedure: ignore this
+value if it is NULL. You can change individual flags in this record to say &quot;set the column to NULL&quot; or,
+in other words, &quot;I really mean it. I want to make this column value NULL&quot; by calling a force function.</P>
+<P>Here are the headers of the force functions for each column:</P>
+<PRE>   FUNCTION te_emp.ename$frc
+      (ename_in IN EMP.ENAME%TYPE DEFAULT NULL)
+      RETURN EMP.ENAME%TYPE;
+</PRE>
+<PRE>   FUNCTION te_emp.job$frc
+      (job_in IN EMP.JOB%TYPE DEFAULT NULL)
+      RETURN EMP.JOB%TYPE;
+</PRE>
+<PRE>   FUNCTION te_emp.mgr$frc
+      (mgr_in IN EMP.MGR%TYPE DEFAULT NULL)
+      RETURN EMP.MGR%TYPE;
+</PRE>
+<PRE>   FUNCTION te_emp.hiredate$frc
+      (hiredate_in IN EMP.HIREDATE%TYPE DEFAULT NULL)
+      RETURN EMP.HIREDATE%TYPE;
+</PRE>
+<PRE>   FUNCTION te_emp.sal$frc
+      (sal_in IN EMP.SAL%TYPE DEFAULT NULL)
+      RETURN EMP.SAL%TYPE;
+</PRE>
+<PRE>   FUNCTION te_emp.comm$frc
+      (comm_in IN EMP.COMM%TYPE DEFAULT NULL)
+      RETURN EMP.COMM%TYPE;
+</PRE>
+<PRE>   FUNCTION te_emp.deptno$frc
+      (deptno_in IN EMP.DEPTNO%TYPE DEFAULT NULL)
+      RETURN EMP.DEPTNO%TYPE;
+</PRE>
+<P>When you call this function it does two things:</P>
+
+<OL>
+	<LI>Returns the value you pass into it, the default being NULL.
+	<LI>Sets the force flag for that column to &quot;Yes, update if NULL&quot;.
+</OL>
+
+<P>The consequence is that when you then call te_emp.upd and pass a NULL value for that
+column, its value will be set to NULL (and not ignored).</P>
+<P>You can use these functions in one of two ways:</P>
+
+<OL>
+	<LI>Assignment statement: a &quot;stand-alone&quot; call to the function, returning the value to a PL/SQL variable
+	of the appropriate type.
+	<LI>In-line execution: call the function within a call to the upd procedure, forcing the update
+	of that column to NULL. This will be the way that you most commonly deploy the force functions.
+</OL>
+
+<P>The following example shows the use of the force function to set every non-primary key column to NULL in the
+update. This will, of course, cause a failure in the update if any of the columns are defined to be NOT NULL.</P>
+<PRE>DECLARE
+   numrows INTEGER;
+BEGIN
+   te_emp.upd(
+      v_EMPNO, /* set in an outer block */
+      ename_in => te_emp.ename$frc
+      job_in => te_emp.job$frc
+      mgr_in => te_emp.mgr$frc
+      hiredate_in => te_emp.hiredate$frc
+      sal_in => te_emp.sal$frc
+      comm_in => te_emp.comm$frc
+      deptno_in => te_emp.deptno$frc
+      numrows
+      );
+END;
+/
+</PRE>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Resetting the Force Flags</B></I></FONT></P>
+<P>You can reset all of the force flags to &quot;don't update if NULL&quot; by calling the following procedure:</P>
+<PRE>PROCEDURE te_emp.reset$frc;
+</PRE>
+<P>Note: this program is called by upd automatically if you pass TRUE (the default value) for the
+reset_in argument.</P>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Update Any/All Column Procedures</B></I></FONT></P>
+<P>You perform an update on one row at a time, identified by the primary key. You can pass the values of the columns
+you want to update either through individual parameters (one parameter per column) or through a record of type
+EMP%ROWTYPE.</P>
+<P><FONT SIZE="4" FACE="Arial"><B>Update by Primary Key, using Individual Fields</B></FONT></P>
+<P>When you call upd, you must provide a value for each column in the primary key. You can then
+pass a value for each column you wish to update. The remaining arguments for upd are described after
+the header.</P>
+<PRE>   PROCEDURE te_emp.upd (
+      empno_in IN EMP.EMPNO%TYPE,
+      ename_in IN EMP.ENAME%TYPE DEFAULT NULL,
+      job_in IN EMP.JOB%TYPE DEFAULT NULL,
+      mgr_in IN EMP.MGR%TYPE DEFAULT NULL,
+      hiredate_in IN EMP.HIREDATE%TYPE DEFAULT NULL,
+      sal_in IN EMP.SAL%TYPE DEFAULT NULL,
+      comm_in IN EMP.COMM%TYPE DEFAULT NULL,
+      deptno_in IN EMP.DEPTNO%TYPE DEFAULT NULL,
+      rowcount_out OUT INTEGER,
+      reset_in IN BOOLEAN DEFAULT TRUE
+      );
+</PRE>
+<P>The rowcount_out argument contains the number of rows updated by your request.</P>
+<P>The reset_in argument controls the resetting of the force record. If TRUE, the default, then the force
+record is reset to its initial values (meaning, a NULL value is ignored). If FALSE, then the force record is not
+reset. The same columns for which a NULL value was applied in the current UPDATE will be &quot;marked&quot; for
+update-if-NULL in the next call to te_emp.upd.</P>
+<P><FONT SIZE="4" FACE="Arial"><B>Update by Primary Key, using Record</B></FONT></P>
+<P>This version of upd allows you to pass your column values for update through a record of type
+EMP%ROWTYPE. The fields corresponding to primary key columns must be filled. All other fields can be assigned
+values as is appropriate to the update you want to perform. The remaining arguments for upd are
+described after the header.</P>
+<PRE>   PROCEDURE te_emp.upd (rec_in IN EMP%ROWTYPE,
+      rowcount_out OUT INTEGER,
+      reset_in IN BOOLEAN DEFAULT TRUE);
+</PRE>
+<P>The rowcount_out argument contains the number of rows updated by your request. This argument should return
+either 0 or 1.</P>
+<P>The reset_in argument controls the resetting of the force record. If TRUE, the default, then the force
+record is reset to its initial values (meaning, a NULL value is ignored). If FALSE, then the force record is not
+reset. The same columns for which a NULL value was applied in the current UPDATE will be &quot;marked&quot; for
+update-if-NULL in the next call to te_emp.upd.</P>
+</PRE>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Update Individual Columns</B></I></FONT></P>
+<P>This package contains one or more procedures you can use to update individual columns for a specific primary
+key without having to call the general update procedure. You may want to do this to avoid the overhead of updating
+each column (even if it is updated to the same value) and initiating unnecessary trigger activity.</P>
+<P>There are two versions of the single-column update for each specified column: one which accepts the primary
+key as individual columns and another which allows you to pass the primary key as a PL/SQL record.</P>
+<P><A HREF="#top">Return to top</A></P>
+<P><A NAME="Delete Programs"></A><FONT SIZE="5" FACE="Arial"><B>Delete Programs</B></FONT></P>
+<P>Rather than issuing an explicit DELETE in your programs, you will call te_emp.del.
+You can delete the single row associated with a primary key, or you can delete all rows associated with a foreign
+key value.</P>
+<P>This package does not perform any kind of special logic or processing for cascading deletes, foreign key dependencies,
+or other possible complications of delete operations.</P>
+<P><FONT SIZE="4" FACE="Arial"><B>Delete by Primary Key using Individual Fields</B></FONT></P>
+<P>With this delete procedure, you provide the values of the primary key in individual arguments.</P>
+<P>The rowcount_out returns the numbers of rows affected by the delete request (either 0 or 1, since it is a
+primary key-based operation).</P>
+<PRE>   PROCEDURE te_emp.del (
+      empno_in IN EMP.EMPNO%TYPE,
+      rowcount_out OUT INTEGER);
+</PRE>
+<P><FONT SIZE="4" FACE="Arial"><B>Delete by Primary Key using Record</B></FONT></P>
+<P>With this delete procedure, you provide the values of the primary key in a record of type te_emp.pky_rt.</P>
+<P>The rowcount_out returns the numbers of rows affected by the delete request (either 0 or 1, since it is a
+primary key-based operation).</P>
+<PRE>   PROCEDURE te_emp.del (rec_in IN pky_rt,
+      rowcount_out OUT INTEGER);
+</PRE>
+<P>You can also request a delete of a row by passing a record of type EMP%ROWTYPE, which contains more
+than just the primary key columns. Here is the header for this version of del:</P>
+<PRE>   PROCEDURE del (rec_in IN EMP%ROWTYPE,
+      rowcount_out OUT INTEGER);
+</PRE>
+<P><FONT SIZE="4" FACE="Arial"><B>Delete by Foreign Key FK_DEPTNO</B></FONT></P>
+<P>With this delete procedure, you delete all the rows in the table associated with a specific foreign key value.
+You provide the values of the different columns in the foreign as individual arguments.</P>
+<P>The rowcount_out returns the numbers of rows affected by the delete request (this number is <I>not</I> restricted
+to 0 or 1, since it is a foreign key-based operation).</P>
+<PRE>   PROCEDURE te_emp.delby_fk_deptno (
+      deptno_in IN EMP.DEPTNO%TYPE,
+      rowcount_out OUT INTEGER
+      );
+</PRE>
+<P><A HREF="#top">Return to top</A></P>
+<P><A NAME="Performance Enhancers"></A><FONT SIZE="5" FACE="Arial"><B>Performance Enhancers</B></FONT></P>
+<P>This package contains one or more features that you may find useful in enhancing the performance of your database
+access.</P>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Pinning te_emp in Shared Memory</B></I></FONT></P>
+<P>If you want to make sure that programs in this package are instantly available for execution, you can &quot;pin&quot;
+the package into shared memory. If you pin a package, it will not be a candidate for removal by the least-recently-used
+(LRU) algorithm employed by Oracle to manage its shared memory area.</P>
+<P>You will usually pin programs when the database is first initialized. That offers the best guarantee that sufficient
+contiguous memory is found for your code.</P>
+<P>There are two steps you will need to take to pin your package:</P>
+
+<OL>
+	<LI>Call DBMS_SHARED_POOL.KEEP to &quot;register&quot; your package as a pinnable package.
+	<LI>Reference an element in te_emp so that the package will be loaded into memory.
+</OL>
+
+<P>Here is the code you will need to run to enable pinning of te_emp:</P>
+<PRE>   DBMS_SHARED_POOL.KEEP ('schemaname.te_emp');
+</PRE>
+<P>where schemaname is the name of the schema which owns te_emp.</P>
+<P>Here is the code you will run after calling the KEEP built-in to load your package into memory:</P>
+<PRE>te_emp.pinme;
+</PRE>
+<P>Both of these lines of code should be placed in an initialization script that is run when the database is started.
+This is a job for your Database Administrator.</P>
+
+<P><A HREF="#top">Return to top</A>
+
+
+</BODY>
+
+</HTML>

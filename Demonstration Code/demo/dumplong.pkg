@@ -1,0 +1,84 @@
+/* Formatted by PL/Formatter v.1.1.12 on 1999/02/10 19:10  (07:10 PM) */
+CREATE OR REPLACE PACKAGE longcol
+IS
+   TYPE pieces_tt IS TABLE OF VARCHAR2(2000)
+      INDEX BY BINARY_INTEGER;
+   
+   PROCEDURE retrieve (
+      tab IN VARCHAR2,
+      col IN VARCHAR2,
+      whr IN VARCHAR2 := NULL,
+      pieces IN OUT pieces_tt
+      );
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY longcol
+IS
+   
+   PROCEDURE retrieve (
+      tab IN VARCHAR2,
+      col IN VARCHAR2,
+      whr IN VARCHAR2 := NULL,
+      pieces IN OUT pieces_tt
+      )
+
+   /* Requires Oracle 7.3.3 or above */
+
+   IS
+      cur                           PLS_INTEGER
+         := DBMS_SQL.open_cursor;
+      fdbk                          PLS_INTEGER;
+      
+      TYPE long_rectype IS RECORD (
+         piece_len                  PLS_INTEGER,
+         pos_in_long                PLS_INTEGER,
+         one_piece                  VARCHAR2(2000),
+         one_piece_len              PLS_INTEGER
+      );
+      
+      rec                           long_rectype;
+   BEGIN
+      DBMS_SQL.parse (
+         cur,
+         'SELECT ' ||
+         col ||
+         '  FROM ' ||
+         tab ||
+         ' WHERE ' ||
+         NVL (whr, '1 = 1'),
+         DBMS_SQL.native
+      );
+      
+      DBMS_SQL.define_column_long (cur, 1);
+      
+      fdbk := DBMS_SQL.execute_and_fetch (CUR);
+      
+      IF fdbk > 0
+      THEN
+         rec.piece_len := 2000;
+         rec.pos_in_long := 0;
+         
+         LOOP
+            DBMS_SQL.column_value_long (
+               cur,
+               1,
+               rec.piece_len,
+               rec.pos_in_long,
+               rec.one_piece,
+               rec.one_piece_len
+            );
+            EXIT WHEN rec.one_piece_len = 0;
+            pieces (NVL (pieces.last, 0) + 1) :=
+               rec.one_piece;
+            rec.pos_in_long :=
+               rec.pos_in_long + rec.one_piece_len;
+         END LOOP;
+      END IF;
+      
+      DBMS_SQL.close_cursor (cur);
+   END;
+
+END;
+/
+

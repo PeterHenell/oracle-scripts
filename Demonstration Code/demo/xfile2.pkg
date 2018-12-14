@@ -1,0 +1,12 @@
+CREATE OR REPLACE PACKAGE xfile
+IS 
+   FUNCTION length (file IN VARCHAR2) RETURN NUMBER;
+END;
+/
+CREATE OR REPLACE PACKAGE BODY xfile
+IS
+   FUNCTION length (file IN VARCHAR2) RETURN NUMBER
+   AS LANGUAGE JAVA
+      NAME 'JFile2.length (java.lang.String) return long';
+END;
+/

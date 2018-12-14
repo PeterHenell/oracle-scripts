@@ -1,0 +1,7 @@
+CREATE OR REPLACE FUNCTION numbytes 
+   (file_in IN VARCHAR2)
+RETURN NUMBER /* Integer will not work -- constrained! */
+AS LANGUAGE JAVA
+   NAME 'Infile.numBytes(java.lang.StringString) 
+      return int';
+/

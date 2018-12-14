@@ -1,0 +1,5 @@
+BEGIN
+   DBMS_OUTPUT.put_line (TO_CHAR (100.55));
+   DBMS_OUTPUT.put_line (TO_CHAR (000100.5500));
+   DBMS_OUTPUT.put_line (TO_CHAR (100.00));
+END;

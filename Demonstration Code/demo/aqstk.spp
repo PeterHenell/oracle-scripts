@@ -1,0 +1,54 @@
+CREATE OR REPLACE TYPE aqstk_objtype IS OBJECT (item VARCHAR2(2000));
+/
+CREATE OR REPLACE PACKAGE aqstk
+
+/* Stack built on AQ; non-persistent! This stack is recreated whenever
+   you restart your session or reinitialization package state. */
+
+IS
+   PROCEDURE push (item IN VARCHAR2);
+   PROCEDURE pop (item OUT VARCHAR2);
+END;
+/
+CREATE OR REPLACE PACKAGE BODY aqstk
+IS
+   c_queue_table CONSTANT aq.name_type := 'aqstk_table';
+   c_queue CONSTANT aq.name_type := 'aqstk';
+
+   g_priority PLS_INTEGER := POWER (2, 30);
+
+   PROCEDURE push (item IN VARCHAR2)
+   IS
+      queueopts DBMS_AQ.ENQUEUE_OPTIONS_T;
+      msgprops DBMS_AQ.MESSAGE_PROPERTIES_T;
+      msgid aq.msgid_type;
+      item_obj aqstk_objtype;
+   BEGIN
+      item_obj := aqstk_objtype (item);
+      msgprops.priority := g_priority;
+      queueopts.visibility := DBMS_AQ.IMMEDIATE;
+      g_priority := g_priority - 1;
+      DBMS_AQ.ENQUEUE (c_queue, queueopts, msgprops, item_obj, msgid);
+   END;
+
+   PROCEDURE pop (item OUT VARCHAR2)
+   IS
+      queueopts DBMS_AQ.DEQUEUE_OPTIONS_T;
+      msgprops DBMS_AQ.MESSAGE_PROPERTIES_T;
+      msgid aq.msgid_type;
+      item_obj aqstk_objtype;
+   BEGIN
+      queueopts.wait := DBMS_AQ.NO_WAIT;
+      queueopts.visibility := DBMS_AQ.IMMEDIATE;
+      DBMS_AQ.DEQUEUE (c_queue, queueopts, msgprops, item_obj, msgid);
+      item := item_obj.item;
+   END;
+
+BEGIN
+   /* Drop the existing queue if present. */
+   aq.stop_and_drop (c_queue_table);
+   
+   /* Create the queue table and queue as necessary. */
+   aq.create_priority_queue (c_queue_table, 'aqstk_objtype', c_queue);
+END;
+/

@@ -1,0 +1,256 @@
+CREATE OR REPLACE PACKAGE employees_eq
+IS
+/*
+   Program name: collections_equal
+
+   Original author: Steven Feuerstein, www.Qnxo.com
+
+   Qnxo Script ID: {C32DEB4D-EDC9-4627-B62F-B49640447CD8}
+
+   You are granted permission to use this code if it was generated
+   by a licensed user of Qnxo.
+
+   Overview:
+
+   Return true if the the contents of the two collections are the same.
+   In this variant, the collection is based on the rowtype of the
+   the table employees,
+
+   Parameters:
+
+      collection1_in - first collection for comparison
+
+      collection2_in - second collection for comparison
+
+      match_indexes_in - if TRUE, then the row numbers in the two
+                         collections must also match.
+
+      both_null_true_in - if TRUE, then if values in corresponding rows
+                          of both collections are NULL, treat this as equality.
+
+   Dependencies/Restrictions:
+
+   Exceptions raised:
+
+   Modification History:
+
+   >> Generated on September 15, 2005 15:33:42 in schema QNXO_REPOSITORY
+*/
+   TYPE employees_aat IS TABLE OF employees%ROWTYPE
+      INDEX BY BINARY_INTEGER;
+
+   FUNCTION collections_equal (
+      collection1_in      IN   employees_aat
+    , collection2_in      IN   employees_aat
+    , match_indexes_in    IN   BOOLEAN DEFAULT TRUE
+    , both_null_true_in   IN   BOOLEAN DEFAULT TRUE
+   )
+      RETURN BOOLEAN;
+END employees_eq;
+/
+
+CREATE OR REPLACE PACKAGE BODY employees_eq
+IS
+   FUNCTION collections_equal (
+      collection1_in      IN   employees_aat
+    , collection2_in      IN   employees_aat
+    , match_indexes_in    IN   BOOLEAN DEFAULT TRUE
+    , both_null_true_in   IN   BOOLEAN DEFAULT TRUE
+   )
+      RETURN BOOLEAN
+   IS
+      l_index1              PLS_INTEGER := collection1_in.FIRST;
+      l_index2              PLS_INTEGER := collection2_in.FIRST;
+      l_collections_equal   BOOLEAN     DEFAULT TRUE;
+
+      FUNCTION equal_records (
+         rec1_in   IN   employees%ROWTYPE
+       , rec2_in   IN   employees%ROWTYPE
+      )
+         RETURN BOOLEAN
+      IS
+         retval   BOOLEAN;
+      BEGIN
+         retval :=
+               rec1_in.employee_id = rec2_in.employee_id
+            OR (rec1_in.employee_id IS NULL AND rec2_in.employee_id IS NULL);
+
+         IF NOT NVL (retval, FALSE)
+         THEN
+            GOTO unequal_records;
+         END IF;
+
+         retval :=
+               rec1_in.last_name = rec2_in.last_name
+            OR (rec1_in.last_name IS NULL AND rec2_in.last_name IS NULL);
+
+         IF NOT NVL (retval, FALSE)
+         THEN
+            GOTO unequal_records;
+         END IF;
+
+         retval :=
+               rec1_in.first_name = rec2_in.first_name
+            OR (rec1_in.first_name IS NULL AND rec2_in.first_name IS NULL);
+
+         IF NOT NVL (retval, FALSE)
+         THEN
+            GOTO unequal_records;
+         END IF;
+
+         retval :=
+               rec1_in.middle_initial = rec2_in.middle_initial
+            OR (    rec1_in.middle_initial IS NULL
+                AND rec2_in.middle_initial IS NULL
+               );
+
+         IF NOT NVL (retval, FALSE)
+         THEN
+            GOTO unequal_records;
+         END IF;
+
+         retval :=
+               rec1_in.job_id = rec2_in.job_id
+            OR (rec1_in.job_id IS NULL AND rec2_in.job_id IS NULL);
+
+         IF NOT NVL (retval, FALSE)
+         THEN
+            GOTO unequal_records;
+         END IF;
+
+         retval :=
+               rec1_in.manager_id = rec2_in.manager_id
+            OR (rec1_in.manager_id IS NULL AND rec2_in.manager_id IS NULL);
+
+         IF NOT NVL (retval, FALSE)
+         THEN
+            GOTO unequal_records;
+         END IF;
+
+         retval :=
+               rec1_in.hire_date = rec2_in.hire_date
+            OR (rec1_in.hire_date IS NULL AND rec2_in.hire_date IS NULL);
+
+         IF NOT NVL (retval, FALSE)
+         THEN
+            GOTO unequal_records;
+         END IF;
+
+         retval :=
+               rec1_in.salary = rec2_in.salary
+            OR (rec1_in.salary IS NULL AND rec2_in.salary IS NULL);
+
+         IF NOT NVL (retval, FALSE)
+         THEN
+            GOTO unequal_records;
+         END IF;
+
+         retval :=
+               rec1_in.commission = rec2_in.commission
+            OR (rec1_in.commission IS NULL AND rec2_in.commission IS NULL);
+
+         IF NOT NVL (retval, FALSE)
+         THEN
+            GOTO unequal_records;
+         END IF;
+
+         retval :=
+               rec1_in.department_id = rec2_in.department_id
+            OR (rec1_in.department_id IS NULL
+                AND rec2_in.department_id IS NULL
+               );
+
+         IF NOT NVL (retval, FALSE)
+         THEN
+            GOTO unequal_records;
+         END IF;
+
+         retval :=
+               rec1_in.created_by = rec2_in.created_by
+            OR (rec1_in.created_by IS NULL AND rec2_in.created_by IS NULL);
+
+         IF NOT NVL (retval, FALSE)
+         THEN
+            GOTO unequal_records;
+         END IF;
+
+         retval :=
+               rec1_in.created_on = rec2_in.created_on
+            OR (rec1_in.created_on IS NULL AND rec2_in.created_on IS NULL);
+
+         IF NOT NVL (retval, FALSE)
+         THEN
+            GOTO unequal_records;
+         END IF;
+
+         retval :=
+               rec1_in.changed_by = rec2_in.changed_by
+            OR (rec1_in.changed_by IS NULL AND rec2_in.changed_by IS NULL);
+
+         IF NOT NVL (retval, FALSE)
+         THEN
+            GOTO unequal_records;
+         END IF;
+
+         retval :=
+               rec1_in.changed_on = rec2_in.changed_on
+            OR (rec1_in.changed_on IS NULL AND rec2_in.changed_on IS NULL);
+
+         IF NOT NVL (retval, FALSE)
+         THEN
+            GOTO unequal_records;
+         END IF;
+
+         <<unequal_records>>
+         RETURN NVL (retval, FALSE);
+      END equal_records;
+   BEGIN
+      -- Are both collections empty?
+      IF l_index1 IS NULL AND l_index2 IS NULL
+      THEN
+         l_collections_equal := NVL (both_null_true_in, FALSE);
+      -- Is only one empty?
+      ELSIF    (l_index1 IS NULL AND l_index2 IS NOT NULL)
+            OR (l_index1 IS NOT NULL AND l_index2 IS NULL)
+      THEN
+         l_collections_equal := FALSE;
+      ELSE
+         -- Start the row by row comparisons.
+         WHILE (    l_index1 IS NOT NULL
+                AND l_index2 IS NOT NULL
+                AND l_collections_equal
+               )
+         LOOP
+            -- Compare each field of both records. Are the individual values equal?
+            -- Do the values match? And if for any reason, this evaluates to NULL,
+            -- then treat it as FALSE.
+            l_collections_equal :=
+               equal_records (collection1_in (l_index1)
+                            , collection2_in (l_index2)
+                             );
+
+            -- Do the indexes match (if that is requested)? And if for any reason,
+            -- this evaluates to NULL, then treat it as FALSE.
+            IF l_collections_equal AND match_indexes_in
+            THEN
+               l_collections_equal := NVL (l_index1 = l_index2, FALSE);
+            END IF;
+
+            -- If still equal, go to next element in each collection
+            -- and make sure they both still have a value.
+            IF l_collections_equal
+            THEN
+               l_index1 := collection1_in.NEXT (l_index1);
+               l_index2 := collection2_in.NEXT (l_index2);
+               l_collections_equal :=
+                     (l_index1 IS NOT NULL AND l_index2 IS NOT NULL
+                     )
+                  OR (l_index1 IS NULL AND l_index2 IS NULL);
+            END IF;
+         END LOOP;
+      END IF;
+
+      RETURN l_collections_equal;
+   END collections_equal;
+END employees_eq;
+/

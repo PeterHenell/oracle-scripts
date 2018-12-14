@@ -1,0 +1,45 @@
+/* Formatted by PL/Formatter v3.1.2.1 on 2001/04/10 10:43 */
+
+CREATE OR REPLACE FUNCTION progexists (
+   prog_in   IN   VARCHAR2,
+   sch_in    IN   VARCHAR2
+)
+   RETURN BOOLEAN
+IS
+   v_prog          VARCHAR2 (1000) := prog_in;
+   /* variables to hold components of the name */
+   sch             VARCHAR2 (100);
+   part1           VARCHAR2 (100);
+   part2           VARCHAR2 (100);
+   dblink          VARCHAR2 (100);
+   part1_type      NUMBER;
+   object_number   NUMBER;
+BEGIN
+   IF sch_in IS NOT NULL
+   THEN
+      v_prog := sch_in || '.' || prog_in;
+   END IF;
+
+   /* Break down the name into its components */
+   DBMS_UTILITY.name_resolve (v_prog,
+      1,
+      sch,
+      part1,
+      part2,
+      dblink,
+      part1_type,
+      object_number
+   );
+   RETURN TRUE;
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      IF sch_in IS NOT NULL
+      THEN
+         RETURN progexists (prog_in, NULL);
+      ELSE
+         RETURN FALSE;
+      END IF;
+END;
+/
+

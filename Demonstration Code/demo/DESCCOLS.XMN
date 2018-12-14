@@ -1,0 +1,98 @@
+DROP TABLE coltypes
+/
+CREATE TABLE coltypes
+   (vc VARCHAR2(10),
+    nvc NVARCHAR2(10),
+    ch CHAR(10),
+    nch NCHAR(10),
+    d DATE,
+    n NUMBER,
+    i INTEGER,
+    l LONG,
+    r RAW(100),
+    rid ROWID,
+    cl CLOB,
+    ncl NCLOB,
+    bl BLOB,
+    bf BFILE,
+    msl MLSLABEL
+    )
+/
+DECLARE
+   cur integer := dbms_sql.open_cursor;
+   cl CLOB;
+   bl BLOB;
+   ncl NCLOB;
+   bf BFILE;
+   msl MLSLABEL;
+   r RAW(100);
+   rid ROWID;
+BEGIN
+   dbms_sql.PARSE (cur, 'SELECT vc, nvc, ch, nch, d, n, i, l, r
+      , rid, cl, ncl, bl, bf, msl FROM coltypes', DBMS_SQL.NATIVE);
+   DBMS_SQL.DEFINE_COLUMN (cur, 1, 'a', 10);
+   DBMS_SQL.DEFINE_COLUMN (cur, 2, 'a', 10);
+   DBMS_SQL.DEFINE_COLUMN_CHAR (cur, 3, 'a', 10);
+   DBMS_SQL.DEFINE_COLUMN_CHAR (cur, 4, 'a', 10); 
+   DBMS_SQL.DEFINE_COLUMN (cur, 5, SYSDATE);
+   DBMS_SQL.DEFINE_COLUMN (cur, 6, 1);
+   DBMS_SQL.DEFINE_COLUMN (cur, 7, 1);
+   DBMS_SQL.DEFINE_COLUMN_LONG (cur, 8);
+   DBMS_SQL.DEFINE_COLUMN_RAW (cur, 9, r, 10); 
+   DBMS_SQL.DEFINE_COLUMN_ROWID (cur, 10, rid);
+   DBMS_SQL.DEFINE_COLUMN (cur, 11, cl);
+   DBMS_SQL.DEFINE_COLUMN (cur, 12, ncl);
+   DBMS_SQL.DEFINE_COLUMN (cur, 13, bl);
+   DBMS_SQL.DEFINE_COLUMN (cur, 14, bf);
+   DBMS_SQL.DEFINE_COLUMN (cur, 15, msl); 
+   desccols.forcur (cur);
+   desccols.show;
+   DBMS_SQL.CLOSE_CURSOR (cur);
+END;
+/
+
+Column 1
+VC
+1
+Column 2
+NVC
+1
+Column 3
+CH
+96
+Column 4
+NCH
+96
+Column 5
+D
+12
+Column 6
+N
+2
+Column 7
+I
+2
+Column 8
+L
+8
+Column 9
+R
+23
+Column 10
+RID
+11
+Column 11
+CL
+112
+Column 12
+NCL
+112
+Column 13
+BL
+113
+Column 14
+BF
+114
+Column 15
+MSL
+106

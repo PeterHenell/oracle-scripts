@@ -1,0 +1,18 @@
+CREATE OR REPLACE PACKAGE cvpkg
+IS
+   TYPE weak_refcur IS REF CURSOR;
+   PROCEDURE close_if_open (cv IN OUT weak_refcur);
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY cvpkg
+IS
+   PROCEDURE close_if_open (cv IN OUT weak_refcur)
+   IS
+   BEGIN
+      IF cv%ISOPEN THEN CLOSE cv; END IF;
+   END;
+END;
+/
+
+

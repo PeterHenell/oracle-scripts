@@ -1,0 +1,1 @@
+create directory DEMO as 'd:\demo-seminar';

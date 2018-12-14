@@ -1,0 +1,27 @@
+CREATE OR REPLACE FUNCTION stripped_string (
+   string_in             IN   VARCHAR2
+  ,strip_characters_in   IN   VARCHAR2
+)
+   RETURN VARCHAR2
+IS
+-- With REGEXP_REPLACE, each character to be replaced with NULL,
+-- must be followed by a "*".
+   l_strip_characters   VARCHAR2 (32767);
+   l_length             PLS_INTEGER;
+BEGIN
+   l_length := LENGTH (strip_characters_in);
+
+   IF l_length > 0
+   THEN
+      FOR l_index IN 1 .. l_length
+      LOOP
+         l_strip_characters :=
+               l_strip_characters
+            || SUBSTR (strip_characters_in, l_index, 1)
+            || '*';
+      END LOOP;
+   END IF;
+
+   RETURN regexp_replace (string_in, l_strip_characters);
+END stripped_string;
+/

@@ -1,0 +1,84 @@
+CREATE OR REPLACE PACKAGE bonus_pkg
+IS
+   FUNCTION application_program (job_id_in IN employees.job_id%TYPE)
+      RETURN VARCHAR2;
+END bonus_pkg;
+/
+
+CREATE OR REPLACE PACKAGE BODY bonus_pkg
+IS
+   FUNCTION application_program (job_id_in IN employees.job_id%TYPE)
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      RETURN 'apply_bonus';
+   END application_program;
+END bonus_pkg;
+/
+
+CREATE OR REPLACE PACKAGE dyn_emp_rows
+IS
+   PROCEDURE by_hire_dates (
+      job_id_in IN employees.job_id%TYPE
+    , start_in IN employees.hire_date%TYPE
+    , end_in IN employees.hire_date%TYPE
+   );
+
+   PROCEDURE by_salary_limit (
+      job_id_in IN employees.job_id%TYPE
+    , salary_limit_in IN employees.salary%TYPE
+   );
+END dyn_emp_rows;
+/
+
+CREATE OR REPLACE PACKAGE BODY dyn_emp_rows
+IS
+   FUNCTION dyn_block (
+      job_id_in IN employees.job_id%TYPE
+    , where_in IN VARCHAR2
+   )
+      RETURN VARCHAR2
+   IS
+      l_apply_bonus_program   VARCHAR2 (32767)
+                                    := bonus_pkg.application_program (job_id_in);
+   BEGIN
+      RETURN    
+      'DECLARE TYPE emprows_tt IS TABLE OF employees%ROWTYPE; 
+          l_rows emprows_tt;
+       BEGIN
+          SELECT * BULK COLLECT INTO l_rows FROM employees  
+           WHERE '
+             || where_in
+             || ';
+          FOR indx IN 1 .. l_rows.COUNT LOOP '
+             || l_apply_bonus_program
+             || ' (l_rows(indx));
+          END LOOP;
+       END;';
+   END dyn_block;
+
+   PROCEDURE by_hire_dates (
+      job_id_in IN employees.job_id%TYPE
+    , start_in IN employees.hire_date%TYPE
+    , end_in IN employees.hire_date%TYPE
+   )
+   IS
+      l_where   VARCHAR2 (32767)
+                              := ' hire_date between :startdate and :enddate';
+   BEGIN
+      EXECUTE IMMEDIATE dyn_block (job_id_in, l_where)
+                  USING start_in, end_in;
+   END by_hire_dates;
+
+   PROCEDURE by_salary_limit (
+      job_id_in IN employees.job_id%TYPE
+    , salary_limit_in IN employees.salary%TYPE
+   )
+   IS
+      l_where   VARCHAR2 (32767) := ' salary < :salary_limit';
+   BEGIN
+      EXECUTE IMMEDIATE dyn_block (job_id_in, l_where)
+                  USING salary_limit_in;
+   END by_salary_limit;
+END dyn_emp_rows;
+/

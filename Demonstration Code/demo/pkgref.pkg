@@ -1,0 +1,46 @@
+CREATE OR REPLACE PACKAGE pkg
+IS
+   PROCEDURE proc1 (num IN NUMBER := 0);
+   PROCEDURE proc2;
+END pkg;
+/
+CREATE OR REPLACE PACKAGE BODY pkg
+IS
+/*=== Private Data */
+
+   c_pkgname VARCHAR2(3) := 'pkg';
+
+/*=== Private Programs */
+
+   PROCEDURE priv (dt IN DATE)
+   IS
+   BEGIN
+      p.l ('Hey, This is private, date-wise!');
+   END;
+
+   PROCEDURE priv (num IN NUMBER)
+   IS
+   BEGIN
+      p.l ('Hey, This is private, number-wise!');
+   END;
+   
+/*=== Public Programs. */
+
+   PROCEDURE proc2
+   IS
+   BEGIN
+      priv (100);
+      p.l ('Number 2 in a series...');
+   END;
+
+   PROCEDURE proc1 (num IN NUMBER := 100)
+   IS
+   BEGIN
+      priv (SYSDATE);
+      p.l (num);
+   END;
+
+END pkg;
+/
+
+   

@@ -1,0 +1,38 @@
+SQL> /
+
+'DROPTABLE'||TABLE_NAME||';'                                                                                            
+------------------------------------------                                                                              
+drop table ACTIVITIES_TAB;                                                                                              
+drop table BIRDS;                                                                                                       
+drop table BIRD_HABITATS;                                                                                               
+drop table BONUS;                                                                                                       
+drop table CREATE$JAVA$LOB$TABLE;                                                                                       
+drop table DEPARTMENT;                                                                                                  
+drop table DEPT;                                                                                                        
+drop table EMP;                                                                                                         
+drop table EMP2;                                                                                                        
+drop table EMPLOYEE;                                                                                                    
+drop table INFLATION_BEATER;                                                                                            
+drop table JAVA$CLASS$MD5$TABLE;                                                                                        
+drop table JOB;                                                                                                         
+drop table LOBBYING_RESULTS;                                                                                            
+drop table LOC;                                                                                                         
+drop table LOCEMP;                                                                                                      
+drop table LOG81TAB;                                                                                                    
+drop table MSG_INFO;                                                                                                    
+drop table PLSQL_PROFILER_DATA;                                                                                         
+drop table PLSQL_PROFILER_RUNS;                                                                                         
+drop table PLSQL_PROFILER_UNITS;                                                                                        
+drop table SALGRADE;                                                                                                    
+drop table SALHIST;                                                                                                     
+drop table SALHISTORY;                                                                                                  
+drop table SA_SALARIES;                                                                                                 
+drop table TABLE_W_EXCESSIVELY_LONG_NM;                                                                                 
+drop table TWOCOLS;                                                                                                     
+drop table USER_CONFIG;                                                                                                 
+drop table WEB_GRAPHIC_BLOBS;                                                                                           
+drop table WWW_DOMAINS;                                                                                                 
+
+30 rows selected.
+
+SQL> spool off

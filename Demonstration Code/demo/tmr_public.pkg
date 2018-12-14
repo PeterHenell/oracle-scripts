@@ -1,0 +1,32 @@
+CREATE OR REPLACE PACKAGE tmr
+IS
+   last_timing NUMBER := NULL;
+
+   PROCEDURE capture;
+   FUNCTION elapsed RETURN NUMBER;
+   PROCEDURE show_elapsed;
+END tmr;
+/
+
+CREATE OR REPLACE PACKAGE BODY tmr
+IS       
+   PROCEDURE capture IS
+   BEGIN
+     last_timing := DBMS_UTILITY.GET_TIME;
+   END;
+
+   FUNCTION elapsed RETURN NUMBER
+   IS
+   BEGIN
+      RETURN (
+        MOD (DBMS_UTILITY.GET_TIME - 
+             last_timing + 
+             POWER(2,32), POWER(2,32)));
+   END;
+   
+   PROCEDURE show_elapsed IS
+   BEGIN
+      DBMS_OUTPUT.PUT_LINE (elapsed);
+   END;
+END tmr;
+/

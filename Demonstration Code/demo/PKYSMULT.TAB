@@ -1,0 +1,12 @@
+CREATE TABLE pkysmult
+ (
+  a NUMBER,
+  b DATE,
+  c VARCHAR2(25),
+  nickname VARCHAR2(100) DEFAULT 'Lucky',
+  multilat NUMBER,
+  hiredate DATE DEFAULT sysdate,
+  lastsal NUMBER DEFAULT 0,
+  CONSTRAINT pkmult PRIMARY KEY (a, b, c)
+  )
+;

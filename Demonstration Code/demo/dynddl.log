@@ -1,0 +1,34 @@
+﻿Connected as SYS@ORA112 as sysdba
+ORA-01951: ROLE 'RESOURCE' not granted to 'SCOTT'
+Revoke complete.
+Revoke complete.
+Grant complete.
+Connected as SCOTT@ORA112
+Table dropped.
+Table dropped.
+ORA-01031: insufficient privileges
+ORA-01031: insufficient privileges
+ORA-06512: at line 2
+Connected as SYS@ORA112 as sysdba
+ORA-01952: system privileges not granted to 'SCOTT'
+ORA-01921: role name 'CREATE_TABLE' conflicts with another user or role name
+Grant complete.
+Grant complete.
+User altered.
+Connected as SCOTT@ORA112
+Table created.
+PL/SQL procedure successfully completed.
+Procedure created.
+ORA-01031: insufficient privileges
+ORA-06512: at "SCOTT.CREATE_TABLE_PROC", line 5
+ORA-06512: at line 2
+Procedure created.
+ORA-00955: name is already used by an existing object
+ORA-06512: at "SCOTT.CREATE_TABLE_PROC", line 5
+ORA-06512: at line 2
+Connected as SYS@ORA112 as sysdba
+Grant complete.
+Connected as SCOTT@ORA112
+Table dropped.
+Procedure created.
+PL/SQL procedure successfully completed.

@@ -1,0 +1,124 @@
+/* 
+A "quick and dirty" error logging package.
+
+Relies on:
+
+1. Logging package in log.pkg
+2. Message consolidation package in msginfo.sql
+
+*/
+
+CREATE OR REPLACE PACKAGE errpkg
+IS
+   failure_in_forall   EXCEPTION;
+   PRAGMA EXCEPTION_INIT (failure_in_forall, -24381);
+
+   PROCEDURE raise_error (err_in   IN PLS_INTEGER := SQLCODE
+                        , msg_in   IN VARCHAR2 := NULL);
+
+   PROCEDURE raise_error (err_in IN VARCHAR2, msg_in IN VARCHAR2 := NULL);
+
+   PROCEDURE record_and_stop (err_in   IN PLS_INTEGER := SQLCODE
+                            , msg_in   IN VARCHAR2 := NULL);
+
+   PROCEDURE record_and_continue (err_in   IN PLS_INTEGER := SQLCODE
+                                , msg_in   IN VARCHAR2 := NULL);
+
+   FUNCTION errtext (err_in IN PLS_INTEGER := SQLCODE)
+      RETURN VARCHAR2;
+END errpkg;
+/
+
+CREATE OR REPLACE PACKAGE BODY errpkg
+IS
+   PROCEDURE record_and_continue (err_in   IN PLS_INTEGER := SQLCODE
+                                , msg_in   IN VARCHAR2 := NULL)
+   IS
+   BEGIN
+      /* Automatically include all the error information available through
+         the DBMS_UITLITY functions.
+
+         Downside: you have to parse out these details later.
+      */
+      logpkg.putline (err_in, msg_in);
+   END;
+
+   PROCEDURE raise_error (err_in   IN PLS_INTEGER := SQLCODE
+                        , msg_in   IN VARCHAR2 := NULL)
+   IS
+      l_message   VARCHAR2 (32767)
+         :=    NVL (msg_in, errtext (err_in))
+            || '|Error Message: '
+            || DBMS_UTILITY.format_error_stack
+            || '|Backtrace: '
+            || DBMS_UTILITY.format_error_backtrace
+            || '|Callstack: '
+            || DBMS_UTILITY.format_call_stack;
+   BEGIN
+      IF err_in BETWEEN -20999 AND -20000
+      THEN
+         raise_application_error (err_in, l_message);
+      /* You can use positive error numbers -- lots to choose from! */
+      ELSIF err_in > 0 AND err_in NOT IN (1, 100)
+      THEN
+         raise_application_error (-20000, l_message);
+      /* Can't EXCEPTION_INIT -1403, so we raise these explicitly */
+      ELSIF err_in IN (100, -1403)
+      THEN
+         RAISE NO_DATA_FOUND;
+      /* Re-raise any other exception using dynamic PL/SQL. */
+      ELSE
+         EXECUTE IMMEDIATE   'DECLARE myexc EXCEPTION; '
+                          || '   PRAGMA EXCEPTION_INIT (myexc, '
+                          || TO_CHAR (err_in)
+                          || ');'
+                          || 'BEGIN  RAISE myexc; END;';
+      END IF;
+   END raise_error;
+
+   FUNCTION error_number_from_name (err_in IN VARCHAR2)
+      RETURN PLS_INTEGER
+   IS
+   BEGIN
+      RETURN 'LOOKUP NAME HERE';
+   END error_number_from_name;
+
+   PROCEDURE raise_error (err_in IN VARCHAR2, msg_in IN VARCHAR2 := NULL)
+   IS
+   BEGIN
+      raise_error (error_number_from_name (err_in), msg_in);
+   END raise_error;
+
+   PROCEDURE record_and_stop (err_in   IN PLS_INTEGER := SQLCODE
+                            , msg_in   IN VARCHAR2 := NULL)
+   IS
+   BEGIN
+      record_and_continue (err_in, msg_in);
+      raise_error (err_in);
+   END;
+
+   FUNCTION errtext (err_in IN PLS_INTEGER := SQLCODE)
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      RETURN msginfo.
+              text (code_in       => err_in
+                  , type_in       => 'EXCEPTION'
+                  , use_sqlerrm   => TRUE);
+   END;
+END errpkg;
+/
+
+/* Example of usage
+EXCEPTION
+   WHEN NO_DATA_FOUND
+   THEN 
+      errpkg.record_and_continue (
+         SQLCODE, 
+         ' No company for id ' || TO_CHAR (v_id));
+
+   WHEN OTHERS
+      THEN
+      errpkg.record_and_stop; 
+END;
+*/

@@ -1,0 +1,17 @@
+CREATE OR REPLACE PACKAGE ut_altind
+IS
+   PROCEDURE ut_setup;
+   PROCEDURE ut_teardown;
+ 
+   -- For each program to test...
+   PROCEDURE ut_LOADCACHE;
+   PROCEDURE ut_NOTRC;
+   PROCEDURE ut_ONEROW1;
+   PROCEDURE ut_ONEROW2;
+   PROCEDURE ut_ONEROW_DBIND;
+   PROCEDURE ut_ONEROW_DBNOIND;
+   PROCEDURE ut_SHOWHASH;
+   PROCEDURE ut_TRACING;
+   PROCEDURE ut_TRC;
+END ut_altind;
+/

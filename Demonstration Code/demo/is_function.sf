@@ -1,0 +1,36 @@
+/*
+@bpl.sp
+@dyn_placeholder.pks
+@dyn_placeholder.pkb
+*/
+
+CREATE OR REPLACE FUNCTION is_function (owner_in    IN VARCHAR2
+                                      , package_in  IN VARCHAR2
+                                      , NAME_IN     IN VARCHAR2
+                                      , overload_in IN PLS_INTEGER
+                                       )
+   RETURN BOOLEAN
+IS
+   l_count   PLS_INTEGER;
+BEGIN
+   SELECT COUNT ( * )
+     INTO l_count
+     FROM all_arguments
+    WHERE     owner = owner_in
+          AND package_name = package_in
+          AND object_name = NAME_IN
+          AND (overload = overload_in
+               OR (overload IS NULL AND overload_in IS NULL))
+          AND data_level = 0
+          AND position = 0;
+
+   RETURN l_count > 0;
+END is_function;
+/
+
+BEGIN
+   bpl (is_function (USER, 'DYN_PLACEHOLDER', 'ALL_IN_STRING', NULL));
+   bpl (is_function (USER, 'DYN_PLACEHOLDER', 'SHOW_PLACEHOLDERS', 1));
+   bpl (is_function (USER, 'DYN_PLACEHOLDER', 'NOT-IN-PACKAGE', 1));
+END;
+/

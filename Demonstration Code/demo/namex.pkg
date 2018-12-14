@@ -1,0 +1,576 @@
+/* Formatted by PL/Formatter v3.0.5.0 on 2000/04/14 09:08 */
+
+CREATE OR REPLACE PACKAGE namex
+/*
+|| Author: Steven Feuerstein, sfinfo@stevenfeuerstein.com
+||
+|| Overview: The namex package converts names designed for
+||           a case-insensitive language/environment (PL/SQL code,
+||           the data dictionary, etc.) into names that conform
+||           to the Java standard:
+||
+||           1. Names of classes are capitalized.
+||           2. Names of methods and members are not capitalized.
+||           3. In all cases, discrete words within a name are
+||              capitalized.
+||           4. Underscores, dashes, etc. are generally not used
+||              to distinguish words within a name.
+||
+||           Examples
+||
+||           ORACLE            PL/SQL
+||           ----------------  -----------------
+||           lineitem          LineItem
+||           calc_ord_total    calcOrdTotal
+*/
+IS
+   c_table        CONSTANT CHAR (1)    := 'T';
+   c_column       CONSTANT CHAR (1)    := 'C';
+   c_upper        CONSTANT CHAR (1)    := 'U';
+   c_lower        CONSTANT CHAR (1)    := 'L';
+   c_initcap      CONSTANT CHAR (1)    := 'I';
+   known_delims   CONSTANT VARCHAR2 (3) := '$_#';
+
+   PROCEDURE addwords (
+      word_in          IN   VARCHAR2,
+      action_in        IN   VARCHAR2 := c_initcap,
+      updondup_in      IN   BOOLEAN := TRUE,
+      delim_in         IN   VARCHAR2 := ',',
+      valid_chars_in   IN   VARCHAR2 := known_delims,
+      fixedchar_in     IN   VARCHAR2 := '^'
+   );
+
+   PROCEDURE addfile (
+      dir_in           IN   VARCHAR2,
+      file_in          IN   VARCHAR2,
+      action_in        IN   VARCHAR2 := c_initcap,
+      updondup_in      IN   BOOLEAN := TRUE,
+      valid_chars_in   IN   VARCHAR2 := known_delims,
+      fixedchar_in     IN   VARCHAR2 := '^'
+   );
+
+   FUNCTION tojava (
+      identifier_in   IN   VARCHAR2,
+      nametype_in     IN   VARCHAR2 := c_column
+   )
+      RETURN VARCHAR2;
+
+   /* Perform replacements from end of string. This is called by
+      tojava if the sweep from the start of the string results in
+      a failure.  */
+   FUNCTION tojava_bw (
+      identifier_in   IN   VARCHAR2,
+      nametype_in     IN   VARCHAR2 := c_column
+   )
+      RETURN VARCHAR2;
+
+   FUNCTION matchingrow (identifier_in IN VARCHAR2)
+      RETURN PLS_INTEGER;
+
+   FUNCTION party_crasher (
+      identifier_in    IN   VARCHAR2,
+      valid_chars_in   IN   VARCHAR2 := known_delims,
+      fixedchar_in     IN   VARCHAR2 := '^'
+   )
+      RETURN BOOLEAN;
+
+   PROCEDURE trc;
+
+   PROCEDURE notrc;
+
+   FUNCTION tracing
+      RETURN BOOLEAN;
+
+   PROCEDURE test_against_dd (
+      table_in    IN   VARCHAR2 := '%',
+      schema_in   IN   VARCHAR2 := NULL
+   );
+END;
+/
+CREATE OR REPLACE PACKAGE BODY namex
+IS
+   padchar   CONSTANT CHAR (1)    := '|';
+
+   CURSOR word_cur
+   IS
+      SELECT *
+        FROM namex_word
+       ORDER BY wordlen DESC;
+
+   g_trc              BOOLEAN     := FALSE;
+
+   TYPE wordtabtype IS TABLE OF namex_word%ROWTYPE
+      INDEX BY BINARY_INTEGER;
+
+   wordtab            wordtabtype;
+   word_count         PLS_INTEGER;
+
+   PROCEDURE pl (str IN VARCHAR2, len IN INTEGER := 80)
+   IS
+      /* Dallas 11/99 */
+      v_len   PLS_INTEGER    := LEAST (len, 255);
+      v_str   VARCHAR2 (2000);
+   BEGIN
+      IF LENGTH (str) > v_len
+      THEN
+         v_str := SUBSTR (str, 1, v_len);
+         DBMS_OUTPUT.put_line (v_str);
+         pl (SUBSTR (str, len + 1), v_len);
+      ELSE
+         v_str := str;
+         DBMS_OUTPUT.put_line (v_str);
+      END IF;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         /* TVP 9/99: Might want to use buffer size to STOP program */
+         DBMS_OUTPUT.enable (1000000);
+         DBMS_OUTPUT.put_line (v_str);
+   END;
+
+   PROCEDURE trc
+   IS
+   BEGIN
+      g_trc := TRUE;
+   END;
+
+   PROCEDURE notrc
+   IS
+   BEGIN
+      g_trc := FALSE;
+   END;
+
+   FUNCTION tracing
+      RETURN BOOLEAN
+   IS
+   BEGIN
+      RETURN g_trc;
+   END;
+
+   PROCEDURE addword (
+      word_in          IN   VARCHAR2,
+      action_in        IN   VARCHAR2 := c_initcap,
+      updondup_in      IN   BOOLEAN := TRUE,
+      valid_chars_in   IN   VARCHAR2 := known_delims,
+      fixedchar_in     IN   VARCHAR2 := '^'
+   )
+   IS
+      v_word   namex_word.word%TYPE;
+      addit    BOOLEAN              := TRUE;
+   BEGIN
+      IF action_in = c_initcap
+      THEN
+         v_word := INITCAP (word_in);
+      ELSIF action_in = c_upper
+      THEN
+         v_word := UPPER (word_in);
+      ELSIF action_in = c_lower
+      THEN
+         v_word := LOWER (word_in);
+      ELSE
+         v_word := action_in;
+      END IF;
+
+      IF valid_chars_in IS NOT NULL
+      THEN
+         addit := NOT party_crasher (v_word, valid_chars_in, fixedchar_in);
+      END IF;
+
+      IF addit
+      THEN
+         IF tracing
+         THEN
+            pl ('Adding ' || word_in || '-' || v_word);
+         END IF;
+
+         INSERT INTO namex_word
+                     (word, fword, wordlen)
+              VALUES (RTRIM (word_in), RTRIM (v_word), LENGTH (word_in));
+      ELSE
+         IF tracing
+         THEN
+            pl ('Rejected ' || word_in || '-' || v_word);
+         END IF;
+      END IF;
+   EXCEPTION
+      WHEN DUP_VAL_ON_INDEX
+      THEN
+         IF updondup_in
+         THEN
+            UPDATE namex_word
+               SET fword = v_word
+             WHERE word = word_in;
+         END IF;
+   END;
+
+   PROCEDURE addwords (
+      word_in          IN   VARCHAR2,
+      action_in        IN   VARCHAR2 := c_initcap,
+      updondup_in      IN   BOOLEAN := TRUE,
+      delim_in         IN   VARCHAR2 := ',',
+      valid_chars_in   IN   VARCHAR2 := known_delims,
+      fixedchar_in     IN   VARCHAR2 := '^'
+   )
+   IS
+      startloc   PLS_INTEGER          := 1;
+      nextloc    PLS_INTEGER          := 1;
+      wordlen    PLS_INTEGER          := LENGTH (word_in);
+      v_word     namex_word.word%TYPE;
+   BEGIN
+      IF INSTR (word_in, delim_in) = 0
+      THEN
+         addword (
+            word_in,
+            action_in,
+            updondup_in,
+            valid_chars_in,
+            fixedchar_in
+         );
+      ELSE
+         WHILE nextloc != 0
+           AND startloc < wordlen
+         LOOP
+            nextloc := INSTR (word_in, delim_in, startloc);
+
+            IF nextloc = 0
+            THEN
+               v_word := SUBSTR (word_in, startloc);
+            ELSE
+               v_word := SUBSTR (word_in, startloc, nextloc - startloc);
+               startloc := nextloc + 1;
+            END IF;
+
+            addword (
+               v_word,
+               action_in,
+               updondup_in,
+               valid_chars_in,
+               fixedchar_in
+            );
+         END LOOP;
+      END IF;
+   END;
+
+   PROCEDURE addfile (
+      dir_in           IN   VARCHAR2,
+      file_in          IN   VARCHAR2,
+      action_in        IN   VARCHAR2 := c_initcap,
+      updondup_in      IN   BOOLEAN := TRUE,
+      valid_chars_in   IN   VARCHAR2 := known_delims,
+      fixedchar_in     IN   VARCHAR2 := '^'
+   )
+   IS
+      fid    UTL_FILE.file_type;
+      line   VARCHAR2 (1000);
+   BEGIN
+      fid := UTL_FILE.fopen (dir_in, file_in, 'R');
+
+      LOOP
+         UTL_FILE.get_line (fid, line);
+         addword (line, action_in, updondup_in, valid_chars_in, fixedchar_in);
+      END LOOP;
+
+      UTL_FILE.fclose (fid);
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         UTL_FILE.fclose (fid);
+   END;
+
+   FUNCTION tojava (
+      identifier_in   IN   VARCHAR2,
+      nametype_in     IN   VARCHAR2 := c_column
+   )
+      RETURN VARCHAR2
+   IS
+      /* Set up the return value */
+      retval         VARCHAR2 (32767) := LOWER (identifier_in);
+      
+      /* All words in glossary are in upper case. */
+      v_upperident   VARCHAR2 (32767) := UPPER (identifier_in);
+      
+      wordloc        PLS_INTEGER;
+      identlen       PLS_INTEGER     := LENGTH (identifier_in);
+      startloc       PLS_INTEGER     := 1;
+
+      unidentifiable_word EXCEPTION;
+      
+      PROCEDURE skip_over_known_delims (startloc_inout IN OUT PLS_INTEGER)
+      IS
+      BEGIN
+         WHILE SUBSTR (v_upperident, startloc_inout, 1) IN ('_', '$', '#')
+         LOOP
+            startloc_inout := startloc_inout + 1;
+         END LOOP;
+      END;
+
+      FUNCTION match_from_glossary (
+         NAME_IN       IN   VARCHAR2,
+         startloc_in   IN   PLS_INTEGER
+      )
+         RETURN PLS_INTEGER
+      IS
+         indx      PLS_INTEGER;
+         wordloc   PLS_INTEGER;
+      BEGIN
+         /* Set up variables to loop through the glossary */
+         indx := wordtab.FIRST;
+         wordloc := 0;
+
+         /* Scan through the index-by table cached glossary */
+         WHILE indx <= word_count
+         LOOP
+            wordloc := INSTR (NAME_IN, wordtab (indx).word, startloc_in);
+            EXIT WHEN wordloc = startloc_in;
+            indx := indx + 1;
+         END LOOP;
+
+         IF indx > word_count
+         THEN
+            RETURN NULL;
+         ELSE
+            RETURN indx;
+         END IF;
+      END;
+
+      PROCEDURE format_found_word (
+         name_inout    IN OUT   VARCHAR2,
+         startloc_in   IN       PLS_INTEGER,
+         indx_in       IN       PLS_INTEGER
+      )
+      IS
+      BEGIN
+         IF startloc_in = 1         /* Right at the beginning of the string */
+         THEN
+            /* If I am converting a table name, the first character
+               should be upper-cased. */
+
+            IF nametype_in = c_table
+            THEN
+               name_inout := INITCAP (name_inout);
+            END IF;
+         ELSE
+            /* Swap out the current word and replace it
+               with the formatted word from the cached
+               glossary. */
+
+            name_inout :=
+              SUBSTR (retval, 1, startloc_in - 1) || wordtab (indx_in).fword ||
+                 SUBSTR (retval, startloc_in + wordtab (indx_in).wordlen);
+         END IF;
+
+         IF tracing
+         THEN
+            pl (
+               LPAD (padchar, startloc_in, ' ') ||
+                  RPAD (padchar, wordtab (indx_in).wordlen - 1, padchar)
+            );
+            pl (name_inout);
+         END IF;
+      END;
+
+      PROCEDURE move_ahead_in_string (
+         startloc_inout IN OUT PLS_INTEGER,
+         wordloc_in IN PLS_INTEGER)
+      IS
+      BEGIN
+         startloc_inout := 
+            startloc_inout + wordtab (wordloc_in).wordlen;
+      END;
+
+   BEGIN /* main body of toJava */
+      IF tracing
+      THEN
+         pl ('');
+         pl (RPAD ('-', 60, '-'));
+         pl ('              Oracle to Java Name Conversion ');
+         pl (RPAD ('-', 60, '-'));
+         pl (identifier_in);
+         pl ('');
+      END IF;
+
+      WHILE startloc <= identlen
+      LOOP
+         skip_over_known_delims (startloc);
+         
+         wordloc := match_from_glossary (v_upperident, startloc);
+
+         IF wordloc IS NULL
+         THEN
+            RAISE unidentifiable_word;
+         ELSE
+            format_found_word (retval, startloc, wordloc);
+         END IF;
+
+         move_ahead_in_string (startloc, wordloc);
+      END LOOP;
+
+      RETURN retval;
+   EXCEPTION
+      WHEN unidentifiable_word
+      THEN
+         IF tracing
+         THEN
+            pl (
+               '> Forward scan failure: no match starting at "' ||
+                  SUBSTR (identifier_in, startloc) ||
+                  '"'
+            );
+            pl ('> Start backward scan...');
+         END IF;
+
+         /* Try going backwards. */
+         RETURN (tojava_bw (identifier_in, nametype_in));
+   END;
+
+   FUNCTION tojava_bw (
+      identifier_in   IN   VARCHAR2,
+      nametype_in     IN   VARCHAR2 := c_column
+   )
+      RETURN VARCHAR2
+   IS
+      retval         VARCHAR2 (32767) := LOWER (identifier_in);
+      identlen       PLS_INTEGER     := LENGTH (identifier_in);
+      v_upperident   VARCHAR2 (32767) := UPPER (identifier_in);
+      v_len          PLS_INTEGER;
+      indx           PLS_INTEGER;
+      wordloc        PLS_INTEGER;
+      last_wordloc   PLS_INTEGER;
+   BEGIN
+      LOOP
+         indx := wordtab.FIRST;
+         wordloc := 0;
+         v_upperident := RTRIM (v_upperident, '_');
+         v_len := LENGTH (v_upperident);
+
+         WHILE indx <= word_count
+         LOOP
+            wordloc :=
+              INSTR (
+                 v_upperident,
+                 wordtab (indx).word,
+                 v_len - wordtab (indx).wordlen + 1
+              );
+            EXIT WHEN wordloc > 0;
+            indx := indx + 1;
+         END LOOP;
+
+         IF wordloc = 0
+         THEN
+            RAISE NO_DATA_FOUND;
+         ELSE
+            IF wordloc = 1
+            THEN
+               IF nametype_in = c_table
+               THEN
+                  retval := INITCAP (retval);
+               END IF;
+
+               IF tracing
+               THEN
+                  pl (RPAD (padchar, last_wordloc - 1, padchar));
+                  pl (retval);
+               END IF;
+
+               EXIT;
+            ELSE
+               retval :=
+                 SUBSTR (retval, 1, wordloc - 1) || wordtab (indx).fword ||
+                    SUBSTR (retval, wordloc + wordtab (indx).wordlen);
+            END IF;
+
+            IF tracing
+            THEN
+               pl (
+                  LPAD (padchar, wordloc, ' ') ||
+                     RPAD (padchar, wordtab (indx).wordlen - 1, padchar)
+               );
+               pl (retval);
+               
+               last_wordloc := wordloc;
+            END IF;
+
+            v_upperident :=
+              SUBSTR (
+                 v_upperident,
+                 1,
+                 LENGTH (v_upperident) - wordtab (indx).wordlen
+              );
+         END IF;
+      END LOOP;
+
+      RETURN retval;
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         RETURN NULL;
+   END;
+
+   FUNCTION matchingrow (identifier_in IN VARCHAR2)
+      RETURN PLS_INTEGER
+   IS
+      retval   PLS_INTEGER;
+      indx     PLS_INTEGER;
+   BEGIN
+      indx := wordtab.FIRST;
+
+      WHILE indx <= word_count
+      LOOP
+         IF identifier_in = wordtab (indx).word
+         THEN
+            retval := indx;
+            indx := word_count;
+         END IF;
+
+         indx := indx + 1;
+      END LOOP;
+
+      RETURN retval;
+   END;
+
+   FUNCTION party_crasher (
+      identifier_in    IN   VARCHAR2,
+      valid_chars_in   IN   VARCHAR2 := known_delims,
+      fixedchar_in     IN   VARCHAR2 := '^'
+   )
+      RETURN BOOLEAN
+   IS
+   BEGIN
+      /* The only chars that are allowed are letters, digits and characters
+         in the valid_chars list. */
+      RETURN (
+                TRANSLATE (LOWER (identifier_in),  
+                fixedchar_in ||
+                   'abcdefghijklmnopqrstuvwxyz0123456789' ||
+                   valid_chars_in,  
+                fixedchar_in) IS NOT NULL
+             );
+   END;
+
+   PROCEDURE test_against_dd (
+      table_in    IN   VARCHAR2 := '%',
+      schema_in   IN   VARCHAR2 := NULL
+   )
+   IS
+   BEGIN
+      FOR rec IN (SELECT DISTINCT owner, table_name, column_name
+                    FROM all_tab_columns
+                   WHERE owner LIKE NVL (UPPER (schema_in), USER)
+                     AND table_name LIKE UPPER (table_in))
+      LOOP
+         pl (rec.column_name || ' -> ' || 
+             NVL (namex.tojava (rec.column_name), '*** Unable to convert name'));
+      END LOOP;
+   END;
+
+BEGIN
+   /* Load up the glossary of words from the namex_word table. */
+
+   FOR rec IN word_cur
+   LOOP
+      wordtab (word_cur%rowcount) := rec;
+   END LOOP;
+
+   word_count := wordtab.COUNT;
+END;
+/

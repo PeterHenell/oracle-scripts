@@ -1,0 +1,17 @@
+CREATE OR REPLACE PACKAGE BODY hash
+is
+    maxRange CONSTANT BINARY_INTEGER := 1073741824;
+    delta CONSTANT BINARY_INTEGER := 37;
+
+    FUNCTION val (str IN VARCHAR2) RETURN NUMBER
+    IS
+        retval number := 0;
+    BEGIN
+        retval := DBMS_UTILITY.GET_HASH_VALUE (str, delta, maxRange);
+        RETURN retval;
+    END val;
+
+END hash;
+/
+
+

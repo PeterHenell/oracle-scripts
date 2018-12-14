@@ -1,0 +1,96 @@
+CREATE OR REPLACE PACKAGE schedule_pkg
+IS  
+   PROCEDURE semester_to_queue (student_in IN VARCHAR2);
+
+   PROCEDURE show_by_group;
+END;
+/
+CREATE OR REPLACE PACKAGE BODY schedule_pkg
+IS
+   c_qtable CONSTANT aq.name_type := 'semester_qtable';
+   c_queue CONSTANT aq.name_type := 'semester_queue';
+   
+   PROCEDURE semester_to_queue (student_in IN VARCHAR2)
+   IS
+      CURSOR classes_cur
+      IS
+         SELECT classyear, semester, class
+           FROM semester_class
+          WHERE student = student_in;
+
+      queueopts DBMS_AQ.ENQUEUE_OPTIONS_T;
+      msgprops DBMS_AQ.MESSAGE_PROPERTIES_T;
+
+      v_msgid aq.msgid_type;
+      class_obj semester_class_t;
+
+   BEGIN
+      /* This is the default, but let's make sure! */
+      queueopts.visibility := DBMS_AQ.ON_COMMIT;
+
+      FOR rec IN classes_cur
+      LOOP
+         class_obj := semester_class_t (student_in, rec.class, rec.semester);
+         DBMS_AQ.ENQUEUE (c_queue, queueopts, msgprops, class_obj, v_msgid);
+      END LOOP;
+
+      /* Now commit as a batch to get the message grouping. */
+      COMMIT;
+   END;
+
+   PROCEDURE show_by_group
+   IS
+      obj semester_class_t;
+      v_msgid aq.msgid_type;
+      first_in_group BOOLEAN := TRUE;
+
+      queueopts DBMS_AQ.DEQUEUE_OPTIONS_T;
+      msgprops DBMS_AQ.MESSAGE_PROPERTIES_T;
+   BEGIN
+      /* Just dumping out whatever is in the queue, so no waiting. */
+      queueopts.wait := DBMS_AQ.NO_WAIT;
+
+      /* Start at the beginning of the queue, incorporating all enqueues. */
+      queueopts.navigation := DBMS_AQ.FIRST_MESSAGE;
+
+      LOOP
+         /* Local block to trap exception: end of group. */
+         BEGIN
+            DBMS_AQ.DEQUEUE (c_queue,
+               queueopts, msgprops, obj, v_msgid);
+
+            IF first_in_group
+            THEN
+               first_in_group := FALSE;
+
+               DBMS_OUTPUT.PUT_LINE 
+                  ('Schedule for ' || obj.student || 
+                   ' in semester ' || obj.semester);
+            END IF;
+
+            DBMS_OUTPUT.PUT_LINE ('*   ' || obj.class);
+
+            /* Navigate to the next message in the group. */
+            queueopts.navigation := DBMS_AQ.NEXT_MESSAGE;
+
+         EXCEPTION
+            WHEN aq.end_of_message_group
+            THEN
+               /* Throw out a break line. */
+               DBMS_OUTPUT.PUT_LINE ('*****');
+
+               /* Move to the next student. */
+               queueopts.navigation := DBMS_AQ.NEXT_TRANSACTION;
+
+               /* Set header flag for new student. */
+               first_in_group := FALSE;
+         END;
+      END LOOP;
+   EXCEPTION
+      WHEN aq.dequeue_timeout
+      THEN
+         /* No more students, no more message groups. */
+         NULL;
+   END;
+END;
+/

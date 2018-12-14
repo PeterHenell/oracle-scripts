@@ -1,0 +1,291 @@
+CREATE OR REPLACE PACKAGE p
+-- Adapted from PL/Vision
+IS
+   c_linelen   CONSTANT PLS_INTEGER := 80;
+
+   -- Set line length before wrap 
+   PROCEDURE set_linelen (len IN PLS_INTEGER := c_linelen);
+
+   FUNCTION linelen
+      RETURN PLS_INTEGER;
+
+-- The overloaded versions of the p.l procedure 
+
+   -- Display a date. Can specify a format mask or use the default. 
+   PROCEDURE l (Dt IN DATE, mask_in IN VARCHAR2 := NULL);
+
+   -- Display a number. 
+   PROCEDURE l (num IN NUMBER);
+
+   -- Display a string. 
+   PROCEDURE l (stg IN VARCHAR2);
+
+   -- Display a string followed by a number. 
+   PROCEDURE l (stg IN VARCHAR2, num IN NUMBER);
+
+   -- Display a string followed by a date. 
+   PROCEDURE l (stg IN VARCHAR2, Dt IN DATE, mask_in IN VARCHAR2 := NULL);
+
+   -- Display a Boolean value. 
+   PROCEDURE l (bool IN BOOLEAN);
+
+   -- Display a string and then a Boolean value. 
+   PROCEDURE l (stg IN VARCHAR2, bool IN BOOLEAN);
+
+   PROCEDURE l (file_in IN UTL_FILE.file_type);
+
+   PROCEDURE l (
+      string_in   IN   VARCHAR2
+     ,file_in     IN   UTL_FILE.file_type
+     
+   );
+
+   -- Additional overloadings 
+   PROCEDURE l (num1 IN NUMBER, num2 IN NUMBER);
+
+   PROCEDURE l (str IN VARCHAR2, num1 IN NUMBER, num2 IN NUMBER);
+
+   PROCEDURE l (bool1 IN BOOLEAN, bool2 IN BOOLEAN);
+
+   PROCEDURE l (stg1 IN VARCHAR2, stg2 IN VARCHAR2);
+
+   PROCEDURE l (dt1 IN DATE, dt2 IN DATE, mask_in IN VARCHAR2 := NULL);
+
+   PROCEDURE l (num IN NUMBER, Dt IN DATE, mask_in IN VARCHAR2 := NULL);
+
+   PROCEDURE l (bool IN BOOLEAN, num IN NUMBER);
+
+   PROCEDURE l (bool IN BOOLEAN, Dt IN DATE, mask_in IN VARCHAR2 := NULL);
+
+   PROCEDURE l (bool IN BOOLEAN, stg IN VARCHAR2);
+
+   PROCEDURE l (xml_in IN SYS.XMLTYPE);
+
+   PROCEDURE l (clob_in IN CLOB);
+END p;
+/
+
+CREATE OR REPLACE PACKAGE BODY p
+IS
+   c_max_dopl_line    PLS_INTEGER := 255;
+   c_delim   CONSTANT CHAR (3)    := ' - ';
+   v_linelen          PLS_INTEGER := c_linelen;
+
+   FUNCTION Boolstg (val IN BOOLEAN)
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      IF val
+      THEN
+         RETURN 'TRUE';
+      ELSIF NOT val
+      THEN
+         RETURN 'FALSE';
+      ELSE
+         RETURN 'NULL';
+      END IF;
+   END Boolstg;
+
+   PROCEDURE put_line (str IN VARCHAR2)
+   IS
+      v_len     PLS_INTEGER     := linelen;
+      v_len2    PLS_INTEGER;
+      v_chr10   PLS_INTEGER;
+      v_str     VARCHAR2 (2000);
+   BEGIN
+      IF LENGTH (str) > linelen
+      THEN
+         v_chr10 := INSTR (str, CHR (10));
+
+         IF v_chr10 > 0 AND linelen >= v_chr10
+         THEN
+            v_len := v_chr10 - 1;
+            v_len2 := v_chr10 + 1;
+         ELSE
+            v_len := v_len - 1;
+            v_len2 := v_len;
+         END IF;
+
+         v_str := SUBSTR (str, 1, v_len);
+         DBMS_OUTPUT.put_line (v_str);
+         put_line (SUBSTR (str, v_len2));
+      ELSE
+         DBMS_OUTPUT.put_line (str);
+      END IF;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         DBMS_OUTPUT.ENABLE (1000000);
+         DBMS_OUTPUT.put_line (v_str);
+   END;
+
+   PROCEDURE display_line (line_in IN VARCHAR2)
+   IS
+   BEGIN
+      IF LENGTH (line_in) > linelen
+      THEN
+         PLVprs.display_wrap (line_in
+                             , linelen - 2
+                             ,NULL
+                             ,use_newlines      => TRUE
+                             );
+      ELSE
+         put_line (line_in);
+      END IF;
+   END display_line;
+
+   -- Set line length before wrap 
+   PROCEDURE set_linelen (len IN PLS_INTEGER := c_linelen)
+   IS
+   BEGIN
+      v_linelen :=
+                  LEAST (c_max_dopl_line, GREATEST (NVL (len, c_linelen), 1));
+   END;
+
+   FUNCTION linelen
+      RETURN PLS_INTEGER
+   IS
+   BEGIN
+      RETURN v_linelen;
+   END;
+
+   -------------------- The p.l Procedures ----------------
+   PROCEDURE l (Dt IN DATE, mask_in IN VARCHAR2 := NULL)
+   IS
+   BEGIN
+      display_line (TO_CHAR (Dt, mask_in));
+   END;
+
+   PROCEDURE l (num IN NUMBER)
+   IS
+   BEGIN
+      display_line (TO_CHAR (num));
+   END;
+
+   PROCEDURE l (stg IN VARCHAR2)
+   IS
+   BEGIN
+      display_line (stg);
+   END;
+
+   PROCEDURE l (stg IN VARCHAR2, num IN NUMBER)
+   IS
+   BEGIN
+      display_line (stg || c_delim || TO_CHAR (num));
+   END;
+
+   PROCEDURE l (stg IN VARCHAR2, Dt IN DATE, mask_in IN VARCHAR2 := NULL)
+   IS
+   BEGIN
+      display_line (stg || c_delim || TO_CHAR (Dt, mask_in));
+   END;
+
+   PROCEDURE l (bool IN BOOLEAN)
+   IS
+   BEGIN
+      display_line (Boolstg (bool));
+   END;
+
+   PROCEDURE l (stg IN VARCHAR2, bool IN BOOLEAN)
+   IS
+   BEGIN
+      display_line (stg || c_delim || Boolstg (bool));
+   END;
+
+   PROCEDURE l (file_in IN UTL_FILE.file_type)
+   IS
+   BEGIN
+      display_line (TO_CHAR (file_in.ID));
+   END;
+
+   PROCEDURE l (string_in IN VARCHAR2, file_in IN UTL_FILE.file_type)
+   IS
+   BEGIN
+      l (string_in, file_in.ID);
+   END;
+
+   -- Additional overloadings 
+   PROCEDURE l (num1 IN NUMBER, num2 IN NUMBER)
+   IS
+   BEGIN
+      display_line (TO_CHAR (num1) || c_delim || TO_CHAR (num2));
+   END;
+
+   PROCEDURE l (str IN VARCHAR2, num1 IN NUMBER, num2 IN NUMBER)
+   IS
+   BEGIN
+      display_line (str || c_delim || TO_CHAR (num1) || c_delim
+                    || TO_CHAR (num2)
+                   );
+   END;
+
+   PROCEDURE l (bool1 IN BOOLEAN, bool2 IN BOOLEAN)
+   IS
+   BEGIN
+      display_line (Boolstg (bool1) || c_delim || Boolstg (bool2));
+   END;
+
+   PROCEDURE l (stg1 IN VARCHAR2, stg2 IN VARCHAR2)
+   IS
+   BEGIN
+      display_line (stg1 || c_delim || stg2);
+   END;
+
+   PROCEDURE l (dt1 IN DATE, dt2 IN DATE, mask_in IN VARCHAR2 := NULL)
+   IS
+   BEGIN
+      display_line (TO_CHAR (dt1, mask_in) || c_delim
+                    || TO_CHAR (dt2, mask_in)
+                   );
+   END;
+
+   PROCEDURE l (num IN NUMBER, Dt IN DATE, mask_in IN VARCHAR2 := NULL)
+   IS
+   BEGIN
+      display_line (TO_CHAR (num) || c_delim || TO_CHAR (Dt, mask_in));
+   END;
+
+   PROCEDURE l (bool IN BOOLEAN, num IN NUMBER)
+   IS
+   BEGIN
+      display_line (Boolstg (bool) || c_delim || TO_CHAR (num));
+   END;
+
+   PROCEDURE l (bool IN BOOLEAN, Dt IN DATE, mask_in IN VARCHAR2 := NULL)
+   IS
+   BEGIN
+      display_line (Boolstg (bool) || c_delim || TO_CHAR (Dt, mask_in));
+   END;
+
+   PROCEDURE l (bool IN BOOLEAN, stg IN VARCHAR2)
+   IS
+   BEGIN
+      display_line (stg || c_delim || Boolstg (bool));
+   END;
+
+   PROCEDURE l (xml_in IN SYS.XMLTYPE)
+   IS
+   BEGIN
+      p.l (xml_in.getstringval ());
+   END;
+
+   PROCEDURE l (clob_in IN CLOB)
+   IS
+      buffer     VARCHAR2 (32767);
+      amount     BINARY_INTEGER;
+      POSITION   PLS_INTEGER      := 1;
+   BEGIN
+      LOOP
+         amount := linelen;
+         DBMS_LOB.READ (clob_in, amount, POSITION, buffer);
+         -- Display the buffer contents: 
+         p.l (buffer);
+         POSITION := POSITION + amount;
+      END LOOP;
+   EXCEPTION
+      WHEN NO_DATA_FOUND OR VALUE_ERROR
+      THEN
+         NULL;
+   END;
+END p;
+/

@@ -1,0 +1,82 @@
+create or replace package EMP_cache is 
+subtype CONCAT_UI_t is varchar2(32767);
+function onerow ( EMPNO_in IN SCOTT.EMP.EMPNO%TYPE) return SCOTT.EMP%ROWTYPE;
+function onerow_by_CONCAT_UI ( 
+ENAME_in IN SCOTT.EMP.ENAME%TYPE
+,
+JOB_in IN SCOTT.EMP.JOB%TYPE
+) return SCOTT.EMP%ROWTYPE;
+function onerow_by_ENAME_UI ( 
+ENAME_in IN SCOTT.EMP.ENAME%TYPE
+) return SCOTT.EMP%ROWTYPE;
+procedure test;
+end EMP_cache;
+/
+create or replace package body EMP_cache is 
+TYPE EMP_aat IS TABLE OF SCOTT.EMP%ROWTYPE INDEX BY PLS_INTEGER;
+PK_EMP_aa EMP_aat;
+TYPE CONCAT_UI_aat IS TABLE OF SCOTT.EMP.EMPNO%TYPE INDEX BY CONCAT_UI_t;
+CONCAT_UI_aa CONCAT_UI_aat;
+TYPE ENAME_UI_aat IS TABLE OF SCOTT.EMP.EMPNO%TYPE INDEX BY SCOTT.EMP.ENAME%TYPE;
+ENAME_UI_aa ENAME_UI_aat;
+function val_for_CONCAT_UI ( 
+ENAME_in IN SCOTT.EMP.ENAME%TYPE
+,
+JOB_in IN SCOTT.EMP.JOB%TYPE
+) return CONCAT_UI_t
+is begin return (
+ENAME_in
+ || 
+JOB_in
+); end val_for_CONCAT_UI;
+function onerow ( EMPNO_in IN SCOTT.EMP.EMPNO%TYPE) return SCOTT.EMP%ROWTYPE is begin return PK_EMP_aa (EMPNO_in); end;
+function onerow_by_CONCAT_UI ( 
+ENAME_in IN SCOTT.EMP.ENAME%TYPE
+,
+JOB_in IN SCOTT.EMP.JOB%TYPE
+) return SCOTT.EMP%ROWTYPE is begin return PK_EMP_aa (CONCAT_UI_aa (
+val_for_CONCAT_UI(ENAME_in,JOB_in)
+)); end;
+function onerow_by_ENAME_UI ( 
+ENAME_in IN SCOTT.EMP.ENAME%TYPE
+) return SCOTT.EMP%ROWTYPE is begin return PK_EMP_aa (ENAME_UI_aa (
+ENAME_in
+)); end;
+procedure load_arrays is begin
+FOR rec IN (SELECT * FROM SCOTT.EMP)
+LOOP
+PK_EMP_aa(rec.EMPNO) := rec;
+CONCAT_UI_aa(val_for_CONCAT_UI(rec.ENAME,rec.JOB)) := rec.EMPNO;
+ENAME_UI_aa(rec.ENAME) := rec.EMPNO;
+end loop;
+END load_arrays;
+procedure test is
+pky_rec SCOTT.EMP%ROWTYPE;
+CONCAT_UI_aa_rec SCOTT.EMP%ROWTYPE;
+ENAME_UI_aa_rec SCOTT.EMP%ROWTYPE;
+begin
+for rec in (select * from SCOTT.EMP) loop
+pky_rec := onerow (rec.EMPNO);
+CONCAT_UI_aa_rec := onerow_by_CONCAT_UI ( 
+rec.ENAME
+,
+rec.JOB
+);
+if rec.EMPNO = CONCAT_UI_aa_rec.EMPNO then
+dbms_output.put_line ('CONCAT_UI  lookup OK');
+else
+dbms_output.put_line ('CONCAT_UI  lookup NOT OK');
+end if;
+ENAME_UI_aa_rec := onerow_by_ENAME_UI ( 
+rec.ENAME
+);
+if rec.EMPNO = ENAME_UI_aa_rec.EMPNO then
+dbms_output.put_line ('ENAME_UI  lookup OK');
+else
+dbms_output.put_line ('ENAME_UI  lookup NOT OK');
+end if;
+end loop;
+end test;
+BEGIN load_arrays;
+end EMP_cache;
+/

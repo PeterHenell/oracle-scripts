@@ -1,0 +1,377 @@
+/* Formatted on 2001/10/29 10:01 (Formatter Plus v4.5.2) */
+DROP TYPE living_thing_ot FORCE;
+DROP TYPE person_ot FORCE;
+DROP TYPE citizen_ot FORCE;
+DROP TYPE corporation_ot FORCE;
+DROP TYPE warcriminal_ot FORCE;
+
+CREATE OR REPLACE TYPE living_thing_ot IS OBJECT (
+   species VARCHAR2 (100),
+   
+   -- A non-instantiable method is not implemented
+   -- in this object type, but will then have to be implemented
+   -- in any sub-types extended from this (as a) supertype. In Java,
+   -- these are called "abstract methods".
+   NOT INSTANTIABLE MEMBER PROCEDURE showpoliticalpower
+   )
+   NOT INSTANTIABLE 
+   NOT FINAL;
+/
+
+CREATE OR REPLACE TYPE person_ot 
+   under living_thing_ot
+(
+   name    VARCHAR2 (100),
+   weight  NUMBER,
+   dob     TIMESTAMP (3),
+ 
+   -- New methods in object type  
+   MEMBER PROCEDURE show,
+   
+   MEMBER FUNCTION age 
+      RETURN INTERVAL YEAR TO MONTH,
+      
+   FINAL MEMBER PROCEDURE when_crime_committed, 
+     
+   -- New method for person object type
+   -- My wife has been reading Milton's Paradise Lost, so:
+   MEMBER PROCEDURE showpunishment,
+
+   -- Provide OVERRIDING implementation of abstract method.
+   OVERRIDING MEMBER 
+      PROCEDURE showpoliticalpower
+   )
+   INSTANTIABLE 
+   NOT FINAL;
+/
+
+CREATE OR REPLACE TYPE BODY person_ot
+IS 
+   MEMBER PROCEDURE show
+   IS
+   BEGIN
+      DBMS_OUTPUT.PUT_LINE ('Person named ' || name || ' weighs ' || weight || ' and was born on ' || dob);
+   END;
+   
+   -- My wife has been reading Milton's Paradise Lost, so:
+   MEMBER PROCEDURE showpunishment
+   IS
+   BEGIN 
+      DBMS_OUTPUT.PUT_LINE ('Leave Garden of Eden');
+   END;
+   
+   FINAL MEMBER PROCEDURE when_crime_committed
+   IS
+   BEGIN
+      DBMS_OUTPUT.PUT_LINE (   '-------Suppose '
+          || name
+          || ' Was Convicted of a Crime.-------');
+      DBMS_OUTPUT.PUT_LINE (' ');
+      show;      
+      DBMS_OUTPUT.PUT_LINE (' ');
+      DBMS_OUTPUT.PUT_LINE ('Political power?');
+      showPoliticalPower;
+      DBMS_OUTPUT.PUT_LINE (' ');
+      DBMS_OUTPUT.PUT_LINE ('Punishment?');
+      showpunishment;
+   END;
+      
+   MEMBER FUNCTION age RETURN INTERVAL YEAR TO MONTH
+   IS
+      retval INTERVAL YEAR TO MONTH;
+   BEGIN
+      RETURN (SYSDATE - SELF.dob) YEAR TO MONTH;
+   END;
+   
+   OVERRIDING 
+   MEMBER PROCEDURE showpoliticalpower
+   IS
+   BEGIN
+      DBMS_OUTPUT.PUT_LINE ('The existence of a soul');
+   END;
+END;
+/
+
+CREATE OR REPLACE TYPE citizen_ot 
+   under person_ot (
+   nation VARCHAR2(200),
+   politicalPreference VARCHAR2(100),
+   
+   -- Show a citizen
+   OVERRIDING 
+   MEMBER procedure show ,
+   
+   -- override of generic method.
+   OVERRIDING 
+   MEMBER procedure  showPunishment,
+   
+   -- implementation of non-instantiable method
+   OVERRIDING 
+   MEMBER procedure showPoliticalPower
+   )
+   INSTANTIABLE 
+   NOT FINAL;
+/
+
+/* Formatted on 2001/10/29 16:24 (Formatter Plus v4.5.2) */
+CREATE OR REPLACE TYPE BODY citizen_ot
+IS 
+   OVERRIDING 
+   MEMBER PROCEDURE show
+   IS
+   BEGIN
+      DBMS_OUTPUT.PUT_LINE ('Citizen ' || 
+            self.name
+         || ' is a citizen of '
+         || self.nation
+         || ' whose politics are '
+         || self.politicalpreference
+      );
+   END show;
+   
+   -- override of generic method.
+   OVERRIDING 
+   MEMBER PROCEDURE showpunishment
+   IS
+   BEGIN
+      DBMS_OUTPUT.PUT_LINE ('Go to jail, do not pass Go, do not survive.');
+   END showpunishment;
+   
+   -- implementation of non-instantiable method
+   OVERRIDING 
+   MEMBER PROCEDURE showpoliticalpower
+   IS
+   BEGIN
+      DBMS_OUTPUT.PUT_LINE ('One vote');
+   END;
+END;
+
+/
+
+CREATE OR REPLACE TYPE corporation_ot 
+   under person_ot (
+-- Very unfortunately, in my opinion, in the USA, corporations are often
+-- accorded the same constitutional rights as people.
+
+   CEOcompensation NUMBER,
+   layoffs NUMBER,
+   
+   MEMBER procedure maximizeProfits,
+   
+   -- Show a corporation
+   OVERRIDING 
+      MEMBER procedure show ,
+   
+   -- override of generic method.
+   OVERRIDING 
+      MEMBER procedure  showPunishment,
+   
+   -- implementation of non-instantiable method
+   OVERRIDING 
+      MEMBER procedure showPoliticalPower,
+      
+   MEMBER FUNCTION age (merger_date_in IN DATE) 
+      RETURN INTERVAL YEAR TO MONTH 
+   )
+   INSTANTIABLE 
+   NOT FINAL;
+/
+
+/* Formatted on 2001/10/29 16:24 (Formatter Plus v4.5.2) */
+CREATE OR REPLACE TYPE BODY corporation_ot
+IS 
+   -- Special method applicable only to corporations
+   MEMBER procedure  maximizeProfits is begin 
+      self.layoffs := self.layoffs * 2;     
+      self.CEOCompensation := self.CEOCompensation * 10;
+   end;
+   
+   OVERRIDING 
+   MEMBER PROCEDURE show
+   IS
+   BEGIN
+      DBMS_OUTPUT.PUT_LINE ('Corporation ' ||
+            self.name || ' is a transnational entity with ' || self.layoffs ||
+         ' laid-off employees, paying its Chief Executive Officer ' || self.CEOCompensation);
+      
+   END show;
+   
+   -- override of generic method.
+   OVERRIDING 
+      MEMBER PROCEDURE showpunishment
+   IS
+   BEGIN
+      DBMS_OUTPUT.PUT_LINE ('Increased political contributions.');
+   END showpunishment;
+   
+   -- implementation of non-instantiable method
+   OVERRIDING 
+   MEMBER PROCEDURE showpoliticalpower
+   IS
+   BEGIN
+      DBMS_OUTPUT.PUT_LINE ('Virtually unlimited');
+   END;
+   
+   -- Overloading of age function, not an override
+   MEMBER FUNCTION age (merger_date_in IN DATE) 
+      RETURN INTERVAL YEAR TO MONTH
+   IS
+      retval INTERVAL YEAR TO MONTH;
+   BEGIN
+      IF merger_date_in > SELF.dob
+      THEN
+         RETURN (SYSDATE - merger_date_in) YEAR TO MONTH;
+      ELSE
+         RETURN (SYSDATE - SELF.dob) YEAR TO MONTH;
+      END IF;
+   END;
+END;
+
+/
+
+CREATE OR REPLACE TYPE warCriminal_ot
+   under citizen_ot (
+   numberMurdered number,
+   victimNation varchar2(100),
+
+   OVERRIDING MEMBER PROCEDURE show,
+   
+   OVERRIDING MEMBER procedure showPunishment,
+
+   -- implementation of un-implemented or abstract method
+   OVERRIDING MEMBER PROCEDURE showpoliticalpower  
+   )
+   INSTANTIABLE 
+   FINAL;
+/
+
+CREATE OR REPLACE TYPE BODY warCriminal_ot
+IS 
+   OVERRIDING MEMBER PROCEDURE show
+   IS
+   BEGIN
+      DBMS_OUTPUT.PUT_LINE ('War criminal ' || self.name || ' killed ' || 
+          self.numberMurdered || ' in ' || self.victimNation);      
+   END show;
+   
+   -- override of generic method.
+   OVERRIDING 
+      MEMBER PROCEDURE showpunishment
+   IS
+   BEGIN
+      DBMS_OUTPUT.PUT_LINE ('Sometimes you win the Nobel Peace Prize.');
+   END showpunishment;
+
+   -- implementation of abstract method
+   OVERRIDING 
+   MEMBER PROCEDURE showpoliticalpower
+   IS
+   BEGIN
+      DBMS_OUTPUT.PUT_LINE ('Filling the vacuum.');
+   END;
+END;
+/
+
+/* Things that go bump when you try them. */
+
+/* Instantiate the un-instantiable */
+DECLARE
+   squirrel living_thing_ot
+      := living_thing_ot ();
+BEGIN
+   IF squirrel.dob < SYSDATE
+   THEN
+      DBMS_OUTPUT.put_line (
+         'Senior citizen'
+      );
+   END IF;
+-- PLS-00713: attempting to instantiate a type that is NOT INSTANTIABLE
+END;
+/
+
+/* See if I can override a final method. */ 
+CREATE OR REPLACE TYPE immigrant_ot 
+   under person_ot (
+   from_nation VARCHAR2(200),
+      
+   -- Show a citizen
+   OVERRIDING 
+   MEMBER PROCEDURE when_crime_committed
+-- PLS-00637: FINAL method cannot be overridden or hidden
+   )
+   ;
+/
+
+/* So let's examine the progress persons have made over the years. */
+DECLARE
+   -- The original person
+   eve person_ot
+   := person_ot (
+         'Human',
+         'Eve',
+         175 /* Rubanesque */,
+         NULL
+      );
+   ondeathrow citizen_ot
+   := citizen_ot (
+         'Human',
+         'Mumia Abul Jamal',
+         150,
+         NULL,
+         'USA',
+         'Radical'
+      );
+   -- A very scary company
+   theglobalmonster corporation_ot
+   := corporation_ot (
+         'Inhuman',
+         'Northrup-Ford-Mattel-Yahoo-ATT',
+         NULL,
+         SYSDATE,
+         5000000,
+         50000000
+      );
+   -- An even scarier human
+   wiseman warcriminal_ot
+   := warcriminal_ot (
+         'Human?',
+         'Henry Kissinger',
+         175,
+         NULL,
+         'USA',
+         'Above the law',
+         1000000,
+         'Vietnam and Cambodia'
+      );
+
+   -- Declare a nested table of persons (the most general kind of instantiable
+   -- object in this hierarchy. Then populate that array with objects of subclasses.
+
+   TYPE bighappyfamily_nt IS TABLE OF person_ot;
+
+   bighappyfamily bighappyfamily_nt
+   := bighappyfamily_nt (
+         eve,
+         ondeathrow,
+         theglobalmonster,
+         wiseman
+      );
+BEGIN
+   -- Don't forget to take care of business
+   theglobalmonster.maximizeprofits;
+
+   -- Here comes the beauty of dynamic polymorphism. Even though I am 
+   -- now looping through an array of Persons, when I call the 
+   -- showPunishment method, it will not call Person.showPunishment,
+   -- but instead call the showPunishment method for the subclass.
+   -- It 'does the right thing'.
+
+   FOR persindx IN
+       bighappyfamily.FIRST .. bighappyfamily.LAST
+   LOOP
+      DBMS_OUTPUT.PUT_LINE (' ');
+      bighappyfamily (persindx).when_crime_committed;
+   END LOOP;
+END;
+/
+

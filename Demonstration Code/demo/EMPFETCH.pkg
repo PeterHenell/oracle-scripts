@@ -1,0 +1,103 @@
+CREATE OR REPLACE PACKAGE empfetch
+IS
+   PROCEDURE rows (numrows_in IN INTEGER,
+      where_clause_in IN VARCHAR2 := NULL,
+      append_rows_in IN BOOLEAN := FALSE);  
+
+   FUNCTION ename_val (row_in IN INTEGER) RETURN emp.ename%TYPE;
+
+   FUNCTION empno_val (row_in IN INTEGER) RETURN emp.empno%TYPE;
+
+   FUNCTION numfetched RETURN INTEGER;
+
+   PROCEDURE close;
+
+END empfetch;
+/
+CREATE OR REPLACE PACKAGE BODY empfetch
+IS
+   c PLS_INTEGER := DBMS_SQL.OPEN_CURSOR;
+
+   g_num_fetched PLS_INTEGER := 0;
+
+   /* Index-by tables to define array columns and receive the data */
+   empno_array DBMS_SQL.NUMBER_TABLE;
+   ename_array DBMS_SQL.VARCHAR2_TABLE;
+
+   PROCEDURE rows (numrows_in IN INTEGER,
+      where_clause_in IN VARCHAR2 := NULL,
+      append_rows_in IN BOOLEAN := FALSE)  
+   IS
+      v_start PLS_INTEGER := 1;
+   BEGIN
+      IF append_rows_in
+      THEN
+         v_start := 
+            NVL (GREATEST (empno_array.LAST, ename_array.LAST), 0) + 1;
+      ELSE
+         /* Clean out the tables from the last usage. */
+         empno_array.DELETE;
+         ename_array.DELETE;
+      END IF;
+
+      /* Parse the query  with a dynamic WHERE clause */
+      DBMS_SQL.PARSE (c, 
+         'SELECT empno, ename FROM emp WHERE ' || NVL (where_clause_in, '1=1'),
+         DBMS_SQL.NATIVE);
+
+      /* Define the columns in the cursor for this query */
+      DBMS_SQL.DEFINE_ARRAY (c, 1, empno_array, numrows_in, v_start);
+      DBMS_SQL.DEFINE_ARRAY (c, 2, ename_array, numrows_in, v_start);
+
+      /* Execute the query and fetch the rows. */
+      g_num_fetched:= DBMS_SQL.EXECUTE_AND_FETCH (c);
+
+      /* Move the column values into the arrays */
+      DBMS_SQL.COLUMN_VALUE (c, 1, empno_array);
+      DBMS_SQL.COLUMN_VALUE (c, 2, ename_array);
+
+      /* Close the cursor if nothing left to fetch. */
+      IF g_num_fetched < numrows_in
+      THEN               
+         /* Notice that I need to explicitly qualify with package name. */
+         empfetch.close;
+      END IF;
+   END;  
+
+   FUNCTION ename_val (row_in IN INTEGER) RETURN emp.ename%TYPE
+   IS
+   BEGIN
+      IF ename_array.EXISTS (row_in)
+      THEN
+         RETURN ename_array (row_in);
+      ELSE
+         RETURN NULL;
+      END IF;
+   END;
+
+   FUNCTION empno_val (row_in IN INTEGER) RETURN emp.empno%TYPE
+   IS
+   BEGIN
+      IF empno_array.EXISTS (row_in)
+      THEN
+         RETURN empno_array (row_in);
+      ELSE
+         RETURN NULL;
+      END IF;
+   END;
+
+   FUNCTION numfetched RETURN INTEGER
+   IS
+   BEGIN
+      RETURN g_num_fetched;
+   END;
+
+   PROCEDURE close
+   IS
+   BEGIN
+      DBMS_SQL.CLOSE_CURSOR (c);
+   END;
+
+END empfetch;
+/
+

@@ -1,0 +1,32 @@
+CREATE OR REPLACE PACKAGE xfile
+IS 
+   FUNCTION canRead (file IN VARCHAR2) RETURN BOOLEAN;
+END;
+/
+CREATE OR REPLACE PACKAGE BODY xfile
+IS
+   g_true INTEGER;
+   g_false INTEGER;
+   
+   FUNCTION tval RETURN NUMBER
+   AS LANGUAGE JAVA
+      NAME 'JFile4.tVal () return int';
+
+   FUNCTION fval RETURN NUMBER
+   AS LANGUAGE JAVA
+      NAME 'JFile4.fVal () return int';
+
+   FUNCTION IcanRead (file IN VARCHAR2) RETURN NUMBER
+   AS LANGUAGE JAVA
+      NAME 'JFile.canRead (java.lang.String) return int';
+      
+   FUNCTION canRead (file IN VARCHAR2) RETURN BOOLEAN
+   AS
+   BEGIN
+      RETURN IcanRead (file) = g_true;
+   END;
+BEGIN
+   g_true := tval;
+   g_false := fval;   
+END;
+/

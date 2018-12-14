@@ -1,0 +1,189 @@
+CREATE OR REPLACE PACKAGE ut_count_between
+IS
+   PROCEDURE ut_setup;
+
+   PROCEDURE ut_teardown;
+
+   PROCEDURE ut_count_between;
+END ut_count_between;
+/
+
+CREATE OR REPLACE PACKAGE BODY ut_count_between
+IS
+   PROCEDURE ut_setup
+   IS
+   BEGIN
+      NULL;
+   END;
+
+   PROCEDURE ut_teardown
+   IS
+   BEGIN
+      NULL;
+   END;
+
+   PROCEDURE ut_count_between
+   IS
+      g_collection         DBMS_SQL.varchar2s;
+      g_empty_collection   DBMS_SQL.varchar2s;
+      l_count_between      BINARY_INTEGER;
+
+      PROCEDURE initialize
+      IS
+      BEGIN
+         g_collection (1) := 1;
+         g_collection (10) := 1;
+         g_collection (11) := 1;
+         g_collection (100) := 1;
+         g_collection (101) := 1;
+         g_collection (1000) := 1;
+      END initialize;
+
+      PROCEDURE tc_all_rows
+      IS
+         l_testname   VARCHAR2 (32767) := 'All rows - start and end null';
+      BEGIN
+         l_count_between :=
+            count_between (collection_in       => g_collection
+                          ,start_index_in      => NULL
+                          ,end_index_in        => NULL
+                          ,inclusive_in        => TRUE
+                          );
+         utassert.eq (l_testname, l_count_between, g_collection.COUNT);
+      END tc_all_rows;
+
+      PROCEDURE tc_start_then_inside_inc
+      IS
+         l_testname   VARCHAR2 (32767)
+                          := 'From start to inner existing row, inclusive';
+      BEGIN
+         l_count_between :=
+            count_between (collection_in       => g_collection
+                          ,start_index_in      => g_collection.FIRST
+                          ,end_index_in        => 100
+                          ,inclusive_in        => TRUE
+                          );
+         utassert.eq (l_testname, l_count_between, 4);
+      END tc_start_then_inside_inc;
+
+      PROCEDURE tc_start_then_inside_exc
+      IS
+         l_testname   VARCHAR2 (32767)
+                          := 'From start to inner existing row, exclusive';
+      BEGIN
+         l_count_between :=
+            count_between (collection_in       => g_collection
+                          ,start_index_in      => g_collection.FIRST
+                          ,end_index_in        => 100
+                          ,inclusive_in        => FALSE
+                          );
+         utassert.eq (l_testname, l_count_between, 2);
+      END tc_start_then_inside_exc;
+
+      PROCEDURE tc_inside_then_end_inc
+      IS
+         l_testname   VARCHAR2 (32767)
+                            := 'From inner existing row to end, inclusive';
+      BEGIN
+         l_count_between :=
+            count_between (collection_in       => g_collection
+                          ,start_index_in      => 100
+                          ,end_index_in        => g_collection.LAST
+                          ,inclusive_in        => TRUE
+                          );
+         utassert.eq (l_testname, l_count_between, 3);
+      END tc_inside_then_end_inc;
+
+      PROCEDURE tc_inside_then_end_exc
+      IS
+         l_testname   VARCHAR2 (32767)
+                            := 'From inner existing row to end, exclusive';
+      BEGIN
+         l_count_between :=
+            count_between (collection_in       => g_collection
+                          ,start_index_in      => 100
+                          ,end_index_in        => g_collection.LAST
+                          ,inclusive_in        => FALSE
+                          );
+         utassert.eq (l_testname, l_count_between, 1);
+      END tc_inside_then_end_exc;
+
+      PROCEDURE tc_all_inside_inc
+      IS
+         l_testname   VARCHAR2 (32767)
+                    := 'Inner start and end, non existing rows, inclusive';
+      BEGIN
+         l_count_between :=
+            count_between (collection_in       => g_collection
+                          ,start_index_in      => 10
+                          ,end_index_in        => 100
+                          ,inclusive_in        => TRUE
+                          );
+         utassert.eq (l_testname, l_count_between, 3);
+      END tc_all_inside_inc;
+
+      PROCEDURE tc_all_inside_exc
+      IS
+         l_testname   VARCHAR2 (32767)
+                    := 'Inner start and end, non existing rows, exclusive';
+      BEGIN
+         l_count_between :=
+            count_between (collection_in       => g_collection
+                          ,start_index_in      => 10
+                          ,end_index_in        => 100
+                          ,inclusive_in        => FALSE
+                          );
+         utassert.eq (l_testname, l_count_between, 1);
+      END tc_all_inside_exc;
+
+      PROCEDURE tc_all_inside_nonex_inc
+      IS
+         l_testname   VARCHAR2 (32767)
+                    := 'Inner start and end, non existing rows, inclusive';
+      BEGIN
+         l_count_between :=
+            count_between (collection_in       => g_collection
+                          ,start_index_in      => 2
+                          ,end_index_in        => 102
+                          ,inclusive_in        => TRUE
+                          );
+         utassert.eq (l_testname, l_count_between, 4);
+      END tc_all_inside_nonex_inc;
+
+      PROCEDURE tc_all_inside_nonex_exc
+      IS
+         l_testname   VARCHAR2 (32767)
+                    := 'Inner start and end, non existing rows, exclusive';
+      BEGIN
+         l_count_between :=
+            count_between (collection_in       => g_collection
+                          ,start_index_in      => 2
+                          ,end_index_in        => 102
+                          ,inclusive_in        => FALSE
+                          );
+         utassert.eq (l_testname, l_count_between, 4);
+      END tc_all_inside_nonex_exc;
+
+      PROCEDURE tc_count_empty_collection
+      IS
+         l_testname   VARCHAR2 (32767) := 'Empty collection';
+      BEGIN
+         l_count_between :=
+                       count_between (collection_in      => g_empty_collection);
+         utassert.eq (l_testname, l_count_between, 0);
+      END tc_count_empty_collection;
+   BEGIN
+      initialize;
+      tc_all_rows;
+      tc_start_then_inside_inc;
+      tc_start_then_inside_exc;
+      tc_inside_then_end_inc;
+      tc_inside_then_end_exc;
+      tc_all_inside_inc;
+      tc_all_inside_exc;
+      tc_all_inside_nonex_inc;
+      tc_all_inside_nonex_exc;
+      tc_count_empty_collection;
+   END ut_count_between;
+END ut_count_between;
+/

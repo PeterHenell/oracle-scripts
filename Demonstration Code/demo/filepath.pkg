@@ -1,0 +1,197 @@
+CREATE OR REPLACE PACKAGE fileio
+IS
+   c_delim   CHAR (1)     := ';';
+
+   TYPE dirs_tabtype IS TABLE OF VARCHAR2 (2000)
+      INDEX BY BINARY_INTEGER;
+
+   dirs      dirs_tabtype;
+
+   PROCEDURE setpath (str IN VARCHAR2, delim IN VARCHAR2 := c_delim);
+
+   FUNCTION PATH
+      RETURN VARCHAR2;
+
+   FUNCTION pathlist
+      RETURN dirs_tabtype;
+
+   FUNCTION OPEN (FILE IN VARCHAR2, loc IN VARCHAR2 := NULL)
+      RETURN UTL_FILE.file_type;
+
+   PROCEDURE showpath;
+
+   PROCEDURE dbg;
+
+   PROCEDURE nodbg;
+
+   FUNCTION debugging
+      RETURN BOOLEAN;
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY fileio
+IS
+   g_path    VARCHAR2 (32767);
+   g_delim   CHAR (1)         := c_delim;
+   g_dbg     BOOLEAN          := FALSE;
+
+   PROCEDURE dbg
+   IS
+   BEGIN
+      g_dbg := TRUE;
+   END;
+
+   PROCEDURE nodbg
+   IS
+   BEGIN
+      g_dbg := FALSE;
+   END;
+
+   FUNCTION debugging
+      RETURN BOOLEAN
+   IS
+   BEGIN
+      RETURN g_dbg;
+   END;
+
+   PROCEDURE setpath (str IN VARCHAR2, delim IN VARCHAR2 := c_delim)
+   IS
+      v_loc        PLS_INTEGER;
+      v_startloc   PLS_INTEGER     := 1;
+      v_item       VARCHAR2 (2000);
+   BEGIN
+      g_path := str;
+      g_delim := NVL (delim, c_delim);
+      dirs.DELETE;
+
+      IF str IS NOT NULL
+      THEN
+         IF debugging
+         THEN
+            DBMS_OUTPUT.put_line ('Parse path ' || str);
+         END IF;
+
+         LOOP
+            v_loc := INSTR (str, delim, v_startloc);
+
+            IF v_loc = v_startloc
+            THEN
+               v_item := NULL;
+            ELSIF v_loc = 0
+            THEN
+               v_item := SUBSTR (str, v_startloc);
+            ELSE
+               v_item := SUBSTR (str, v_startloc, v_loc - v_startloc);
+            END IF;
+
+            IF debugging
+            THEN
+               DBMS_OUTPUT.put_line (   'Start at '
+                                     || v_startloc
+                                     || ' end at '
+                                     || v_loc
+                                     || ' = '
+                                     || v_item
+                                    );
+            END IF;
+
+            dirs (dirs.COUNT + 1) := v_item;
+
+            IF v_loc = 0
+            THEN
+               EXIT;
+            ELSE
+               v_startloc := v_loc + 1;
+            END IF;
+         END LOOP;
+      END IF;
+   END;
+
+   FUNCTION PATH
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      RETURN g_path;
+   END;
+
+   FUNCTION pathlist
+      RETURN dirs_tabtype
+   IS
+   BEGIN
+      RETURN dirs;
+   END;
+
+   FUNCTION OPEN (FILE IN VARCHAR2, loc IN VARCHAR2 := NULL)
+      RETURN UTL_FILE.file_type
+   IS
+      indx     PLS_INTEGER;
+      v_dir    VARCHAR2 (500);
+      retval   UTL_FILE.file_type;
+
+      PROCEDURE init_dir
+      IS
+      BEGIN
+         IF loc IS NOT NULL
+         THEN
+            indx := NULL;
+            v_dir := loc;
+         ELSE
+            indx := dirs.FIRST;
+            v_dir := dirs (indx);
+         END IF;
+      END;
+
+      PROCEDURE set_next_dir
+      IS
+      BEGIN
+         indx := dirs.NEXT (indx);
+
+         IF indx IS NULL
+         THEN
+            v_dir := NULL;
+         ELSE
+            v_dir := dirs (indx);
+         END IF;
+      END;
+   BEGIN
+      IF debugging
+      THEN
+         DBMS_OUTPUT.put_line ('Open ' || FILE);
+      END IF;
+
+      init_dir;
+
+      WHILE v_dir IS NOT NULL
+      LOOP
+         BEGIN
+            IF debugging
+            THEN
+               DBMS_OUTPUT.put_line ('...looking in ' || v_dir);
+            END IF;
+
+            retval := UTL_FILE.fopen (v_dir, FILE, 'R', max_linesize => 32767);
+            EXIT;
+         EXCEPTION
+            WHEN OTHERS
+            THEN
+               set_next_dir;
+         END;
+      END LOOP;
+
+      RETURN retval;
+   END;
+
+   PROCEDURE showpath
+   IS
+      indx   PLS_INTEGER := dirs.FIRST;
+   BEGIN
+      WHILE indx IS NOT NULL
+      LOOP
+         DBMS_OUTPUT.put_line (dirs (indx));
+         indx := dirs.NEXT (indx);
+      END LOOP;
+   END;
+END;
+/
+
+SHO ERR

@@ -1,0 +1,58 @@
+NO LOGGING                                                                      
+Insert 5000 rows without any errors elapsed CPU time: .4 seconds                
+   my_books count: 5000                                                         
+   log table count: 0                                                           
+   handled errors count: 0                                                      
+                                                                                
+Attempt to insert 5000 rows with 50% errors elapsed CPU time: 16.72 seconds     
+   my_books count: 2500                                                         
+   log table count: 0                                                           
+   handled errors count: 2500                                                   
+                                                                                
+AUTON TRANS LOG                                                                 
+Insert 5000 rows without any errors elapsed CPU time: .44 seconds               
+   my_books count: 5000                                                         
+   log table count: 0                                                           
+   handled errors count: 0                                                      
+                                                                                
+Attempt to insert 5000 rows with 50% errors elapsed CPU time: 18.26 seconds     
+   my_books count: 2500                                                         
+   log table count: 2500                                                        
+   handled errors count: 2500                                                   
+                                                                                
+
+Warning: Procedure created with compilation errors.
+
+DBMS_ERRLOG                                                                     
+Insert 5000 rows without any errors elapsed CPU time: .43 seconds               
+   my_books count: 5000                                                         
+   log table count: 0                                                           
+   handled errors count: 0                                                      
+                                                                                
+Attempt to insert 5000 rows with 50% errors elapsed CPU time: 4.4 seconds       
+   my_books count: 2500                                                         
+   log table count: 2500                                                        
+   handled errors count: 0                                                      
+                                                                                
+FORALL with SAVE EXCEPTIONS                                                     
+Insert 5000 rows without any errors elapsed CPU time: .09 seconds               
+   my_books count: 5000                                                         
+   log table count: 0                                                           
+   handled errors count: 0                                                      
+                                                                                
+Attempt to insert 5000 rows with 50% errors elapsed CPU time: 4.42 seconds      
+   my_books count: 2500                                                         
+   log table count: 2500                                                        
+   handled errors count: 2500                                                   
+                                                                                
+FORALL without SAVE EXCEPTIONS, use of DBMS_ERRLOG                              
+Insert 5000 rows without any errors elapsed CPU time: .23 seconds               
+   my_books count: 5000                                                         
+   log table count: 0                                                           
+   handled errors count: 0                                                      
+                                                                                
+Attempt to insert 5000 rows with 50% errors elapsed CPU time: 3.6 seconds       
+   my_books count: 2500                                                         
+   log table count: 2500                                                        
+   handled errors count: 0                                                      
+                                                                                

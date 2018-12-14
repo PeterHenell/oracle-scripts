@@ -1,0 +1,11 @@
+CREATE OR REPLACE FUNCTION invoker_rights_mode
+-- is_invoker_rights.sf
+RETURN BOOLEAN AUTHID CURRENT_USER
+IS
+   -- Created by Solomon Yakobson
+   v_retval NUMBER;
+BEGIN
+   RETURN SYS_CONTEXT ( 'USERENV', 'SESSION_USER' ) =
+                                    SYS_CONTEXT ( 'USERENV', 'CURRENT_USER' );
+END;
+/

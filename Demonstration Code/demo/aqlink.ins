@@ -1,0 +1,40 @@
+/* Table containing processing steps. */
+CREATE TABLE approval_steps
+   (step_seq INTEGER,
+    performed_by VARCHAR2(100));
+
+/* Create an object for the queueing process. */
+CREATE TYPE application_t IS OBJECT 
+   (applicant VARCHAR2(100),
+    stage INTEGER
+   );
+/
+/* Now populate that table. */
+BEGIN
+   DELETE FROM approval_steps;
+
+   INSERT INTO approval_steps VALUES (0, 'US Postal Service');
+   INSERT INTO approval_steps VALUES (1, 'Juliana Tomas');
+   INSERT INTO approval_steps VALUES (2, 'Nguyan Ng');
+   INSERT INTO approval_steps VALUES (3, 'Sasha Romanoff');
+   INSERT INTO approval_steps VALUES (4, 'Roberta Smith');
+   INSERT INTO approval_steps VALUES (5, 'Roberta Smith');
+   COMMIT;
+END;
+/ 
+
+/* Create the queue table and queue. */
+BEGIN
+   aq.stop_and_drop ('application_qtable');
+
+   /* Create the queue table and queue for multiple consumers. */ 
+   DBMS_AQADM.CREATE_QUEUE_TABLE
+      (queue_table => 'application_qtable',
+       queue_payload_type => 'application_t',
+       multiple_consumers => TRUE); 
+
+   DBMS_AQADM.CREATE_QUEUE ('application_queue', 'application_qtable');
+
+   DBMS_AQADM.START_QUEUE ('application_queue'); 
+END;
+/   

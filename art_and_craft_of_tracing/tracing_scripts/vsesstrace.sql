@@ -1,0 +1,4 @@
+select SQL_TRACE, SQL_TRACE_WAITS, SQL_TRACE_BINDS, SQL_TRACE_PLAN_STATS
+from v$session
+where sid = 255
+/

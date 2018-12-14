@@ -1,0 +1,2258 @@
+REM QUEST CODE TESTER FOR ORACLE SNAPSHOT {6B053046-1BE9-4AA6-9382-413521BB063E} %.SQL_GUARD.PACKAGE <1.6.1.212>
+CREATE OR REPLACE PROCEDURE qcto#import_test_data_group IS PRAGMA AUTONOMOUS_TRANSACTION; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}';   l_universal_id       qu_intval_hdr_tp.universal_id_t  := '{17305A96-6350-48DD-9C7E-D638B7CB9423}';
+   l_name               qu_intval_hdr_tp.universal_id_t  := 'Custom {6A3DD0DC-BC58-4369-B6E6-2078FF530E18}';
+   l_new_universal_id   qu_intval_hdr_tp.universal_id_t;
+   l_new_name           qu_intval_hdr_tp.universal_id_t;
+   --
+   l_delete_first       BOOLEAN DEFAULT FALSE;
+   l_do_import          BOOLEAN DEFAULT TRUE;
+   l_creating_new       BOOLEAN DEFAULT FALSE;
+   --
+   l_inputs             qu_input_tp.universal_id_cc;
+   l_outcomes           qu_outcome_tp.universal_id_cc;
+   l_tdgs               qu_intval_hdr_tp.universal_id_cc;
+   l_values             qu_intval_tp.universal_id_cc;
+l_temp_string VARCHAR2(32767); -- Now declare all clobs...
+CL_internal_value CLOB;
+CL_external_value CLOB;
+CL_setup_code CLOB;
+CL_teardown_code CLOB;
+BEGIN
+   qu_intval_hdr_xp.initialize_import (l_universal_id
+                                     , l_name
+                                     , l_delete_first
+                                     , l_do_import
+                                     , l_new_universal_id
+                                     , l_new_name
+                                     , l_creating_new
+                                      );
+
+   IF l_delete_first
+   THEN
+      qu_intval_hdr_xp.del (l_universal_id
+                          ,    qu_intval_hdr_xp.overwrite_on_name_match
+                            OR qu_intval_hdr_xp.overwrite_on_guid_match
+                          , l_inputs
+                          , l_outcomes
+                          , l_tdgs
+                          , l_values
+                           );
+   END IF;
+
+   IF l_do_import
+   THEN
+QU_INTVAL_HDR_xp.import (universal_id_in => l_new_universal_id,
+name_in => l_new_name,
+datatype_guid_in => '{A13E1D34-8283-4A8B-9463-1B427220581E}',
+description_in => 'Custom test data value group',
+is_default_in => 'N',
+VALUE_TYPE_in => 'QUERY',
+QUERY_SOURCE_in => 'select sql_text
+  from sql_guard_drivers
+order by id',
+QCTO_GROUP_in => CASE WHEN l_creating_new THEN 'N' ELSE 'N' END,
+HIDE_GROUP_in => 'Y',
+IS_EXPRESSION_in => 'N',
+PARENT_GUID_in => NULL,
+handle_error_in => FALSE);
+/* Now reset the TDG references. */
+      qu_intval_hdr_xp.reset_tdgs (l_new_universal_id
+                                 , l_inputs
+                                 , l_outcomes
+                                 , l_tdgs
+                                 , l_values
+                                  ); END IF;
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_data_group;  END;
+/
+REM EXECUTE
+
+CREATE OR REPLACE PROCEDURE qcto#import_test_data_group IS PRAGMA AUTONOMOUS_TRANSACTION; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}';   l_universal_id       qu_intval_hdr_tp.universal_id_t  := '{5FCA5174-5760-4EC0-81A3-B737131AD005}';
+   l_name               qu_intval_hdr_tp.universal_id_t  := 'Custom {5E728883-BCA8-407E-B9A9-EE1F61D58479}';
+   l_new_universal_id   qu_intval_hdr_tp.universal_id_t;
+   l_new_name           qu_intval_hdr_tp.universal_id_t;
+   --
+   l_delete_first       BOOLEAN DEFAULT FALSE;
+   l_do_import          BOOLEAN DEFAULT TRUE;
+   l_creating_new       BOOLEAN DEFAULT FALSE;
+   --
+   l_inputs             qu_input_tp.universal_id_cc;
+   l_outcomes           qu_outcome_tp.universal_id_cc;
+   l_tdgs               qu_intval_hdr_tp.universal_id_cc;
+   l_values             qu_intval_tp.universal_id_cc;
+l_temp_string VARCHAR2(32767); -- Now declare all clobs...
+CL_internal_value CLOB;
+CL_external_value CLOB;
+CL_setup_code CLOB;
+CL_teardown_code CLOB;
+BEGIN
+   qu_intval_hdr_xp.initialize_import (l_universal_id
+                                     , l_name
+                                     , l_delete_first
+                                     , l_do_import
+                                     , l_new_universal_id
+                                     , l_new_name
+                                     , l_creating_new
+                                      );
+
+   IF l_delete_first
+   THEN
+      qu_intval_hdr_xp.del (l_universal_id
+                          ,    qu_intval_hdr_xp.overwrite_on_name_match
+                            OR qu_intval_hdr_xp.overwrite_on_guid_match
+                          , l_inputs
+                          , l_outcomes
+                          , l_tdgs
+                          , l_values
+                           );
+   END IF;
+
+   IF l_do_import
+   THEN
+QU_INTVAL_HDR_xp.import (universal_id_in => l_new_universal_id,
+name_in => l_new_name,
+datatype_guid_in => '{6C603D73-8FAC-4C6E-9676-EAB637DB257A}',
+description_in => 'Custom test data value group',
+is_default_in => 'N',
+VALUE_TYPE_in => 'QUERY',
+QUERY_SOURCE_in => 'select expected_injection_status
+  from sql_guard_drivers
+order by id',
+QCTO_GROUP_in => CASE WHEN l_creating_new THEN 'N' ELSE 'N' END,
+HIDE_GROUP_in => 'Y',
+IS_EXPRESSION_in => 'N',
+PARENT_GUID_in => NULL,
+handle_error_in => FALSE);
+/* Now reset the TDG references. */
+      qu_intval_hdr_xp.reset_tdgs (l_new_universal_id
+                                 , l_inputs
+                                 , l_outcomes
+                                 , l_tdgs
+                                 , l_values
+                                  ); END IF;
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_data_group;  END;
+/
+REM EXECUTE
+
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+DECLARE l_temp_string VARCHAR2(32767); -- Now declare all clobs
+CL_declarations CLOB;
+CL_declare_programs CLOB;
+CL_setup_code CLOB;
+CL_teardown_code CLOB;
+CL_ext_setup_code CLOB;
+CL_ext_teardown_code CLOB;
+CL_ext_tc_exec_code CLOB;
+CL_private_declarations CLOB;
+CL_private_declare_programs CLOB;
+BEGIN IF NOT qu_harness_xp.merging_on_import () THEN qu_harness_xp.del (owner_in => USER,name_in => 'Q##SQL_GUARD',program_owner_in => 'HR',program_name_in => 'SQL_GUARD',prefix_in => 'Q##',rows_out => l_rows,create_suite_collection_in => TRUE); END IF;
+DBMS_LOB.createtemporary (CL_declarations, TRUE, dur => DBMS_LOB.CALL);
+DBMS_LOB.createtemporary (CL_declare_programs, TRUE, dur => DBMS_LOB.CALL);
+DBMS_LOB.createtemporary (CL_private_declarations, TRUE, dur => DBMS_LOB.CALL);
+DBMS_LOB.createtemporary (CL_private_declare_programs, TRUE, dur => DBMS_LOB.CALL);
+DBMS_LOB.createtemporary (CL_setup_code, TRUE, dur => DBMS_LOB.CALL);
+l_temp_string := '    q$error_manager.set_trace (TRUE);
+    q$error_manager.toscreen;';
+DBMS_LOB.writeappend (lob_loc => CL_setup_code, amount => LENGTH (l_temp_string), buffer => l_temp_string);
+DBMS_LOB.createtemporary (CL_teardown_code, TRUE, dur => DBMS_LOB.CALL);
+DBMS_LOB.createtemporary (CL_ext_setup_code, TRUE, dur => DBMS_LOB.CALL);
+DBMS_LOB.createtemporary (CL_ext_teardown_code, TRUE, dur => DBMS_LOB.CALL);
+DBMS_LOB.createtemporary (CL_ext_tc_exec_code, TRUE, dur => DBMS_LOB.CALL);
+QU_HARNESS_xp.import (universal_id_in => '{6B053046-1BE9-4AA6-9382-413521BB063E}',
+harness_owner_in => USER,
+name_in => 'Q##SQL_GUARD',
+description_in => NULL,
+test_engine_type_in => 'QuestCodeTesterOracle',
+harness_type_in => 'PACKAGE',
+program_owner_in => USER,
+program_name_in => 'SQL_GUARD',
+program_type_in => 'PACKAGE',
+prefix_in => 'Q##',
+suffix_in => NULL,
+is_test_harness_in => 'N',
+is_example_in => 'N',
+IS_LOCKED_in => 'N',
+LAST_RUN_STATUS_in => NULL,
+PROGRAM_STATUS_in => NULL,
+TEST_CODE_STATUS_in => NULL,
+TEST_CODE_CURRENT_in => NULL,
+TEST_DEFINITION_CURRENT_in => NULL,
+declarations_in => CL_declarations,
+declare_programs_in => CL_declare_programs,
+private_declarations_in => CL_private_declarations,
+private_declare_programs_in => CL_private_declare_programs,
+setup_code_in => CL_setup_code,
+teardown_code_in => CL_teardown_code,
+ext_setup_code_in => CL_ext_setup_code,
+ext_teardown_code_in => CL_ext_teardown_code,
+ext_tc_exec_code_in => CL_ext_tc_exec_code,
+definition_status_in => 'Under Development',
+handle_error_in => FALSE);
+DBMS_LOB.freetemporary (CL_declarations);
+DBMS_LOB.freetemporary (CL_declare_programs);
+DBMS_LOB.freetemporary (CL_private_declarations);
+DBMS_LOB.freetemporary (CL_private_declare_programs);
+DBMS_LOB.freetemporary (CL_setup_code);
+DBMS_LOB.freetemporary (CL_teardown_code);
+DBMS_LOB.freetemporary (CL_ext_setup_code);
+DBMS_LOB.freetemporary (CL_ext_teardown_code);
+DBMS_LOB.freetemporary (CL_ext_tc_exec_code);
+END;
+QU_UNIT_TEST_XP.import (universal_id_in => '{1243874A-7609-4BD9-8E0C-B83AC67D9B9F}',harness_guid_in => qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),name_in => 'SQL_SAFETY_LEVEL',
+description_in => 'Unit test for "SQL_SAFETY_LEVEL"',
+program_name_in => 'SQL_SAFETY_LEVEL',program_type_in => 'FUNCTION',overload_in => NULL,ut_program_name_in => 'Q##SQL_SAFETY_LEVEL',testing_status_in => 'Y',exception_on_failure_in => NULL,
+declarations_in => NULL,
+declare_programs_in => NULL,
+setup_code_in => NULL,
+teardown_code_in => NULL,
+exceptions_in => NULL,
+handle_error_in => FALSE);
+DECLARE l_parent_key VARCHAR2(1000) :='{A6C30E36-BF97-4FEE-BF6C-86E6A4EFBD96}'; BEGIN 
+QU_TEST_ELEMENT_XP.import (universal_id_in => l_parent_key,unit_test_guid_in => qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),name_in => 'SQL_TEXT_IN',
+description_in => 'Test element for "SQL_TEXT_IN"',
+data_type_guid_in => '{A13E1D34-8283-4A8B-9463-1B427220581E}',data_type_name_in => 'VARCHAR2(32767)',
+definition_in => NULL,
+default_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',assign_in_setup_in => 'N',element_type_in => 'ARGUMENT',position_in => TO_CHAR(1),argument_mode_in => 'IN',argument_alias_in => 'L_SQL_TEXT_IN',control_alias_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_XP.import (
+parent_guid_in => l_parent_key,usage_type_in => 'DEFAULT',
+internal_value_in => NULL,
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'SQL_TEXT_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :='{7E82DDC2-E067-47B8-A3D1-BE67CFC0F338}'; BEGIN 
+QU_TEST_ELEMENT_XP.import (universal_id_in => l_parent_key,unit_test_guid_in => qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),name_in => '[Function return value]',
+description_in => 'Test element for "[Function return value]"',
+data_type_guid_in => '{6C603D73-8FAC-4C6E-9676-EAB637DB257A}',data_type_name_in => 'PLS_INTEGER',
+definition_in => NULL,
+default_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',assign_in_setup_in => 'N',element_type_in => 'RETURN',position_in => TO_CHAR(0),argument_mode_in => 'OUT',argument_alias_in => 'Q##FUNCTION_RETURN_VALUE',control_alias_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_XP.import (
+parent_guid_in => l_parent_key,usage_type_in => 'DEFAULT',
+internal_value_in => NULL,
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'[Function return value]'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :='{186522CC-A5E4-4464-BB86-1E3E30530309}'; BEGIN 
+QU_TEST_ELEMENT_XP.import (universal_id_in => l_parent_key,unit_test_guid_in => qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),name_in => 'APPLY_ONCE_ONLY_IN',
+description_in => NULL,
+data_type_guid_in => '{6FA050E9-F476-4528-A340-E27E474F9A47}',data_type_name_in => 'BOOLEAN',
+definition_in => REPLACE ('<?xml version="1.0" encoding="UTF-8"?>
+<Constraint xmlns:xsi="http:{37066390-59DE-4ABC-92F8-47D362A20DC1}{37066390-59DE-4ABC-92F8-47D362A20DC1}www.w3.org{37066390-59DE-4ABC-92F8-47D362A20DC1}2001{37066390-59DE-4ABC-92F8-47D362A20DC1}XMLSchema-instance" xsi:noNamespaceSchemaLocation="Constraint.xsd"><Boolean DefaultValue="TRUE" FreeForm=""><{37066390-59DE-4ABC-92F8-47D362A20DC1}Boolean><{37066390-59DE-4ABC-92F8-47D362A20DC1}Constraint>
+',c_for_slash, '/'),
+default_value_in => 'TRUE',
+external_value_in => 'TRUE',
+is_expression_in => 'N',assign_in_setup_in => 'N',element_type_in => 'ARGUMENT',position_in => NULL,argument_mode_in => 'IN',argument_alias_in => 'l_APPLY_ONCE_ONLY_IN',control_alias_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_XP.import (
+parent_guid_in => l_parent_key,usage_type_in => 'DEFAULT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'APPLY_ONCE_ONLY_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+QU_TEST_CASE_xp.import (
+universal_id_in => '{C55B8C03-35D9-4562-BF62-220AA711FFD7}',unit_test_guid_in => qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),name_in => 'Only test once criteria',
+description_in => '<NEW TEST CASE DESCRIPTION>',
+requirement_in => NULL,
+testing_status_in => 'Y',program_name_in => 'Q##ONLY_TEST_ONCE_CRITERIA',
+declarations_in => NULL,
+setup_code_in => NULL,
+pre_execution_code_in => NULL,
+post_execution_code_in => NULL,
+alt_execution_code_in => NULL,
+assertion_code_in => NULL,
+teardown_code_in => NULL,
+exceptions_in => NULL,
+exception_on_failure_in => NULL,
+parameter_hash_list_in => NULL,
+generated_on_in => NULL,
+is_simple_in => 'N',
+code_location_in => NULL,
+declare_programs_in => NULL,
+correlate_values_in => 'Y',
+is_dynamic_in => 'N',
+handle_error_in => FALSE);
+QU_TEST_CASE_xp.import (
+universal_id_in => '{B7BE80A7-5A6D-4B2D-AA44-84A7D9314697}',unit_test_guid_in => qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),name_in => 'Add test once criteria',
+description_in => 'Add additional criteria to the base set that will cause SQL Guard to detect injection. ',
+requirement_in => NULL,
+testing_status_in => 'Y',program_name_in => 'Q##ADD_TEST_ONCE_CRITERIA',
+declarations_in => NULL,
+setup_code_in => 'sql_guard.add_test (test_string_in => ''%STEVEN%'', NAME_IN => ''Cannot have Steven'',
+ apply_once_in => true);',
+pre_execution_code_in => NULL,
+post_execution_code_in => NULL,
+alt_execution_code_in => NULL,
+assertion_code_in => NULL,
+teardown_code_in => NULL,
+exceptions_in => NULL,
+exception_on_failure_in => NULL,
+parameter_hash_list_in => NULL,
+generated_on_in => NULL,
+is_simple_in => 'N',
+code_location_in => NULL,
+declare_programs_in => NULL,
+correlate_values_in => 'Y',
+is_dynamic_in => 'N',
+handle_error_in => FALSE);
+QU_TEST_CASE_xp.import (
+universal_id_in => '{EEC844C0-9D4A-4DE2-BEAA-F9106B160C60}',unit_test_guid_in => qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),name_in => 'Ignore criteria just once',
+description_in => '<NEW TEST CASE DESCRIPTION>',
+requirement_in => NULL,
+testing_status_in => 'Y',program_name_in => 'Q##IGNORE_CRITERIA_JUST_ONCE',
+declarations_in => NULL,
+setup_code_in => 'sql_guard.remove_test (NAME_IN => ''CREATE KEYWORD'',
+ apply_once_in => true);',
+pre_execution_code_in => NULL,
+post_execution_code_in => NULL,
+alt_execution_code_in => NULL,
+assertion_code_in => NULL,
+teardown_code_in => NULL,
+exceptions_in => NULL,
+exception_on_failure_in => NULL,
+parameter_hash_list_in => NULL,
+generated_on_in => NULL,
+is_simple_in => 'N',
+code_location_in => NULL,
+declare_programs_in => NULL,
+correlate_values_in => 'Y',
+is_dynamic_in => 'N',
+handle_error_in => FALSE);
+QU_TEST_CASE_xp.import (
+universal_id_in => '{F23E69D1-C71B-4C5F-8C96-2DF29C2A19F2}',unit_test_guid_in => qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),name_in => 'Test SQL text from driver table',
+description_in => 'Rather than define a lot of different test cases inside the UI, I will populate the sql_guard_drivers table with various SQL text and expected return value, and then run them all through Code Tester',
+requirement_in => NULL,
+testing_status_in => 'Y',program_name_in => 'Q##TEST_SQL_TEXT_FROM_DRIVER_T',
+declarations_in => NULL,
+setup_code_in => NULL,
+pre_execution_code_in => NULL,
+post_execution_code_in => NULL,
+alt_execution_code_in => NULL,
+assertion_code_in => NULL,
+teardown_code_in => NULL,
+exceptions_in => NULL,
+exception_on_failure_in => NULL,
+parameter_hash_list_in => NULL,
+generated_on_in => NULL,
+is_simple_in => 'N',
+code_location_in => NULL,
+declare_programs_in => NULL,
+correlate_values_in => 'Y',
+is_dynamic_in => 'N',
+handle_error_in => FALSE);
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+DECLARE l_parent_key VARCHAR2(1000) :='{9D9ED1C3-24DF-4982-B0E8-FE68B20D7299}'; BEGIN 
+QU_INPUT_XP.import (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_xp.pky_un_qu_case_name (qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'Only test once criteria'),test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'SQL_TEXT_IN'),
+internal_value_in => 'NULL',
+external_value_in => 'NULL',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'i_SQL_TEXT_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_XP.import (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'SQL_TEXT_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'V1861774848',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :='{8DB0C89F-A84B-42C1-88F0-816AD9EBF891}'; BEGIN 
+QU_INPUT_XP.import (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_xp.pky_un_qu_case_name (qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'Only test once criteria'),test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'APPLY_ONCE_ONLY_IN'),
+internal_value_in => 'TRUE',
+external_value_in => 'TRUE',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'l_APPLY_ONCE_ONLY_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_XP.import (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'APPLY_ONCE_ONLY_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => 'BOOLEAN',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+DECLARE l_parent_key VARCHAR2(1000) :='{10C1CEA7-ABAC-41EA-9A89-C4024901F045}'; BEGIN 
+QU_INPUT_XP.import (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_xp.pky_un_qu_case_name (qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'Add test once criteria'),test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'SQL_TEXT_IN'),
+internal_value_in => 'Hello+Steven',
+external_value_in => '''Hello Steven''',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'i_SQL_TEXT_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_XP.import (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'SQL_TEXT_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'V20454945',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :='{4F4C0397-9285-45BB-937A-D1FE7A225962}'; BEGIN 
+QU_INPUT_XP.import (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_xp.pky_un_qu_case_name (qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'Add test once criteria'),test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'APPLY_ONCE_ONLY_IN'),
+internal_value_in => 'TRUE',
+external_value_in => 'TRUE',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'l_APPLY_ONCE_ONLY_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_XP.import (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'APPLY_ONCE_ONLY_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => 'BOOLEAN',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+DECLARE l_parent_key VARCHAR2(1000) :='{A7DB0FCF-6855-4952-A294-980DA498A7C2}'; BEGIN 
+QU_INPUT_XP.import (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_xp.pky_un_qu_case_name (qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'Ignore criteria just once'),test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'SQL_TEXT_IN'),
+internal_value_in => 'create+table+a',
+external_value_in => '''create table a''',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'i_SQL_TEXT_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_XP.import (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'SQL_TEXT_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'V776155709',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :='{390892C5-71C1-421B-9E7D-4F4682FD98C2}'; BEGIN 
+QU_INPUT_XP.import (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_xp.pky_un_qu_case_name (qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'Ignore criteria just once'),test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'APPLY_ONCE_ONLY_IN'),
+internal_value_in => 'TRUE',
+external_value_in => 'TRUE',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'l_APPLY_ONCE_ONLY_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_XP.import (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'APPLY_ONCE_ONLY_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => 'BOOLEAN',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+DECLARE l_parent_key VARCHAR2(1000) :='{01878D1C-565C-4423-9B83-7AB004219178}'; BEGIN 
+QU_INPUT_XP.import (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_xp.pky_un_qu_case_name (qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'Test SQL text from driver table'),test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'SQL_TEXT_IN'),
+internal_value_in => 'NULL',
+external_value_in => 'NULL',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => '{17305A96-6350-48DD-9C7E-D638B7CB9423}',
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'i_SQL_TEXT_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_XP.import (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'SQL_TEXT_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'V1486709073',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :='{02771DB9-EC5D-4853-8910-4898A1D66745}'; BEGIN 
+QU_INPUT_XP.import (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_xp.pky_un_qu_case_name (qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'Test SQL text from driver table'),test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'APPLY_ONCE_ONLY_IN'),
+internal_value_in => 'TRUE',
+external_value_in => 'TRUE',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'l_APPLY_ONCE_ONLY_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_XP.import (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'APPLY_ONCE_ONLY_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => 'BOOLEAN',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+DECLARE l_parent_key VARCHAR2(1000) :='{52BF01EF-D279-498F-9E96-583D2FEFF3B3}'; BEGIN 
+QU_OUTCOME_XP.import (
+universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_xp.pky_un_qu_case_name (qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'Only test once criteria'),assertion_type_guid_in => '{43E3B49A-0877-4F51-9526-DCBF345F1563}',null_ok_in => 'Y',raise_exception_in => 'N',name_in => 'Scalar is equal to the expected value?',testing_status_in => 'Y',template_guid_in => '{25499982-A764-42F8-9A6F-C3E416CD3655}',custom_assert_only_in => 'N',
+assertion_code_in => NULL,
+description_in => NULL,
+code_location_in => NULL,
+declare_programs_in => NULL,
+setup_code_in => NULL,
+teardown_code_in => NULL,
+column_set_guid_in => NULL,
+intval_hdr_guid_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_XP.import (
+parent_guid_in => l_parent_key,usage_type_in => 'CONTROL',
+internal_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'[Function return value]'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'e_Function_return_value1',datatype_declare_in => 'PLS_INTEGER',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+BEGIN QU_ATTRIBUTES_XP.import (
+parent_guid_in => l_parent_key,usage_type_in => 'RESULT',
+internal_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'[Function return value]'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'Q##function_return_value',datatype_declare_in => 'PLS_INTEGER',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+DECLARE l_parent_key VARCHAR2(1000) :='{81CCC4F6-14AC-4EBA-AF8C-932D3181E934}'; BEGIN 
+QU_OUTCOME_XP.import (
+universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_xp.pky_un_qu_case_name (qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'Add test once criteria'),assertion_type_guid_in => '{43E3B49A-0877-4F51-9526-DCBF345F1563}',null_ok_in => 'Y',raise_exception_in => 'N',name_in => 'Scalar is equal to the expected value?',testing_status_in => 'Y',template_guid_in => '{25499982-A764-42F8-9A6F-C3E416CD3655}',custom_assert_only_in => 'N',
+assertion_code_in => NULL,
+description_in => NULL,
+code_location_in => NULL,
+declare_programs_in => NULL,
+setup_code_in => NULL,
+teardown_code_in => NULL,
+column_set_guid_in => NULL,
+intval_hdr_guid_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_XP.import (
+parent_guid_in => l_parent_key,usage_type_in => 'CONTROL',
+internal_value_in => 'sql_guard.c_injection_detected',
+external_value_in => 'sql_guard.c_injection_detected',
+is_expression_in => 'Y',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'[Function return value]'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'e_Function_return_value1',datatype_declare_in => 'PLS_INTEGER',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+BEGIN QU_ATTRIBUTES_XP.import (
+parent_guid_in => l_parent_key,usage_type_in => 'RESULT',
+internal_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'[Function return value]'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'Q##function_return_value',datatype_declare_in => 'PLS_INTEGER',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+DECLARE l_parent_key VARCHAR2(1000) :='{9F1F11F0-6A18-4357-89BB-CFCBC381C5D0}'; BEGIN 
+QU_OUTCOME_XP.import (
+universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_xp.pky_un_qu_case_name (qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'Ignore criteria just once'),assertion_type_guid_in => '{43E3B49A-0877-4F51-9526-DCBF345F1563}',null_ok_in => 'Y',raise_exception_in => 'N',name_in => 'Scalar is equal to the expected value?',testing_status_in => 'Y',template_guid_in => '{25499982-A764-42F8-9A6F-C3E416CD3655}',custom_assert_only_in => 'N',
+assertion_code_in => NULL,
+description_in => NULL,
+code_location_in => NULL,
+declare_programs_in => NULL,
+setup_code_in => NULL,
+teardown_code_in => NULL,
+column_set_guid_in => NULL,
+intval_hdr_guid_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_XP.import (
+parent_guid_in => l_parent_key,usage_type_in => 'CONTROL',
+internal_value_in => 'sql_guard.c_injection_detected',
+external_value_in => 'sql_guard.c_injection_detected',
+is_expression_in => 'Y',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'[Function return value]'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'e_Function_return_value1',datatype_declare_in => 'PLS_INTEGER',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+BEGIN QU_ATTRIBUTES_XP.import (
+parent_guid_in => l_parent_key,usage_type_in => 'RESULT',
+internal_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'[Function return value]'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'Q##function_return_value',datatype_declare_in => 'PLS_INTEGER',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+DECLARE l_parent_key VARCHAR2(1000) :='{082ABC5A-E273-422B-9D9D-308AB5CC3F4A}'; BEGIN 
+QU_OUTCOME_XP.import (
+universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_xp.pky_un_qu_case_name (qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'Test SQL text from driver table'),assertion_type_guid_in => '{43E3B49A-0877-4F51-9526-DCBF345F1563}',null_ok_in => 'Y',raise_exception_in => 'N',name_in => 'Scalar is equal to the expected value?',testing_status_in => 'Y',template_guid_in => '{25499982-A764-42F8-9A6F-C3E416CD3655}',custom_assert_only_in => 'N',
+assertion_code_in => NULL,
+description_in => NULL,
+code_location_in => NULL,
+declare_programs_in => NULL,
+setup_code_in => NULL,
+teardown_code_in => NULL,
+column_set_guid_in => NULL,
+intval_hdr_guid_in => '{5FCA5174-5760-4EC0-81A3-B737131AD005}',
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_XP.import (
+parent_guid_in => l_parent_key,usage_type_in => 'CONTROL',
+internal_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'[Function return value]'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'e_Function_return_value1',datatype_declare_in => 'PLS_INTEGER',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+BEGIN QU_ATTRIBUTES_XP.import (
+parent_guid_in => l_parent_key,usage_type_in => 'RESULT',
+internal_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_xp.pky_un_testel_name(qu_unit_test_xp.pky_un_qu_test_name (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),'SQL_SAFETY_LEVEL'),'[Function return value]'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'Q##function_return_value',datatype_declare_in => 'PLS_INTEGER',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+QU_result_xp.import (universal_id_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}',RESULT_LEVEL_in => 'HARNESS',result_status_in => 'FAILURE',description_in => 'Test failed at this level.',name_in => 'HR.SQL_GUARD',iteration_in => 0,start_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{6B053046-1BE9-4AA6-9382-413521BB063E}',parent_universal_id_in => '',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{C0532693-CE92-4081-B65F-784A04AF8C14}',RESULT_LEVEL_in => 'UNITTEST',result_status_in => 'FAILURE',description_in => 'Test failed at this level.',name_in => 'SQL_SAFETY_LEVEL',iteration_in => 0,start_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{1243874A-7609-4BD9-8E0C-B83AC67D9B9F}',parent_universal_id_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{2ED1CBC9-FE66-471B-8D7C-04FF7F55FF1F}',RESULT_LEVEL_in => 'TESTCASE',result_status_in => 'FAILURE',description_in => 'Test failed at this level.',name_in => 'Only test once criteria',iteration_in => 0,start_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{C55B8C03-35D9-4562-BF62-220AA711FFD7}',parent_universal_id_in => '{C0532693-CE92-4081-B65F-784A04AF8C14}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{7613643C-8642-45CF-AE3F-932E507211B7}',RESULT_LEVEL_in => 'OUTCOME',result_status_in => 'FAILURE',description_in => ' From Program Value of 1010101 <> Expected Value NULL',name_in => 'Scalar is equal to the expected value?',iteration_in => 0,start_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{52BF01EF-D279-498F-9E96-583D2FEFF3B3}',parent_universal_id_in => '{2ED1CBC9-FE66-471B-8D7C-04FF7F55FF1F}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{19123C12-5646-42F4-BD8A-EA3E3C9F2AEA}',RESULT_LEVEL_in => 'INPUT',result_status_in => 'SUCCESS',description_in => 'NULL',name_in => 'SQL_TEXT_IN',iteration_in => 0,start_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{9D9ED1C3-24DF-4982-B0E8-FE68B20D7299}',parent_universal_id_in => '{2ED1CBC9-FE66-471B-8D7C-04FF7F55FF1F}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{C1F254DB-F1CD-4CED-8656-7EBF5FCE741D}',RESULT_LEVEL_in => 'INPUT',result_status_in => 'SUCCESS',description_in => 'TRUE',name_in => 'APPLY_ONCE_ONLY_IN',iteration_in => 0,start_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{8DB0C89F-A84B-42C1-88F0-816AD9EBF891}',parent_universal_id_in => '{2ED1CBC9-FE66-471B-8D7C-04FF7F55FF1F}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{90F52059-437F-4E1A-B7FC-69C3BBDE04A0}',RESULT_LEVEL_in => 'OUTARG',result_status_in => 'SUCCESS',description_in => '1010101',name_in => 'RETURN',iteration_in => 0,start_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{7E82DDC2-E067-47B8-A3D1-BE67CFC0F338}|{2ED1CBC9-FE66-471B-8D7C-04FF7F55FF1F}',parent_universal_id_in => '{2ED1CBC9-FE66-471B-8D7C-04FF7F55FF1F}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{F03F34EA-24BD-4D6B-82F3-AA61D32927B8}',RESULT_LEVEL_in => 'TESTCASE',result_status_in => 'SUCCESS',description_in => 'Test succeeded up to this level.',name_in => 'Add test once criteria',iteration_in => 0,start_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{B7BE80A7-5A6D-4B2D-AA44-84A7D9314697}',parent_universal_id_in => '{C0532693-CE92-4081-B65F-784A04AF8C14}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{88AAC92B-E8BF-409E-8363-A8804A161113}',RESULT_LEVEL_in => 'OUTCOME',result_status_in => 'SUCCESS',description_in => ' From Program Value of 2020202 = Expected Value 2020202',name_in => 'Scalar is equal to the expected value?',iteration_in => 0,start_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{81CCC4F6-14AC-4EBA-AF8C-932D3181E934}',parent_universal_id_in => '{F03F34EA-24BD-4D6B-82F3-AA61D32927B8}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{7D1F5A02-C0ED-4BD7-AA22-C34860220AE6}',RESULT_LEVEL_in => 'INPUT',result_status_in => 'SUCCESS',description_in => 'Hello Steven',name_in => 'SQL_TEXT_IN',iteration_in => 0,start_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{10C1CEA7-ABAC-41EA-9A89-C4024901F045}',parent_universal_id_in => '{F03F34EA-24BD-4D6B-82F3-AA61D32927B8}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{72D2540F-2061-40C9-83FF-55666A7831DF}',RESULT_LEVEL_in => 'INPUT',result_status_in => 'SUCCESS',description_in => 'TRUE',name_in => 'APPLY_ONCE_ONLY_IN',iteration_in => 0,start_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{4F4C0397-9285-45BB-937A-D1FE7A225962}',parent_universal_id_in => '{F03F34EA-24BD-4D6B-82F3-AA61D32927B8}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{CFDDA3F7-032B-41B7-BBFC-8FD1F367D32C}',RESULT_LEVEL_in => 'OUTARG',result_status_in => 'SUCCESS',description_in => '2020202',name_in => 'RETURN',iteration_in => 0,start_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{7E82DDC2-E067-47B8-A3D1-BE67CFC0F338}|{F03F34EA-24BD-4D6B-82F3-AA61D32927B8}',parent_universal_id_in => '{F03F34EA-24BD-4D6B-82F3-AA61D32927B8}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{06D664E0-C8A1-4D20-9B68-8194F03F361B}',RESULT_LEVEL_in => 'TESTCASE',result_status_in => 'FAILURE',description_in => 'Test failed at this level.',name_in => 'Ignore criteria just once',iteration_in => 0,start_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{EEC844C0-9D4A-4DE2-BEAA-F9106B160C60}',parent_universal_id_in => '{C0532693-CE92-4081-B65F-784A04AF8C14}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{74754197-FB75-46CF-A47C-498921515939}',RESULT_LEVEL_in => 'OUTCOME',result_status_in => 'FAILURE',description_in => ' From Program Value of 1010101 <> Expected Value 2020202',name_in => 'Scalar is equal to the expected value?',iteration_in => 0,start_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{9F1F11F0-6A18-4357-89BB-CFCBC381C5D0}',parent_universal_id_in => '{06D664E0-C8A1-4D20-9B68-8194F03F361B}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{4206391F-4384-4105-8CAD-3175889D9C27}',RESULT_LEVEL_in => 'INPUT',result_status_in => 'SUCCESS',description_in => 'create table a',name_in => 'SQL_TEXT_IN',iteration_in => 0,start_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{A7DB0FCF-6855-4952-A294-980DA498A7C2}',parent_universal_id_in => '{06D664E0-C8A1-4D20-9B68-8194F03F361B}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{EC426691-C698-42A1-AF0B-FE76EE371AE8}',RESULT_LEVEL_in => 'INPUT',result_status_in => 'SUCCESS',description_in => 'TRUE',name_in => 'APPLY_ONCE_ONLY_IN',iteration_in => 0,start_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{390892C5-71C1-421B-9E7D-4F4682FD98C2}',parent_universal_id_in => '{06D664E0-C8A1-4D20-9B68-8194F03F361B}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{4946A6C5-EC11-4F59-9588-D6892030FA20}',RESULT_LEVEL_in => 'OUTARG',result_status_in => 'SUCCESS',description_in => '1010101',name_in => 'RETURN',iteration_in => 0,start_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{7E82DDC2-E067-47B8-A3D1-BE67CFC0F338}|{06D664E0-C8A1-4D20-9B68-8194F03F361B}',parent_universal_id_in => '{06D664E0-C8A1-4D20-9B68-8194F03F361B}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{EC661274-3E4A-4A9D-93CA-C278157C278E}',RESULT_LEVEL_in => 'TESTCASE',result_status_in => 'FAILURE',description_in => 'Test failed at this level.',name_in => 'Test SQL text from driver table',iteration_in => 0,start_on_in=>TO_DATE(20071015053054, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{F23E69D1-C71B-4C5F-8C96-2DF29C2A19F2}',parent_universal_id_in => '{C0532693-CE92-4081-B65F-784A04AF8C14}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{43E6D94E-8A1F-4552-900F-42AACCADB914}',RESULT_LEVEL_in => 'TESTCASE',result_status_in => 'SUCCESS',description_in => 'Test case generated from test data values for test case "Test SQL text from driver table". Drill down to outcome and inputs (displayed when test case failes) for more details.',name_in => 'Test SQL text from driver table-1',iteration_in => 1,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{F23E69D1-C71B-4C5F-8C96-2DF29C2A19F2}',parent_universal_id_in => '{EC661274-3E4A-4A9D-93CA-C278157C278E}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{60D0F6DB-7FAF-43F1-85BC-D7DC9FEA5388}',RESULT_LEVEL_in => 'INPUT',result_status_in => 'SUCCESS',description_in => 'SELECT * FROM employees',name_in => 'SQL_TEXT_IN',iteration_in => 1,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{01878D1C-565C-4423-9B83-7AB004219178}',parent_universal_id_in => '{43E6D94E-8A1F-4552-900F-42AACCADB914}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{5A26076E-5C27-4499-B324-E29C1770593C}',RESULT_LEVEL_in => 'INPUT',result_status_in => 'SUCCESS',description_in => 'TRUE',name_in => 'APPLY_ONCE_ONLY_IN',iteration_in => 1,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{02771DB9-EC5D-4853-8910-4898A1D66745}',parent_universal_id_in => '{43E6D94E-8A1F-4552-900F-42AACCADB914}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{1D4FA152-4559-4F71-9569-4EE7C17493D9}',RESULT_LEVEL_in => 'OUTARG',result_status_in => 'SUCCESS',description_in => '1010101',name_in => 'RETURN',iteration_in => 1,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{7E82DDC2-E067-47B8-A3D1-BE67CFC0F338}|{43E6D94E-8A1F-4552-900F-42AACCADB914}',parent_universal_id_in => '{43E6D94E-8A1F-4552-900F-42AACCADB914}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{BC679D11-1EFF-4C55-9279-6B152958F738}',RESULT_LEVEL_in => 'OUTCOME',result_status_in => 'SUCCESS',description_in => ' From Program Value of 1010101 = Expected Value 1010101',name_in => 'Scalar is equal to the expected value?-1',iteration_in => 1,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{082ABC5A-E273-422B-9D9D-308AB5CC3F4A}',parent_universal_id_in => '{43E6D94E-8A1F-4552-900F-42AACCADB914}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{5CBC8AEB-C784-436A-BDDE-AA9257C15137}',RESULT_LEVEL_in => 'TESTCASE',result_status_in => 'FAILURE',description_in => 'Test failed at this level.',name_in => 'Test SQL text from driver table-2',iteration_in => 2,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{F23E69D1-C71B-4C5F-8C96-2DF29C2A19F2}',parent_universal_id_in => '{EC661274-3E4A-4A9D-93CA-C278157C278E}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{C159BFC0-8495-431A-9619-7B8906B0E8C7}',RESULT_LEVEL_in => 'INPUT',result_status_in => 'SUCCESS',description_in => 'DROP TABLE abc',name_in => 'SQL_TEXT_IN',iteration_in => 2,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{01878D1C-565C-4423-9B83-7AB004219178}',parent_universal_id_in => '{5CBC8AEB-C784-436A-BDDE-AA9257C15137}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{6772F1D8-208D-4FCB-BA41-9FA4BDB59846}',RESULT_LEVEL_in => 'INPUT',result_status_in => 'SUCCESS',description_in => 'TRUE',name_in => 'APPLY_ONCE_ONLY_IN',iteration_in => 2,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{02771DB9-EC5D-4853-8910-4898A1D66745}',parent_universal_id_in => '{5CBC8AEB-C784-436A-BDDE-AA9257C15137}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{21FBDB2C-5A2D-48F0-9770-5EF70FC8AA61}',RESULT_LEVEL_in => 'OUTARG',result_status_in => 'SUCCESS',description_in => '1010101',name_in => 'RETURN',iteration_in => 2,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{7E82DDC2-E067-47B8-A3D1-BE67CFC0F338}|{5CBC8AEB-C784-436A-BDDE-AA9257C15137}',parent_universal_id_in => '{5CBC8AEB-C784-436A-BDDE-AA9257C15137}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{6D791562-B0A3-4B82-AE7E-2B700DB2200B}',RESULT_LEVEL_in => 'OUTCOME',result_status_in => 'FAILURE',description_in => ' From Program Value of 1010101 <> Expected Value 2020202',name_in => 'Scalar is equal to the expected value?-2',iteration_in => 2,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{082ABC5A-E273-422B-9D9D-308AB5CC3F4A}',parent_universal_id_in => '{5CBC8AEB-C784-436A-BDDE-AA9257C15137}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{D0BFCFDE-B7D1-4246-8829-24A623C72ED5}',RESULT_LEVEL_in => 'TESTCASE',result_status_in => 'FAILURE',description_in => 'Test failed at this level.',name_in => 'Test SQL text from driver table-3',iteration_in => 3,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{F23E69D1-C71B-4C5F-8C96-2DF29C2A19F2}',parent_universal_id_in => '{EC661274-3E4A-4A9D-93CA-C278157C278E}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{780D3828-1427-4197-AD81-DBF3D9784854}',RESULT_LEVEL_in => 'INPUT',result_status_in => 'SUCCESS',description_in => 'where 1=1',name_in => 'SQL_TEXT_IN',iteration_in => 3,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{01878D1C-565C-4423-9B83-7AB004219178}',parent_universal_id_in => '{D0BFCFDE-B7D1-4246-8829-24A623C72ED5}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{A4268A2B-0F8E-4299-BE51-9517C93BFC47}',RESULT_LEVEL_in => 'INPUT',result_status_in => 'SUCCESS',description_in => 'TRUE',name_in => 'APPLY_ONCE_ONLY_IN',iteration_in => 3,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{02771DB9-EC5D-4853-8910-4898A1D66745}',parent_universal_id_in => '{D0BFCFDE-B7D1-4246-8829-24A623C72ED5}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{2FA22C1D-ADE8-483F-B015-6165D1AED83D}',RESULT_LEVEL_in => 'OUTARG',result_status_in => 'SUCCESS',description_in => '1010101',name_in => 'RETURN',iteration_in => 3,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{7E82DDC2-E067-47B8-A3D1-BE67CFC0F338}|{D0BFCFDE-B7D1-4246-8829-24A623C72ED5}',parent_universal_id_in => '{D0BFCFDE-B7D1-4246-8829-24A623C72ED5}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{745E5503-6B51-4F3B-B2CC-FD8E4D7D5A9E}',RESULT_LEVEL_in => 'OUTCOME',result_status_in => 'FAILURE',description_in => ' From Program Value of 1010101 <> Expected Value 2020202',name_in => 'Scalar is equal to the expected value?-3',iteration_in => 3,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{082ABC5A-E273-422B-9D9D-308AB5CC3F4A}',parent_universal_id_in => '{D0BFCFDE-B7D1-4246-8829-24A623C72ED5}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{19F4CFFD-EC1F-4EAA-9968-5C33AED98256}',RESULT_LEVEL_in => 'TESTCASE',result_status_in => 'FAILURE',description_in => 'Test failed at this level.',name_in => 'Test SQL text from driver table-4',iteration_in => 4,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{F23E69D1-C71B-4C5F-8C96-2DF29C2A19F2}',parent_universal_id_in => '{EC661274-3E4A-4A9D-93CA-C278157C278E}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{5B8D27AD-708B-4883-BE18-8DD7D3066249}',RESULT_LEVEL_in => 'INPUT',result_status_in => 'SUCCESS',description_in => 'select * from dummy',name_in => 'SQL_TEXT_IN',iteration_in => 4,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{01878D1C-565C-4423-9B83-7AB004219178}',parent_universal_id_in => '{19F4CFFD-EC1F-4EAA-9968-5C33AED98256}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{D9721320-BB08-48B0-B473-74FA5D00E8C3}',RESULT_LEVEL_in => 'INPUT',result_status_in => 'SUCCESS',description_in => 'TRUE',name_in => 'APPLY_ONCE_ONLY_IN',iteration_in => 4,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{02771DB9-EC5D-4853-8910-4898A1D66745}',parent_universal_id_in => '{19F4CFFD-EC1F-4EAA-9968-5C33AED98256}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{004D4188-2BB0-4235-B443-EF117790D9DE}',RESULT_LEVEL_in => 'OUTARG',result_status_in => 'SUCCESS',description_in => '1010101',name_in => 'RETURN',iteration_in => 4,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{7E82DDC2-E067-47B8-A3D1-BE67CFC0F338}|{19F4CFFD-EC1F-4EAA-9968-5C33AED98256}',parent_universal_id_in => '{19F4CFFD-EC1F-4EAA-9968-5C33AED98256}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{C5734F28-87DA-4480-B35E-6BB3F24250DE}',RESULT_LEVEL_in => 'OUTCOME',result_status_in => 'FAILURE',description_in => ' From Program Value of 1010101 <> Expected Value 2020202',name_in => 'Scalar is equal to the expected value?-4',iteration_in => 4,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{082ABC5A-E273-422B-9D9D-308AB5CC3F4A}',parent_universal_id_in => '{19F4CFFD-EC1F-4EAA-9968-5C33AED98256}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{293E576B-44B5-47A4-B905-9D01B0D39BD3}',RESULT_LEVEL_in => 'TESTCASE',result_status_in => 'FAILURE',description_in => 'Test failed at this level.',name_in => 'Test SQL text from driver table-5',iteration_in => 5,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{F23E69D1-C71B-4C5F-8C96-2DF29C2A19F2}',parent_universal_id_in => '{EC661274-3E4A-4A9D-93CA-C278157C278E}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{4906D715-E802-4549-A488-B89D24675BD0}',RESULT_LEVEL_in => 'INPUT',result_status_in => 'SUCCESS',description_in => 'create or replace procedure abc is begin null; end;',name_in => 'SQL_TEXT_IN',iteration_in => 5,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{01878D1C-565C-4423-9B83-7AB004219178}',parent_universal_id_in => '{293E576B-44B5-47A4-B905-9D01B0D39BD3}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{AD12196C-3C7B-4767-9456-CDFD1470677C}',RESULT_LEVEL_in => 'INPUT',result_status_in => 'SUCCESS',description_in => 'TRUE',name_in => 'APPLY_ONCE_ONLY_IN',iteration_in => 5,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{02771DB9-EC5D-4853-8910-4898A1D66745}',parent_universal_id_in => '{293E576B-44B5-47A4-B905-9D01B0D39BD3}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{C44FDD30-1735-46BA-988A-FE6B22F7B9EB}',RESULT_LEVEL_in => 'OUTARG',result_status_in => 'SUCCESS',description_in => '1010101',name_in => 'RETURN',iteration_in => 5,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{7E82DDC2-E067-47B8-A3D1-BE67CFC0F338}|{293E576B-44B5-47A4-B905-9D01B0D39BD3}',parent_universal_id_in => '{293E576B-44B5-47A4-B905-9D01B0D39BD3}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+QU_result_xp.import (universal_id_in => '{45FB1C31-6153-4925-9CC4-0971E982BEE0}',RESULT_LEVEL_in => 'OUTCOME',result_status_in => 'FAILURE',description_in => ' From Program Value of 1010101 <> Expected Value 2020202',name_in => 'Scalar is equal to the expected value?-5',iteration_in => 5,start_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),end_on_in=>TO_DATE(20071015053055, 'YYYYMMDDHH24MISS'),result_universal_id_in => '{082ABC5A-E273-422B-9D9D-308AB5CC3F4A}',parent_universal_id_in => '{293E576B-44B5-47A4-B905-9D01B0D39BD3}',harness_guid_in => '{7B6CCC44-C62A-40F3-AF10-C2F0F3D8BDCA}');
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+qu_source_code_xp.clear_caches();
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '515',text_in => '           FROM all_source
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '516',text_in => '          WHERE owner = owner_in
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '517',text_in => '            AND NAME = object_name_in
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '518',text_in => '            AND TYPE = object_type_in;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '519',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '520',text_in => '         l_index := 1;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '521',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '522',text_in => '         WHILE (NOT l_return AND l_index <= l_source.LAST)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '523',text_in => '         LOOP
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '524',text_in => '            l_upper_text := UPPER (l_source (l_index));
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '525',text_in => '            l_return :=
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '526',text_in => '                  INSTR (l_upper_text, ''DBMS_SQL'') > 0
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '527',text_in => '               OR INSTR (l_upper_text, ''EXECUTE IMMEDIATE'') > 0;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '528',text_in => '            l_index := l_index + 1;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '529',text_in => '         END LOOP;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '530',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '531',text_in => '         RETURN l_return;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '532',text_in => '      END uses_dynamic_sql;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '533',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '534',text_in => '      FUNCTION uses_sql_guard (
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '535',text_in => '         owner_in         IN   VARCHAR2
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '536',text_in => '       , object_name_in   IN   VARCHAR2
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '537',text_in => '       , object_type_in   IN   VARCHAR2
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '538',text_in => '      )
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '539',text_in => '         RETURN BOOLEAN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '540',text_in => '      IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '541',text_in => '         l_dummy   VARCHAR2 (1);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '542',text_in => '      BEGIN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '543',text_in => '         SELECT ''x''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '544',text_in => '           INTO l_dummy
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '545',text_in => '           FROM all_dependencies
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '546',text_in => '          WHERE owner = owner_in
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '547',text_in => '            AND NAME = object_name_in
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '548',text_in => '            AND TYPE = object_type_in
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '549',text_in => '            AND referenced_type = ''PACKAGE''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '550',text_in => '            AND referenced_name = ''SQL_GUARD''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '551',text_in => '            AND ROWNUM < 2;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '552',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '553',text_in => '         RETURN TRUE;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '554',text_in => '      EXCEPTION
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '555',text_in => '         WHEN NO_DATA_FOUND
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '556',text_in => '         THEN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '557',text_in => '            RETURN FALSE;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '558',text_in => '      END uses_sql_guard;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '559',text_in => '   BEGIN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '560',text_in => '      FOR object_rec IN (SELECT *
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '561',text_in => '                           FROM all_objects
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '562',text_in => '                          WHERE owner = NVL (schema_in, USER)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '563',text_in => '                            AND object_name LIKE object_name_filter_in
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '564',text_in => '                            AND object_type IN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '565',text_in => '                                   (''PACKAGE'', ''PROCEDURE'', ''FUNCTION''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '566',text_in => '                                  , ''TRIGGER'', ''TYPE BODY''))
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '567',text_in => '      LOOP
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '568',text_in => '         IF uses_dynamic_sql (object_rec.owner
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '569',text_in => '                            , object_rec.object_name
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '570',text_in => '                            , object_rec.object_type
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '571',text_in => '                             )
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '572',text_in => '         THEN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '573',text_in => '            IF NOT uses_sql_guard (object_rec.owner
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '574',text_in => '                                 , object_rec.object_name
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '575',text_in => '                                 , object_rec.object_type
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '576',text_in => '                                  )
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '577',text_in => '            THEN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '578',text_in => '               DBMS_OUTPUT.put_line (object_rec.object_name);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '579',text_in => '            END IF;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '580',text_in => '         END IF;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '581',text_in => '      END LOOP;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '582',text_in => '   END show_no_sql_guard_use;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '583',text_in => 'END sql_guard; ');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '1',text_in => 'PACKAGE sql_guard
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '2',text_in => '/*
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '3',text_in => '| The SQL Guard package: an API to help PL/SQL developers
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '4',text_in => '|    minimize the risk of SQL injection.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '5',text_in => '|
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '6',text_in => '| File name: sql_guard.pks
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '7',text_in => '|
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '8',text_in => '| Overview: Protection against SQL injection comes in these forms:
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '9',text_in => '|
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '10',text_in => '|           1. Analyze contents of dynamic SQL text, identifying
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '11',text_in => '|              the presence of strings which could be dangerous,
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '12',text_in => '|              such as ; or CREATE or DROP. Save the text, plus all
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '13',text_in => '|              related information in a record within the package body.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '14',text_in => '|              Hand back to the caller a handle or pointer to that
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '15',text_in => '|              SQL statement and its analysis.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '16',text_in => '|
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '17',text_in => '|           2. All dynamic SQL programs then will no longer accept a
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '18',text_in => '|              string of text to be processed and executed. Instead, you
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '19',text_in => '|              pass in the SQL_GUARD handle and then the program makes
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '20',text_in => '|              certain that the SQL text is safe. If not, you do not
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '21',text_in => '|              execute the statement; instead you raise an exception.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '22',text_in => '|
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '23',text_in => '| Installation notes:
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '24',text_in => '|    * You should wrap the package body so that it will be impossible (or
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '25',text_in => '|      very very difficult) for anyone to bypass the package security and
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '26',text_in => '|      manipulate the SQL bundles.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '27',text_in => '|
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '28',text_in => '| IMPORTANT CAVEAT: this package will *not* comprehensively and
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '29',text_in => '|    automatically protect against SQL injection. It will, however,
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '30',text_in => '|    increase programmer awareness of the issues and make it eassier
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '31',text_in => '|    to flag problematic text.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '32',text_in => '|
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '33',text_in => '| Author(s): Steven Feuerstein, steven.feuerstein@quest.com
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '34',text_in => '|
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '35',text_in => '| Modification History:
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '36',text_in => '|   Date          Who           What
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '37',text_in => '|   Oct 13, 2007  SF            Add support for PL/SQL expressions
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '38',text_in => '|                               Add "show" program to scan data dictionary.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '39',text_in => '|   Oct 12, 2007  SF            Add sql_safety_level function, to be used in
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '40',text_in => '|                               Code Tester driver.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '41',text_in => '|   Sep 8, 2007   SFeuerstein   Switch to handing back only a handle, not record.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '42',text_in => '|   Sep 6, 2007   SFeuerstein   Create first draft of package (Bratislava)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '43',text_in => '|
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '44',text_in => '*/
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '45',text_in => 'IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '46',text_in => '   /* Codes used to communicate safety level */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '47',text_in => '   c_sql_is_safe          CONSTANT PLS_INTEGER    := 1010101;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '48',text_in => '   c_injection_detected   CONSTANT PLS_INTEGER    := 2020202;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '49',text_in => '   c_unknown_handle       CONSTANT PLS_INTEGER    := 3030303;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '50',text_in => '   /* Types of dynamic SQL */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '51',text_in => '   c_sql                  CONSTANT VARCHAR2 (100) := ''SQL'';
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '52',text_in => '   c_dml                  CONSTANT VARCHAR2 (100) := ''DML'';
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '53',text_in => '   c_ddl                  CONSTANT VARCHAR2 (100) := ''DDL'';
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '54',text_in => '   c_ddl_plsql            CONSTANT VARCHAR2 (100) := ''DDLPLSQL'';
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '55',text_in => '   c_plsql                CONSTANT VARCHAR2 (100) := ''PLSQL'';
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '56',text_in => '   /* Types of tests */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '57',text_in => '   c_expression_test      CONSTANT VARCHAR2 (100) := ''EXPRESSION'';
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '58',text_in => '   c_regexp_like_test     CONSTANT VARCHAR2 (100) := ''REGEXP_LIKE'';
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '59',text_in => '   /* Tag for replacement of sql text */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '60',text_in => '   c_sqltext_tag          CONSTANT VARCHAR2 (100) := ''[SQLTEXT]'';
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '61',text_in => '   c_sqltext_tag_length   CONSTANT PLS_INTEGER    := 9;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '62',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '63',text_in => '   SUBTYPE analyzed_sql_handle_t IS VARCHAR2 (40);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '64',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '65',text_in => '   /*
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '66',text_in => '   API that allows users to add logic to be used to validate text.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '67',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '68',text_in => '   Example:
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '69',text_in => '      sql_guard.add_test (''LIKE'', ''%--%'');
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '70',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '71',text_in => '   This test will then be added to whatever other indicators are
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '72',text_in => '   applied to the analysis of injection.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '73',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '74',text_in => '   If you use EXPRESSION (c_expression_test) as the operator, then
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '75',text_in => '   you can provide any valid Boolean PL/SQL expression you desire
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '76',text_in => '   and it will be executed. Use the tag [sqltext] in your string to
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '77',text_in => '   tell SQL Guard where to place the text being evaluated.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '78',text_in => '   */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '79',text_in => '   PROCEDURE add_test (
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '80',text_in => '      test_string_in         IN   VARCHAR2
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '81',text_in => '    , NAME_IN                IN   VARCHAR2 DEFAULT NULL
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '82',text_in => '    , operator_in            IN   VARCHAR2 DEFAULT ''LIKE''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '83',text_in => '    , surround_with_pct_in   IN   BOOLEAN DEFAULT TRUE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '84',text_in => '    , apply_once_in          IN   BOOLEAN DEFAULT FALSE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '85',text_in => '   );
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '86',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '87',text_in => '   PROCEDURE remove_test (
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '88',text_in => '      NAME_IN         IN   VARCHAR2 DEFAULT NULL
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '89',text_in => '    , apply_once_in   IN   BOOLEAN DEFAULT FALSE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '90',text_in => '   );
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '91',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '92',text_in => '   /* Analyze the SQL statement and return a handle to the bundle of
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '93',text_in => '      information for that statement. */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '94',text_in => '   FUNCTION analyzed_sql (
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '95',text_in => '      sql_text_in          IN   VARCHAR2
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '96',text_in => '    , apply_once_only_in   IN   BOOLEAN DEFAULT FALSE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '97',text_in => '   )
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '98',text_in => '      RETURN analyzed_sql_handle_t;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '99',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '100',text_in => '   /* Simple, direct check of SQL text, returning just the safety level. */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '101',text_in => '   FUNCTION sql_safety_level (
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '102',text_in => '      sql_text_in          IN   VARCHAR2
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '103',text_in => '    , apply_once_only_in   IN   BOOLEAN DEFAULT FALSE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '104',text_in => '   )
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '105',text_in => '      RETURN PLS_INTEGER;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '106',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '107',text_in => '   FUNCTION safety_status (sql_handle_in IN analyzed_sql_handle_t)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '108',text_in => '      RETURN PLS_INTEGER;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '109',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '110',text_in => '   FUNCTION sql_is_safe (sql_handle_in IN analyzed_sql_handle_t)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '111',text_in => '      RETURN BOOLEAN;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '112',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '113',text_in => '   FUNCTION injection_detected (sql_handle_in IN analyzed_sql_handle_t)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '114',text_in => '      RETURN BOOLEAN;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '115',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '116',text_in => '   FUNCTION sql_text (sql_handle_in IN analyzed_sql_handle_t)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '117',text_in => '      RETURN VARCHAR2;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '118',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '119',text_in => '   FUNCTION injection_indicators_found (sql_handle_in IN analyzed_sql_handle_t)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '120',text_in => '      RETURN DBMS_SQL.varchar2s;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '121',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '122',text_in => '   PROCEDURE show_no_sql_guard_use (
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '123',text_in => '      schema_in               IN   VARCHAR2 DEFAULT NULL
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '124',text_in => '    , object_name_filter_in   IN   VARCHAR2 DEFAULT ''%''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '125',text_in => '   );
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE',line_in => '126',text_in => 'END sql_guard; ');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '1',text_in => 'PACKAGE BODY sql_guard
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '2',text_in => '/*
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '3',text_in => '| The SQL Guard package: an API to help PL/SQL developers
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '4',text_in => '|    minimize the risk of SQL injection.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '5',text_in => '|
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '6',text_in => '| File name: sql_guard.pkb
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '7',text_in => '|
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '8',text_in => '| Author(s): Steven Feuerstein, steven.feuerstein@quest.com
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '9',text_in => '|
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '10',text_in => '| Modification History:
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '11',text_in => '|   Date          Who           What
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '12',text_in => '|   Sep 6, 2007   SFeuerstein   Create first draft of package (Bratislava)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '13',text_in => '|
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '14',text_in => '*/
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '15',text_in => 'IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '16',text_in => '/*
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '17',text_in => 'Other ideas
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '18',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '19',text_in => '  Concerns identified by Pete Finnegan:
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '20',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '21',text_in => '* UNIONS can be added to an existing statement to execute a second statement;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '22',text_in => '* SUBSELECTS can be added to existing statements;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '23',text_in => '* Existing SQL can be short-circuited to bring back all data. This technique is often used to gain access via third party-implemented authentication schemes;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '24',text_in => '* A large selection of installed packages and procedures are available, these include packages to read and write O/S files;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '25',text_in => '* Data Definition Language (DDL) can be injected if DDL is used in a dynamic SQL string;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '26',text_in => '* INSERTS, UPDATES and DELETES can also be injected; and,
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '27',text_in => '* Other databases can be injected through the first by using database links.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '28',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '29',text_in => 'I think that I should create categories of indicators and let people choose.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '30',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '31',text_in => 'As in: no remote database, no DML, no DDL, no comments, and so on.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '32',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '33',text_in => 'Also for strings below, they must be distinct, not part of another bigger string,
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '34',text_in => 'like CREATE_EMP.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '35',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '36',text_in => 'Add full list of SYS catalog views.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '37',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '38',text_in => 'Detect fishing: repetitive calls to the same program within a period of time, same user,
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '39',text_in => 'something like that.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '40',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '41',text_in => '''a''=''a'' or 1=1
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '42',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '43',text_in => 'Analysis of certain classes of errors - such as multiple errors indicating that select classes have the wrong number of items or wrong data types. This would indicate someone trying to create an extra select using a union.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '44',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '45',text_in => '*/
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '46',text_in => '   TYPE safe_bundle_rt IS RECORD (
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '47',text_in => '      sql_text                    VARCHAR2 (32767)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '48',text_in => '    , safety_level                PLS_INTEGER
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '49',text_in => '    , injection_indicators        DBMS_SQL.varchar2s
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '50',text_in => '    , unsafe_indicators_checked   DBMS_SQL.varchar2s
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '51',text_in => '    , created_on                  DATE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '52',text_in => '    , created_by                  VARCHAR2 (30)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '53',text_in => '   );
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '54',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '55',text_in => '   TYPE bundles_tt IS TABLE OF safe_bundle_rt
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '56',text_in => '      INDEX BY analyzed_sql_handle_t;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '57',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '58',text_in => '   g_bundles       bundles_tt;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '59',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '60',text_in => '   --
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '61',text_in => '   TYPE tests_aat IS TABLE OF sql_guard_tests%ROWTYPE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '62',text_in => '      INDEX BY PLS_INTEGER;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '63',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '64',text_in => '   TYPE tests_by_name_aat IS TABLE OF sql_guard_tests%ROWTYPE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '65',text_in => '      INDEX BY sql_guard_tests.NAME%TYPE;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '66',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '67',text_in => '   g_test_once     tests_by_name_aat;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '68',text_in => '   g_ignore_once   tests_by_name_aat;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '69',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '70',text_in => '   PROCEDURE add_test (
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '71',text_in => '      test_string_in         IN   VARCHAR2
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '72',text_in => '    , NAME_IN                IN   VARCHAR2 DEFAULT NULL
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '73',text_in => '    , operator_in            IN   VARCHAR2 DEFAULT ''LIKE''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '74',text_in => '    , surround_with_pct_in   IN   BOOLEAN DEFAULT TRUE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '75',text_in => '    , apply_once_in          IN   BOOLEAN DEFAULT FALSE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '76',text_in => '   )
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '77',text_in => '   IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '78',text_in => '      PRAGMA AUTONOMOUS_TRANSACTION;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '79',text_in => '      l_upper_name   VARCHAR2 (32767)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '80',text_in => '         := UPPER (NVL (NAME_IN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '81',text_in => '                      ,    test_string_in
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '82',text_in => '                        || CASE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '83',text_in => '                              WHEN INSTR (test_string_in, '' '') > 0
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '84',text_in => '                                 THEN '' Statement''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '85',text_in => '                              ELSE '' Keyword''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '86',text_in => '                           END
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '87',text_in => '                       )
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '88',text_in => '                  );
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '89',text_in => '      l_test         sql_guard_tests.test_string%TYPE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '90',text_in => '         := CASE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '91',text_in => '         WHEN surround_with_pct_in
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '92',text_in => '            THEN ''%'' || test_string_in || ''%''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '93',text_in => '         ELSE test_string_in
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '94',text_in => '      END;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '95',text_in => '   BEGIN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '96',text_in => '      IF apply_once_in
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '97',text_in => '      THEN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '98',text_in => '         /* Add to cache list. */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '99',text_in => '         g_test_once (l_upper_name).NAME := l_upper_name;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '100',text_in => '         g_test_once (l_upper_name).OPERATOR := operator_in;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '101',text_in => '         g_test_once (l_upper_name).test_string := l_test;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '102',text_in => '      ELSE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '103',text_in => '         /* Put it into the database and commit it. */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '104',text_in => '         INSERT INTO sql_guard_tests
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '105',text_in => '                     (NAME
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '106',text_in => '                    , OPERATOR
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '107',text_in => '                    , test_string
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '108',text_in => '                     )
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '109',text_in => '              VALUES (l_upper_name
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '110',text_in => '                    , operator_in
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '111',text_in => '                    , l_test
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '112',text_in => '                     );
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '113',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '114',text_in => '         COMMIT;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '115',text_in => '      END IF;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '116',text_in => '   EXCEPTION
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '117',text_in => '      WHEN OTHERS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '118',text_in => '      THEN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '119',text_in => '         DBMS_OUTPUT.put_line (''SQL GUARD: Unanticipated Error!'');
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '120',text_in => '         DBMS_OUTPUT.put_line (DBMS_UTILITY.format_error_stack);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '121',text_in => '         DBMS_OUTPUT.put_line (DBMS_UTILITY.format_error_backtrace);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '122',text_in => '         DBMS_OUTPUT.put_line (DBMS_UTILITY.format_call_stack);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '123',text_in => '         ROLLBACK;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '124',text_in => '         RAISE;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '125',text_in => '   END add_test;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '126',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '127',text_in => '   PROCEDURE remove_test (
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '128',text_in => '      NAME_IN         IN   VARCHAR2 DEFAULT NULL
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '129',text_in => '    , apply_once_in   IN   BOOLEAN DEFAULT FALSE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '130',text_in => '   )
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '131',text_in => '   IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '132',text_in => '      l_upper_name   VARCHAR2 (32767) := UPPER (NAME_IN);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '133',text_in => '   BEGIN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '134',text_in => '      IF apply_once_in
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '135',text_in => '      THEN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '136',text_in => '         g_ignore_once (l_upper_name).NAME := NAME_IN;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '137',text_in => '      ELSE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '138',text_in => '         /* Remove from the test table */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '139',text_in => '         DELETE FROM sql_guard_tests
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '140',text_in => '               WHERE NAME = l_upper_name;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '141',text_in => '      END IF;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '142',text_in => '   END remove_test;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '143',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '144',text_in => '   PROCEDURE clear_test_once
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '145',text_in => '   IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '146',text_in => '   BEGIN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '147',text_in => '      g_test_once.DELETE;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '148',text_in => '      g_ignore_once.DELETE;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '149',text_in => '   END clear_test_once;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '150',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '151',text_in => '   PROCEDURE how_safe_is_it (
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '152',text_in => '      sql_text_in                IN       VARCHAR2
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '153',text_in => '    , safety_level_out           OUT      PLS_INTEGER
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '154',text_in => '    , injection_indicators_out   IN OUT   DBMS_SQL.varchar2s
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '155',text_in => '    , apply_once_only_in         IN       BOOLEAN DEFAULT FALSE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '156',text_in => '   )
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '157',text_in => '   IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '158',text_in => '      l_upper_text          VARCHAR2 (32767)           := UPPER (sql_text_in);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '159',text_in => '      l_tests               tests_by_name_aat;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '160',text_in => '      l_index               sql_guard_tests.NAME%TYPE;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '161',text_in => '      l_unsafe_indicators   DBMS_SQL.varchar2s;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '162',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '163',text_in => '      PROCEDURE apply_table_tests (
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '164',text_in => '         injection_indicators_out   IN OUT   DBMS_SQL.varchar2s
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '165',text_in => '      )
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '166',text_in => '      IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '167',text_in => '         c_dangerous   VARCHAR2 (100)   := ''DANGEROUS'';
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '168',text_in => '         l_block       VARCHAR2 (32767);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '169',text_in => '         l_result      VARCHAR2 (100);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '170',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '171',text_in => '         PROCEDURE prepare_test_list (tests_out OUT tests_by_name_aat)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '172',text_in => '         IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '173',text_in => '            l_temp_tests   tests_aat;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '174',text_in => '            l_tests        tests_by_name_aat;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '175',text_in => '            l_index        sql_guard_tests.NAME%TYPE;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '176',text_in => '         BEGIN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '177',text_in => '            IF q$error_manager.trace_enabled
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '178',text_in => '            THEN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '179',text_in => '               q$error_manager.TRACE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '180',text_in => '                                  (''prepare_test_list total test once tests''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '181',text_in => '                                 , g_test_once.COUNT
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '182',text_in => '                                  );
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '183',text_in => '               q$error_manager.TRACE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '184',text_in => '                                 (''prepare_test_list total ignore once tests''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '185',text_in => '                                , g_ignore_once.COUNT
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '186',text_in => '                                 );
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '187',text_in => '               l_index := g_test_once.FIRST;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '188',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '189',text_in => '               WHILE (l_index IS NOT NULL)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '190',text_in => '               LOOP
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '191',text_in => '                  q$error_manager.TRACE (   ''prepare_test_list test once ''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '192',text_in => '                                         || l_index
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '193',text_in => '                                       , g_test_once (l_index).test_string
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '194',text_in => '                                        );
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '195',text_in => '                  l_index := g_test_once.NEXT (l_index);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '196',text_in => '               END LOOP;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '197',text_in => '            END IF;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '198',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '199',text_in => '            IF apply_once_only_in
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '200',text_in => '            THEN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '201',text_in => '               l_tests := g_test_once;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '202',text_in => '            ELSE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '203',text_in => '               SELECT *
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '204',text_in => '               BULK COLLECT INTO l_temp_tests
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '205',text_in => '                 FROM sql_guard_tests;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '206',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '207',text_in => '               FOR indx IN 1 .. l_temp_tests.COUNT
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '208',text_in => '               LOOP
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '209',text_in => '                  l_tests (l_temp_tests (indx).NAME) := l_temp_tests (indx);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '210',text_in => '               END LOOP;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '211',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '212',text_in => '               /* Add the test once only tests */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '213',text_in => '               l_index := g_test_once.FIRST;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '214',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '215',text_in => '               WHILE (l_index IS NOT NULL)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '216',text_in => '               LOOP
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '217',text_in => '                  l_tests (g_test_once (l_index).NAME) :=
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '218',text_in => '                                                        g_test_once (l_index);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '219',text_in => '                  l_index := g_test_once.NEXT (l_index);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '220',text_in => '               END LOOP;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '221',text_in => '            END IF;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '222',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '223',text_in => '            /* Remove any ignore once tests. */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '224',text_in => '            l_index := g_ignore_once.FIRST;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '225',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '226',text_in => '            WHILE (l_index IS NOT NULL)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '227',text_in => '            LOOP
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '228',text_in => '               l_tests.DELETE (l_index);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '229',text_in => '               l_index := g_ignore_once.NEXT (l_index);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '230',text_in => '            END LOOP;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '231',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '232',text_in => '            IF q$error_manager.trace_enabled
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '233',text_in => '            THEN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '234',text_in => '               q$error_manager.TRACE (''prepare_test_list total tests''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '235',text_in => '                                    , l_tests.COUNT
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '236',text_in => '                                     );
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '237',text_in => '               q$error_manager.TRACE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '238',text_in => '                                   (''prepare_test_list total test once tests''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '239',text_in => '                                  , g_test_once.COUNT
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '240',text_in => '                                   );
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '241',text_in => '               q$error_manager.TRACE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '242',text_in => '                                 (''prepare_test_list total ignore once tests''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '243',text_in => '                                , g_ignore_once.COUNT
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '244',text_in => '                                 );
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '245',text_in => '               l_index := l_tests.FIRST;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '246',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '247',text_in => '               WHILE (l_index IS NOT NULL)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '248',text_in => '               LOOP
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '249',text_in => '                  q$error_manager.TRACE (''prepare_test_list test '' || l_index
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '250',text_in => '                                       , l_tests (l_index).test_string
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '251',text_in => '                                        );
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '252',text_in => '                  l_index := l_tests.NEXT (l_index);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '253',text_in => '               END LOOP;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '254',text_in => '            END IF;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '255',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '256',text_in => '            tests_out := l_tests;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '257',text_in => '         END prepare_test_list;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '258',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '259',text_in => '         FUNCTION block_for_operator (test_in IN sql_guard_tests%ROWTYPE)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '260',text_in => '            RETURN VARCHAR2
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '261',text_in => '         IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '262',text_in => '            c_endif_text          CONSTANT VARCHAR2 (1000)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '263',text_in => '               :=    '' THEN :result_value := ''''''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '264',text_in => '                  || c_dangerous
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '265',text_in => '                  || ''''''; ELSE :result_value := ''''SAFE''''; 
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '266',text_in => '                                   END IF; END;'';
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '267',text_in => '            c_operator            CONSTANT sql_guard_tests.OPERATOR%TYPE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '268',text_in => '                                                   := UPPER (test_in.OPERATOR);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '269',text_in => '            c_upper_test_string   CONSTANT sql_guard_tests.test_string%TYPE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '270',text_in => '                                                := UPPER (test_in.test_string);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '271',text_in => '            c_placeholder                  VARCHAR2 (100)       := '':sql_text'';
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '272',text_in => '            l_stringloc                    PLS_INTEGER;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '273',text_in => '            l_return                       VARCHAR2 (32767);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '274',text_in => '         BEGIN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '275',text_in => '            CASE c_operator
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '276',text_in => '               WHEN c_expression_test
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '277',text_in => '               THEN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '278',text_in => '                  /* Substitute in the actual string for [SQLTEST] and then construct the block. */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '279',text_in => '                  l_stringloc := INSTR (c_upper_test_string, c_sqltext_tag);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '280',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '281',text_in => '                  IF l_stringloc > 0
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '282',text_in => '                  THEN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '283',text_in => '                     l_return :=
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '284',text_in => '                           SUBSTR (test_in.test_string, 1, l_stringloc - 1)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '285',text_in => '                        || '' ''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '286',text_in => '                        || c_placeholder
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '287',text_in => '                        || '' ''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '288',text_in => '                        || SUBSTR (test_in.test_string
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '289',text_in => '                                 , l_stringloc + c_sqltext_tag_length
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '290',text_in => '                                  );
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '291',text_in => '                  ELSE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '292',text_in => '                     /* No substitution */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '293',text_in => '                     l_return := test_in.test_string;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '294',text_in => '                  END IF;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '295',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '296',text_in => '                  l_return := ''IF '' || l_return || c_endif_text;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '297',text_in => '               WHEN c_regexp_like_test
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '298',text_in => '               THEN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '299',text_in => '                  l_return :=
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '300',text_in => '                        ''BEGIN IF REGEXP_LIKE (''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '301',text_in => '                     || c_placeholder
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '302',text_in => '                     || '',  ''''''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '303',text_in => '                     || test_in.test_string
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '304',text_in => '                     || '''''') ''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '305',text_in => '                     || c_endif_text;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '306',text_in => '               ELSE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '307',text_in => '                  /* Regular old PL/SQL comparison of some sort...build it! */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '308',text_in => '                  l_return :=
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '309',text_in => '                        ''BEGIN IF ''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '310',text_in => '                     || c_placeholder
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '311',text_in => '                     || '' ''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '312',text_in => '                     || test_in.OPERATOR
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '313',text_in => '                     || '' ''''''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '314',text_in => '                     || test_in.test_string
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '315',text_in => '                     || ''''''''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '316',text_in => '                     || c_endif_text;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '317',text_in => '            END CASE;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '318',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '319',text_in => '            RETURN l_return;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '320',text_in => '         END block_for_operator;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '321',text_in => '      BEGIN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '322',text_in => '         prepare_test_list (l_tests);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '323',text_in => '         l_index := l_tests.FIRST;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '324',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '325',text_in => '         WHILE (l_index IS NOT NULL)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '326',text_in => '         LOOP
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '327',text_in => '            BEGIN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '328',text_in => '               l_block := block_for_operator (l_tests (l_index));
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '329',text_in => '               DBMS_OUTPUT.put_line (l_block);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '330',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '331',text_in => '               EXECUTE IMMEDIATE l_block
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '332',text_in => '                           USING l_upper_text, OUT l_result;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '333',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '334',text_in => '               IF l_result = c_dangerous
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '335',text_in => '               THEN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '336',text_in => '                  injection_indicators_out (injection_indicators_out.COUNT + 1
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '337',text_in => '                                           ) :=
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '338',text_in => '                        l_tests (l_index).OPERATOR
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '339',text_in => '                     || '' ''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '340',text_in => '                     || l_tests (l_index).test_string;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '341',text_in => '               END IF;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '342',text_in => '            EXCEPTION
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '343',text_in => '               WHEN OTHERS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '344',text_in => '               THEN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '345',text_in => '                  /* The operator or string provided is not valid.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '346',text_in => '                     Display the information and continue. */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '347',text_in => '                  DBMS_OUTPUT.put_line (''SQL GUARD: Invalid test!'');
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '348',text_in => '                  DBMS_OUTPUT.put_line (DBMS_UTILITY.format_error_stack);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '349',text_in => '                  DBMS_OUTPUT.put_line (DBMS_UTILITY.format_error_backtrace);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '350',text_in => '                  DBMS_OUTPUT.put_line (DBMS_UTILITY.format_call_stack);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '351',text_in => '                  DBMS_OUTPUT.put_line (   ''Operator = ''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '352',text_in => '                                        || l_tests (l_index).OPERATOR
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '353',text_in => '                                       );
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '354',text_in => '                  DBMS_OUTPUT.put_line (   ''Test string  = ''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '355',text_in => '                                        || l_tests (l_index).test_string
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '356',text_in => '                                       );
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '357',text_in => '                  DBMS_OUTPUT.put_line (''Block  = '' || l_block);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '358',text_in => '            END;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '359',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '360',text_in => '            l_index := g_test_once.NEXT (l_index);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '361',text_in => '         END LOOP;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '362',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '363',text_in => '         /*
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '364',text_in => '         Clear out the test once tests.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '365',text_in => '         */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '366',text_in => '         clear_test_once ();
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '367',text_in => '      END apply_table_tests;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '368',text_in => '   BEGIN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '369',text_in => '      /*
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '370',text_in => '      Now check to see if there are tests in the test table to apply.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '371',text_in => '      */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '372',text_in => '      apply_table_tests (injection_indicators_out);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '373',text_in => '      safety_level_out :=
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '374',text_in => '         CASE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '375',text_in => '            WHEN injection_indicators_out.COUNT > 0
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '376',text_in => '               THEN c_injection_detected
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '377',text_in => '            ELSE c_sql_is_safe
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '378',text_in => '         END;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '379',text_in => '   END how_safe_is_it;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '380',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '381',text_in => '   FUNCTION analyzed_sql (
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '382',text_in => '      sql_text_in          IN   VARCHAR2
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '383',text_in => '    , apply_once_only_in   IN   BOOLEAN DEFAULT FALSE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '384',text_in => '   )
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '385',text_in => '      RETURN analyzed_sql_handle_t
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '386',text_in => '   IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '387',text_in => '      l_safe_bundle   safe_bundle_rt;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '388',text_in => '      l_new_handle    analyzed_sql_handle_t := SYS_GUID;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '389',text_in => '   BEGIN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '390',text_in => '      l_safe_bundle.sql_text := sql_text_in;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '391',text_in => '      how_safe_is_it
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '392',text_in => '             (sql_text_in                   => sql_text_in
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '393',text_in => '            , safety_level_out              => l_safe_bundle.safety_level
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '394',text_in => '            , injection_indicators_out      => l_safe_bundle.injection_indicators
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '395',text_in => '            , apply_once_only_in            => apply_once_only_in
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '396',text_in => '             );
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '397',text_in => '      l_safe_bundle.created_on := SYSDATE;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '398',text_in => '      l_safe_bundle.created_by := USER;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '399',text_in => '      g_bundles (l_new_handle) := l_safe_bundle;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '400',text_in => '      RETURN l_new_handle;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '401',text_in => '   END analyzed_sql;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '402',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '403',text_in => '   /*
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '404',text_in => '   API that allows users to add logic to be used to validate text.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '405',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '406',text_in => '   Example:
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '407',text_in => '      sql_guard.add_test (''LIKE'', ''%--%'');
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '408',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '409',text_in => '   This test will then be added to whatever other indicators are
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '410',text_in => '   applied to the analysis of injection.
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '411',text_in => '   */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '412',text_in => '   PROCEDURE add_for_next_only (
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '413',text_in => '      test_in                 IN   VARCHAR2
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '414',text_in => '    , operator_in             IN   VARCHAR2 DEFAULT ''LIKE''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '415',text_in => '    , surround_with_pct_in    IN   BOOLEAN DEFAULT TRUE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '416',text_in => '    , next_analysis_only_in   IN   BOOLEAN DEFAULT FALSE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '417',text_in => '   )
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '418',text_in => '   IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '419',text_in => '   BEGIN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '420',text_in => '      NULL;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '421',text_in => '   END add_for_next_only;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '422',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '423',text_in => '   /* Simple, direct check of SQL text, using default indicators. */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '424',text_in => '   FUNCTION sql_safety_level (
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '425',text_in => '      sql_text_in          IN   VARCHAR2
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '426',text_in => '    , apply_once_only_in   IN   BOOLEAN DEFAULT FALSE
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '427',text_in => '   )
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '428',text_in => '      RETURN PLS_INTEGER
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '429',text_in => '   IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '430',text_in => '      l_no_extra_indicators   DBMS_SQL.varchar2s;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '431',text_in => '      l_ignore_nothing        DBMS_SQL.varchar2s;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '432',text_in => '      l_analysis              analyzed_sql_handle_t;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '433',text_in => '      l_return                PLS_INTEGER;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '434',text_in => '   BEGIN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '435',text_in => '      /* Use the default indicators, PLUS whatever was loaded into the sql_quard_tests table. */
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '436',text_in => '      l_analysis := analyzed_sql (sql_text_in, apply_once_only_in);
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '437',text_in => '      RETURN g_bundles (l_analysis).safety_level;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '438',text_in => '   END sql_safety_level;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '439',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '440',text_in => '   FUNCTION safety_status (sql_handle_in IN analyzed_sql_handle_t)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '441',text_in => '      RETURN PLS_INTEGER
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '442',text_in => '   IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '443',text_in => '   BEGIN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '444',text_in => '      RETURN g_bundles (sql_handle_in).safety_level;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '445',text_in => '   EXCEPTION
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '446',text_in => '      WHEN NO_DATA_FOUND
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '447',text_in => '      THEN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '448',text_in => '         RETURN c_unknown_handle;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '449',text_in => '   END safety_status;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '450',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '451',text_in => '   FUNCTION sql_is_safe (sql_handle_in IN analyzed_sql_handle_t)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '452',text_in => '      RETURN BOOLEAN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '453',text_in => '   IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '454',text_in => '   BEGIN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '455',text_in => '      RETURN g_bundles (sql_handle_in).safety_level = c_sql_is_safe;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '456',text_in => '   EXCEPTION
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '457',text_in => '      WHEN NO_DATA_FOUND
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '458',text_in => '      THEN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '459',text_in => '         RETURN NULL;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '460',text_in => '   END sql_is_safe;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '461',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '462',text_in => '   FUNCTION injection_detected (sql_handle_in IN analyzed_sql_handle_t)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '463',text_in => '      RETURN BOOLEAN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '464',text_in => '   IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '465',text_in => '   BEGIN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '466',text_in => '      RETURN g_bundles (sql_handle_in).safety_level = c_injection_detected;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '467',text_in => '   EXCEPTION
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '468',text_in => '      WHEN NO_DATA_FOUND
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '469',text_in => '      THEN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '470',text_in => '         RETURN NULL;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '471',text_in => '   END injection_detected;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '472',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '473',text_in => '   FUNCTION sql_text (sql_handle_in IN analyzed_sql_handle_t)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '474',text_in => '      RETURN VARCHAR2
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '475',text_in => '   IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '476',text_in => '   BEGIN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '477',text_in => '      RETURN g_bundles (sql_handle_in).sql_text;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '478',text_in => '   EXCEPTION
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '479',text_in => '      WHEN NO_DATA_FOUND
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '480',text_in => '      THEN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '481',text_in => '         RETURN NULL;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '482',text_in => '   END sql_text;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '483',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '484',text_in => '   FUNCTION injection_indicators_found (sql_handle_in IN analyzed_sql_handle_t)
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '485',text_in => '      RETURN DBMS_SQL.varchar2s
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '486',text_in => '   IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '487',text_in => '      l_empty   DBMS_SQL.varchar2s;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '488',text_in => '   BEGIN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '489',text_in => '      RETURN g_bundles (sql_handle_in).injection_indicators;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '490',text_in => '   EXCEPTION
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '491',text_in => '      WHEN NO_DATA_FOUND
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '492',text_in => '      THEN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '493',text_in => '         RETURN l_empty;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '494',text_in => '   END injection_indicators_found;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '495',text_in => '
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '496',text_in => '   PROCEDURE show_no_sql_guard_use (
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '497',text_in => '      schema_in               IN   VARCHAR2 DEFAULT NULL
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '498',text_in => '    , object_name_filter_in   IN   VARCHAR2 DEFAULT ''%''
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '499',text_in => '   )
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '500',text_in => '   IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '501',text_in => '      FUNCTION uses_dynamic_sql (
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '502',text_in => '         owner_in         IN   VARCHAR2
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '503',text_in => '       , object_name_in   IN   VARCHAR2
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '504',text_in => '       , object_type_in   IN   VARCHAR2
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '505',text_in => '      )
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '506',text_in => '         RETURN BOOLEAN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '507',text_in => '      IS
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '508',text_in => '         l_return       BOOLEAN                := FALSE;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '509',text_in => '         l_source       DBMS_SQL.varchar2a;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '510',text_in => '         l_index        PLS_INTEGER;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '511',text_in => '         l_upper_text   all_source.text%TYPE;
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '512',text_in => '      BEGIN
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '513',text_in => '         SELECT text
+');
+qu_source_code_xp.add_text (type_in => 'PACKAGE BODY',line_in => '514',text_in => '         BULK COLLECT INTO l_source
+');
+qu_source_code_xp.add_header_and_save (
+ universal_id_in => '{E514257E-8318-4136-99EF-28C177ED116C}'
+, harness_guid_in => qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'),
+created_on_in => TO_DATE ('20071015 053054', 'YYYYMMDD HH24MISS'), created_by_in => 'HR');
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+REM EXECUTE
+BEGIN qu_harness_xp.upgrade_import (qu_harness_xp.pky_un_qu_hrn_name (USER,'Q##SQL_GUARD'), '1.6.1.212'); END;
+/
+REM EXECUTE

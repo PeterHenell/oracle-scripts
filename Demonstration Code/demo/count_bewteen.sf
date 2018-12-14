@@ -1,0 +1,70 @@
+CREATE OR REPLACE FUNCTION count_between (
+   -- Replace with your own type here, as needed.
+   collection_in    IN   DBMS_SQL.VARCHAR2S
+  ,start_index_in   IN   BINARY_INTEGER DEFAULT NULL
+  ,end_index_in     IN   BINARY_INTEGER DEFAULT NULL
+  ,inclusive_in     IN   BOOLEAN DEFAULT TRUE
+)
+   RETURN PLS_INTEGER
+/*
+   Program name: count_between
+
+   Original author: Steven Feuerstein, www.Qnxo.com
+
+   Qnxo Script ID: {578A9B78-17A9-4DC3-AC71-9CE45A26CEFB}
+
+   You are granted permission to use this code if it was generated
+   by a licensed user of Qnxo.
+
+   Overview:
+
+   Return the number of elements defined within the specified index range.
+
+   Parameters:
+
+      collection_in - the collection to be counted
+
+      start_index_in - starting index for count; default is first index in
+                       collection as returned by the FIRST method.
+
+      end_index_in - ending index for count; default is first index in
+                       collection as returned by the FIRST method.
+
+      inclusive_in - pass TRUE if you want the endpoints to be counted
+                     in the result (only if the elements exist).
+
+   Dependencies/Restrictions:
+
+   Exceptions raised:
+
+   Modification History:
+
+   >> Generated on August 7, 2005 17:46:9 in schema SCOTT
+*/
+IS
+   l_start   BINARY_INTEGER := NVL (start_index_in, collection_in.FIRST);
+   l_end     BINARY_INTEGER := NVL (end_index_in, collection_in.LAST);
+   l_index   BINARY_INTEGER;
+   l_count   PLS_INTEGER DEFAULT 0;
+BEGIN
+   l_index := l_start;
+
+   WHILE (l_index <= l_end)
+   LOOP
+      IF l_index = l_end AND NOT inclusive_in
+      THEN
+         NULL;
+      ELSIF l_index = l_start AND NOT inclusive_in
+      THEN
+         NULL;
+      ELSIF collection_in.EXISTS (l_index)
+      THEN
+         l_count := l_count + 1;
+      END IF;
+
+      l_index := collection_in.NEXT (l_index);
+   END LOOP;
+
+   RETURN l_count;
+END count_between;
+/

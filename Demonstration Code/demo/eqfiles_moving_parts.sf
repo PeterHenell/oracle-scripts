@@ -1,0 +1,243 @@
+CREATE OR REPLACE FUNCTION files_are_equal 
+/*
+| File name: eqfiles_moving_parts.sql
+|
+| Overview: Compare two files to see if they have the same contents.
+|           Note: If no "file2 this" directory, then we use the
+|           same directory as "file1 this".
+|
+| Author(s): Steven Feuerstein
+|
+| Modification History:
+|   Date          Who         What
+|   02-OCT-2007   SF+Norsk    Changed name of compare_num_of_characters
+|   31-AUG-2007   SF          Greatly improved by Prague class.
+|   19-AUG-2007   SF          Refactored program for PL/SQL Mosaic course
+|   23-SEP-2005   SF          Created program (see eqfiles_before_ref.sf)
+*/
+(
+   file1_name_in IN VARCHAR2
+ , dir1_name_in IN VARCHAR2
+ , file2_name_in IN VARCHAR2
+ , dir2_name_in IN VARCHAR2 := NULL
+)
+   RETURN BOOLEAN
+IS
+   TYPE file_info_rt IS RECORD (
+      file_id     UTL_FILE.file_type
+    , dir         plsql_limits.maxvarchar2
+    , filename    plsql_limits.maxvarchar2
+    , next_line   utl_file_constants.max_linesize_t
+    , eof         BOOLEAN
+   );
+
+   l_file1           file_info_rt;
+   l_file2           file_info_rt;
+   --
+   l_keep_checking   BOOLEAN      DEFAULT TRUE;
+   l_identical       BOOLEAN      DEFAULT FALSE;
+
+   /*
+   Generic assertion program to increase the likelihood
+   that I will actually file1 to make sure assumptions
+   are being followed.
+   */
+   PROCEDURE assert (condition_in IN BOOLEAN, msg_in IN VARCHAR2)
+   IS
+   BEGIN
+      IF NOT condition_in OR condition_in IS NULL
+      THEN
+         raise_application_error (plsql_limits.c_max_user_code, msg_in);
+      END IF;
+   END assert;
+
+   /*
+   Consolidate all initialization logic:
+     - Validate all assumptions regarding inputs.
+     - Open the files.
+   */
+   PROCEDURE initialize (file1_out OUT file_info_rt, file2_out OUT file_info_rt)
+   IS
+   BEGIN
+      /*
+      Make sure inputs are valid.
+      */
+      assert (dir1_name_in IS NOT NULL, 'Directory cannot be NULL.');
+      assert (file1_name_in IS NOT NULL, 'File name cannot be NULL.');
+      assert (file2_name_in IS NOT NULL, 'File name cannot be NULL.');
+      /*
+      Everything is OK. Load up the records and open the files.
+      */
+      file1_out.filename := file1_name_in;
+      file2_out.filename := file2_name_in;
+      file1_out.dir := dir1_name_in;
+      file2_out.dir := NVL (dir2_name_in, dir1_name_in);
+      file1_out.file_id :=
+         UTL_FILE.fopen (LOCATION          => dir1_name_in
+                       , filename          => file1_name_in
+                       , open_mode         => utl_file_constants.read_only ()
+                       , max_linesize      => utl_file_constants.max_linesize
+                                                                           ()
+                        );
+      file2_out.file_id :=
+         UTL_FILE.fopen (LOCATION          => NVL (dir2_name_in, dir1_name_in)
+                       , filename          => file2_name_in
+                       , open_mode         => utl_file_constants.read_only ()
+                       , max_linesize      => utl_file_constants.max_linesize
+                                                                           ()
+                        );
+   END initialize;
+
+   /*
+   Avoid direct call to GET_LINE becausee it leads to poorly
+   structured code (application logic in the exception section).
+   Instead, trap the NO_DATA_FOUND exception and return a Boolean flag.
+   */
+   PROCEDURE get_next_line_from_file (file_inout IN OUT file_info_rt)
+   IS
+   BEGIN
+      UTL_FILE.get_line (file_inout.file_id, file_inout.next_line);
+      file_inout.eof := FALSE;
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         file_inout.eof := TRUE;
+   END get_next_line_from_file;
+
+   /* Lysaker 10/2007: compare_lengths is bad name! */
+   PROCEDURE compare_num_of_characters (
+      file1_in IN file_info_rt
+    , file2_in IN file_info_rt
+    , identical_out OUT BOOLEAN
+   )
+   IS
+      FUNCTION file_length (dir_in IN VARCHAR2, file_in IN VARCHAR2)
+         RETURN PLS_INTEGER
+      IS
+         TYPE fgetattr_t IS RECORD (
+            fexists       BOOLEAN
+          , file_length   PLS_INTEGER
+          , block_size    PLS_INTEGER
+         );
+
+         fgetattr_rec   fgetattr_t;
+      BEGIN
+         UTL_FILE.fgetattr (LOCATION         => dir_in
+                          , filename         => file_in
+                          , fexists          => fgetattr_rec.fexists
+                          , file_length      => fgetattr_rec.file_length
+                          , block_size       => fgetattr_rec.block_size
+                           );
+         RETURN fgetattr_rec.file_length;
+      END file_length;
+   BEGIN
+      identical_out :=
+         file_length (file1_in.dir, file1_in.filename) =
+         file_length (file2_in.dir, file2_in.filename);
+   END;
+
+   /*
+   Isolate the comparison logic into a single procedure.
+   Return flags indicating whether or not to continue
+   reading from the file and if the two are still identical.
+   */
+   PROCEDURE check_for_equality (
+      file1_in IN file_info_rt
+    , file2_in IN file_info_rt
+    , identical_out OUT BOOLEAN
+    , read_next_out OUT BOOLEAN
+   )
+   IS
+   BEGIN
+      IF file1_in.eof AND file2_in.eof
+      THEN
+         /* Made it to the end of both files simultaneously. That's good news! */
+         identical_out := TRUE;
+         read_next_out := FALSE;
+      ELSIF file1_in.eof OR file2_in.eof
+      THEN
+         /* Reached end of one before the other. Not identical! */
+         identical_out := FALSE;
+         read_next_out := FALSE;
+      ELSE
+         /*
+         Only continue IF the two lines are identical.
+         And if they are both null/empty, consider them to be equal.
+         */
+         identical_out :=
+               NVL (file1_in.next_line = file2_in.next_line, FALSE)
+            OR (file1_in.next_line IS NULL AND file2_in.next_line IS NULL);
+         read_next_out := identical_out;
+      END IF;
+   END check_for_equality;
+
+   /*
+   Common cleanup procedure that I can call both in the executable section
+   and in the exception section. I pass the error code so I know whether
+   or not it is necessary to log error information.
+   */
+   PROCEDURE cleanup (
+      file1_inout IN OUT file_info_rt
+    , file2_inout IN OUT file_info_rt
+    , sqlcode_in IN PLS_INTEGER DEFAULT plsql_limits.c_no_error
+   )
+   IS
+   BEGIN
+      /* Close any files that are still open. */
+      IF UTL_FILE.is_open (file1_inout.file_id)
+      THEN
+         UTL_FILE.fclose (file1_inout.file_id);
+      END IF;
+
+      IF UTL_FILE.is_open (file2_inout.file_id)
+      THEN
+         UTL_FILE.fclose (file2_inout.file_id);
+      END IF;
+
+      /* If I have an error, then log the information. But if the error
+          is from an assertion failure, then bypass the logging.
+
+         I am using the Quest Error Manager freeware utility below.
+
+         www.oracleplsqlprogramming.com/downloads/qem.zip
+      */
+      IF sqlcode_in NOT IN
+                      (plsql_limits.c_no_error, plsql_limits.c_max_user_code)
+      THEN
+         q$error_manager.register_error
+            (error_name_in      => 'UNANTICIPATED-ERROR'
+           , text_in            => 'Unexpected error when attempting to compare two files for equality.'
+           , name1_in           => 'FILE1 DIR'
+           , value1_in          => file1_inout.dir
+           , name2_in           => 'FILE2 DIR'
+           , value2_in          => file2_inout.dir
+           , name3_in           => 'FILE1 NAME'
+           , value3_in          => file1_inout.filename
+           , name4_in           => 'FILE2 FILE'
+           , value4_in          => file2_inout.filename
+            );
+      END IF;
+   END cleanup;
+BEGIN
+   initialize (l_file1, l_file2);
+   compare_num_of_characters (l_file1, l_file2, l_identical);
+
+   IF l_identical
+   THEN
+      WHILE (l_keep_checking)
+      LOOP
+         get_next_line_from_file (l_file1);
+         get_next_line_from_file (l_file2);
+         check_for_equality (l_file1, l_file2, l_identical, l_keep_checking);
+      END LOOP;
+   END IF;
+
+   cleanup (l_file1, l_file2);
+   RETURN l_identical;
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      cleanup (l_file1, l_file2, SQLCODE);
+      RAISE;
+END files_are_equal;
+/

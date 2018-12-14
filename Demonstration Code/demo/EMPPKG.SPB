@@ -1,0 +1,53 @@
+CREATE OR REPLACE PACKAGE BODY emppkg
+IS
+
+/* Variables */
+
+/* Private Programs */
+
+/* Public Programs */
+
+   FUNCTION updating_salary (action_in IN VARCHAR2) RETURN BOOLEAN
+   IS
+   BEGIN
+      RETURN (UPPER (action_in) = c_updsal);
+   END;
+
+   FUNCTION setting_totalcomp (action_in IN VARCHAR2) RETURN BOOLEAN
+   IS
+   BEGIN
+      RETURN (UPPER (action_in) = c_totcomp);
+   END;
+
+   FUNCTION showing_employee (action_in IN VARCHAR2) RETURN BOOLEAN
+   IS
+   BEGIN
+      RETURN (UPPER (action_in) = c_showemp);
+   END;
+   
+   PROCEDURE updsal 
+      (emp_in IN emp.empno%TYPE,
+	   sal_in IN emp.sal%TYPE,
+	   comm_in IN emp.comm%TYPE DEFAULT NULL)
+   IS
+   BEGIN
+      UPDATE emp 
+         SET sal = totcomp (NVL (sal_in, sal), comm_in) 
+       WHERE empno = emp_in;  
+      
+      IF SQL%ROWCOUNT = 0
+      THEN
+         RAISE no_such_employee;
+         
+      ELSIF SQL%ROWCOUNT > 1
+      THEN
+         RAISE multiple_primary_keys;
+         
+      ELSE
+         NULL;
+         
+      END IF;    
+   END;
+
+END emppkg;
+/

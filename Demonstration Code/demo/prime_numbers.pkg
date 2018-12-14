@@ -1,0 +1,92 @@
+CREATE OR REPLACE PACKAGE prime_numbers
+IS
+   TYPE primes_aat IS TABLE OF VARCHAR2 ( 32767 )
+      INDEX BY PLS_INTEGER;
+
+   FUNCTION is_prime (
+      number_in IN INTEGER
+   )
+      RETURN BOOLEAN;
+
+   PROCEDURE show_primes (
+      start_in IN INTEGER DEFAULT 1
+    , end_in IN INTEGER DEFAULT 100
+    , prefix_in IN VARCHAR2 DEFAULT NULL
+    , suffix_in IN VARCHAR2 DEFAULT NULL
+    , placedholder_in IN VARCHAR2 DEFAULT '$prime'
+   );
+
+   FUNCTION primes (
+      start_in IN INTEGER DEFAULT 1
+    , end_in IN INTEGER DEFAULT 100
+    , prefix_in IN VARCHAR2 DEFAULT NULL
+    , suffix_in IN VARCHAR2 DEFAULT NULL
+    , placedholder_in IN VARCHAR2 DEFAULT '$prime'
+   )
+      RETURN primes_aat;
+END prime_numbers;
+/
+
+CREATE OR REPLACE PACKAGE BODY prime_numbers
+IS
+   FUNCTION is_prime (
+      number_in IN INTEGER
+   )
+      RETURN BOOLEAN
+   IS
+      c_limit INTEGER := ABS ( number_in );
+      retval BOOLEAN DEFAULT TRUE;
+      divisor INTEGER := 2;
+   BEGIN
+      WHILE ( divisor < c_limit AND retval )
+      LOOP
+         retval := MOD ( number_in, divisor ) <> 0;
+         divisor := divisor + 1;
+      END LOOP;
+
+      RETURN retval;
+   END is_prime;
+
+   FUNCTION primes (
+      start_in IN INTEGER DEFAULT 1
+    , end_in IN INTEGER DEFAULT 100
+    , prefix_in IN VARCHAR2 DEFAULT NULL
+    , suffix_in IN VARCHAR2 DEFAULT NULL
+    , placedholder_in IN VARCHAR2 DEFAULT '$prime'
+   )
+      RETURN primes_aat
+   IS
+      retval primes_aat;
+   BEGIN
+      FOR indx IN start_in .. end_in
+      LOOP
+         IF is_prime ( indx )
+         THEN
+            retval ( retval.COUNT + 1 ) :=
+                  REPLACE ( prefix_in, placedholder_in, TO_CHAR ( indx ))
+               || TO_CHAR ( indx )
+               || REPLACE ( suffix_in, placedholder_in, TO_CHAR ( indx ));
+         END IF;
+      END LOOP;
+
+      RETURN retval;
+   END primes;
+
+   PROCEDURE show_primes (
+      start_in IN INTEGER DEFAULT 1
+    , end_in IN INTEGER DEFAULT 100
+    , prefix_in IN VARCHAR2 DEFAULT NULL
+    , suffix_in IN VARCHAR2 DEFAULT NULL
+    , placedholder_in IN VARCHAR2 DEFAULT '$prime'
+   )
+   IS
+      l_primes primes_aat
+          := primes ( start_in, end_in, prefix_in, suffix_in, placedholder_in );
+   BEGIN
+      FOR indx IN 1 .. l_primes.COUNT
+      LOOP
+         DBMS_OUTPUT.put_line ( l_primes ( indx ));
+      END LOOP;
+   END show_primes;
+END prime_numbers;
+/

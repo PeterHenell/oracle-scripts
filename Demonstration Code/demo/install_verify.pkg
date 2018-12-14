@@ -1,0 +1,4305 @@
+CREATE OR REPLACE PACKAGE qu_verify
+IS
+   c_new_line_character CONSTANT CHAR (1) := CHR (10);
+
+   -- Add in 1.2.0.1: check to make sure tables are built correctly.
+   FUNCTION verify_table_structure (
+      schema_in IN VARCHAR2
+    , table_filter_in IN VARCHAR2 DEFAULT '%'
+    , show_in IN BOOLEAN DEFAULT FALSE
+    , delim_in IN VARCHAR2 DEFAULT c_new_line_character
+   )
+      RETURN CLOB;
+
+   FUNCTION verify_metadata (
+      show_in IN BOOLEAN DEFAULT FALSE
+    , delim_in IN VARCHAR2 DEFAULT c_new_line_character
+   )
+      RETURN CLOB;
+
+   FUNCTION verify_compilation (
+      schema_in IN VARCHAR2
+    , show_in IN BOOLEAN DEFAULT FALSE
+    , delim_in IN VARCHAR2 DEFAULT c_new_line_character
+   )
+      RETURN CLOB;
+
+   FUNCTION verify_install (
+      schema_in IN VARCHAR2
+    , delim_in IN VARCHAR2 DEFAULT c_new_line_character
+    , show_in IN BOOLEAN DEFAULT FALSE
+   )
+      RETURN CLOB;
+
+   PROCEDURE verify_install (schema_in IN VARCHAR2);
+
+   -- Called from front end
+   FUNCTION verify_install (delim_in IN VARCHAR2, show_in IN BOOLEAN)
+      RETURN VARCHAR2;
+
+   PROCEDURE verify_install (show_in IN BOOLEAN DEFAULT TRUE);
+
+   -- Need a separate program? Would they change core metadata?
+   FUNCTION verify_upgrade (
+      schema_in IN VARCHAR2
+    , delim_in IN VARCHAR2 DEFAULT c_new_line_character
+    , show_in IN BOOLEAN DEFAULT FALSE
+   )
+      RETURN CLOB;
+
+   -- You must call program below to generate the code via DBMS_OUTPUT
+   -- to then put into the verify table structure program.
+   PROCEDURE gen_table_control_code;
+END qu_verify;
+/
+
+CREATE OR REPLACE PACKAGE BODY qu_verify
+IS
+   TYPE names_t IS TABLE OF BOOLEAN
+      INDEX BY VARCHAR2 (100);
+
+   g_code_object_names   names_t;
+
+   PROCEDURE load_objects
+   IS
+            /* Generate this list from the following script:
+
+   BEGIN
+      FOR rec IN (SELECT *
+                    FROM user_objects
+                   WHERE object_name NOT LIKE 'QV%'
+                     AND object_name NOT LIKE 'QU_VERIFY%'
+                     AND object_name <> 'QU_UTPLSQL_API'
+                     AND object_type IN ('PACKAGE', 'PACKAGE BODY', 'TRIGGER'))
+      LOOP
+         DBMS_OUTPUT.put_line (   'g_code_object_names ('''
+                               || rec.object_type
+                               || '.'
+                               || rec.object_name
+                               || ''') := TRUE;'
+                              );
+      END LOOP;
+   END;
+
+            */
+   BEGIN
+      g_code_object_names ('PACKAGE BODY.QU_OUTCOME_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_PLACEHOLDER_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_RESULT_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_SUBSTITUTION_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_SUITE_HARNESS_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_SUITE_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_TEMPLATE_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_TEST_CASE_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_TEST_ELEMENT_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_TE_INTVAL_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_UNIT_TEST_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_ALL_ARGUMENTS_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_ASSERTION_CODE_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_ASSERTION_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_ASSERTION_GROUP_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_ASSERTION_HDR_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_ASSERTION_PH_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_ATTRIBUTES_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_DATATYPE_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_DEMO_CATEGORY_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_DEMO_TOPIC_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_HARNESS_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_INPUT_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_INTVAL_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_INTVAL_HDR_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_OPERATOR_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_OUTCOME_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_PLACEHOLDER_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_RESULT_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_SUBSTITUTION_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_SUITE_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_SUITE_HARNESS_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_TEMPLATE_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_TEST_CASE_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_TEST_ELEMENT_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_TE_INTVAL_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_UNIT_TEST_CP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_ALL_ARGUMENTS_XP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_ALL_OBJECTS') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_ASSERTION_XP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_ATTRIBUTES_XP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_CONFIG') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_DATATYPE_XP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_DEMO_TOPIC_XP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_DESCRIBE') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_GENERATE') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_HARNESS_XP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_INPUT_XP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_JAVA') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_OPERATOR_XP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_OUTCOME_XP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_PIPE') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_REPLACE') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_RESULT_XP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_RUNTIME') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_SUBSTITUTION_XP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_SUITE_HARNESS_XP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_SUITE_YP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_TEMPLATE_XP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_TEST') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_TEST_CASE_XP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_TEST_ELEMENT_XP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_UNIT_TEST_XP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_USED') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ALL_ARGUMENTS_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ASSERTION_CODE_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ASSERTION_GROUP_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ASSERTION_HDR_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ASSERTION_PH_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ASSERTION_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ATTRIBUTES_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_DATATYPE_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_DEMO_CATEGORY_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_DEMO_TOPIC_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_HARNESS_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_INPUT_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_INTVAL_HDR_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_INTVAL_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_OPERATOR_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_OUTCOME_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_PLACEHOLDER_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_RESULT_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_SUBSTITUTION_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_SUITE_HARNESS_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_SUITE_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_TEMPLATE_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_TEST_CASE_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_TEST_ELEMENT_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_TE_INTVAL_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_UNIT_TEST_TP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ALL_ARGUMENTS_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ASSERTION_CODE_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ASSERTION_GROUP_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ASSERTION_HDR_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ASSERTION_PH_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ASSERTION_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ATTRIBUTES_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_DATATYPE_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_DEMO_CATEGORY_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_DEMO_TOPIC_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_HARNESS_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_INPUT_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_INTVAL_HDR_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_INTVAL_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_OPERATOR_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_OUTCOME_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_PLACEHOLDER_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_RESULT_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_SUBSTITUTION_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_SUITE_HARNESS_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_SUITE_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_TEMPLATE_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_TEST_CASE_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_TEST_ELEMENT_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_TE_INTVAL_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_UNIT_TEST_QP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ALL_ARGUMENTS_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ASSERTION_CODE_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ASSERTION_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ASSERTION_GROUP_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ASSERTION_HDR_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ASSERTION_PH_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ATTRIBUTES_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_DATATYPE_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_DEMO_CATEGORY_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_DEMO_TOPIC_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_HARNESS_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_INPUT_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_INTVAL_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_INTVAL_HDR_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_OPERATOR_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_OUTCOME_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_PLACEHOLDER_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_RESULT_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_SUBSTITUTION_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_SUITE_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_SUITE_HARNESS_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_TEMPLATE_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_TEST_CASE_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_TEST_ELEMENT_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_TE_INTVAL_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_UNIT_TEST_CP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_CONFIG') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ALL_ARGUMENTS_XP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ALL_OBJECTS') := TRUE;
+      g_code_object_names ('PACKAGE.QU_TEMPLATE_XP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ASSERTION_XP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_ATTRIBUTES_XP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_DATATYPE_XP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_DEMO_TOPIC_XP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_DESCRIBE') := TRUE;
+      g_code_object_names ('PACKAGE.QU_OUTCOME_XP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_GENERATE') := TRUE;
+      g_code_object_names ('PACKAGE.QU_HARNESS_XP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_INPUT_XP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_JAVA') := TRUE;
+      g_code_object_names ('PACKAGE.QU_OPERATOR_XP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_PIPE') := TRUE;
+      g_code_object_names ('PACKAGE.QU_REPLACE') := TRUE;
+      g_code_object_names ('PACKAGE.QU_RESULT_XP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_RUNTIME') := TRUE;
+      g_code_object_names ('PACKAGE.QU_SUBSTITUTION_XP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_SUITE_HARNESS_XP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_SUITE_YP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_TEST') := TRUE;
+      g_code_object_names ('PACKAGE.QU_TEST_CASE_XP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_TEST_ELEMENT_XP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_UNIT_TEST_XP') := TRUE;
+      g_code_object_names ('PACKAGE.QU_USED') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_ALL_ARGUMENTS_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_ASSERTION_CODE_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_ASSERTION_GROUP_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_ASSERTION_HDR_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_ASSERTION_PH_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_ASSERTION_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_ATTRIBUTES_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_DATATYPE_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_DEMO_CATEGORY_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_DEMO_TOPIC_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_HARNESS_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_INPUT_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_INTVAL_HDR_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_INTVAL_QP') := TRUE;
+      g_code_object_names ('PACKAGE BODY.QU_OPERATOR_QP') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ASSERTION_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ASSERTION_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ASSERTION_CODE_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ASSERTION_CODE_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ASSERTION_GROUP_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ASSERTION_GROUP_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ASSERTION_HDR_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ASSERTION_HDR_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ASSERTION_PH_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ASSERTION_PH_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ATTRIBUTES_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ATTRIBUTES_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_DATATYPE_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_DATATYPE_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_DEMO_CATEGORY_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_DEMO_CATEGORY_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_DEMO_TOPIC_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_DEMO_TOPIC_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ERROR_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ERROR_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ERR_CONTEXT_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ERR_CONTEXT_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ERR_INSTANCE_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ERR_INSTANCE_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_HARNESS_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_HARNESS_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_INPUT_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_INPUT_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_INTVAL_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_INTVAL_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_INTVAL_HDR_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_INTVAL_HDR_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_LOG_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_LOG_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_OPERATOR_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_OPERATOR_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_OUTCOME_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_OUTCOME_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_PLACEHOLDER_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_PLACEHOLDER_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_RESULT_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_RESULT_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_SUBSTITUTION_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_SUBSTITUTION_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_SUITE_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_SUITE_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_SUITE_HARNESS_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_SUITE_HARNESS_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_TEMPLATE_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_TEMPLATE_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_TEST_CASE_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_TEST_CASE_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_TEST_ELEMENT_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_TEST_ELEMENT_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_TE_INTVAL_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_TE_INTVAL_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_UNIT_TEST_BIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_UNIT_TEST_BUR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_OUTCOME_BUIR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_UNIT_TEST_CRTR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_TEST_ELEMENT_CRTR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_TEST_ELEMENT_PNRTR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_TEST_ELEMENT_PNSTR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_TEST_CASE_CRTR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_INPUT_CRTR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_OUTCOME_CRTR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ATTRIBUTES_CRTR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ATTRIBUTES_SET_TGUID') := TRUE;
+      g_code_object_names ('TRIGGER.QU_UNIT_TEST_CSTR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_TEST_ELEMENT_CSTR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_TEST_CASE_CSTR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_INPUT_CSTR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_OUTCOME_CSTR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_ATTRIBUTES_CSTR') := TRUE;
+      g_code_object_names ('TRIGGER.QU_HARNESS_NO_DEL_IMPL_BDR') := TRUE;
+   END load_objects;
+
+   PROCEDURE pl (str IN VARCHAR2)
+   IS
+      c_len   CONSTANT PLS_INTEGER      := 255;
+      l_len            PLS_INTEGER      := c_len;
+      l_len2           PLS_INTEGER;
+      l_chr10          PLS_INTEGER;
+      l_str            VARCHAR2 (32767);
+   BEGIN
+      IF LENGTH (str) > c_len
+      THEN
+         l_chr10 := INSTR (str, CHR (10));
+
+         IF l_chr10 > 0 AND l_len >= l_chr10
+         THEN
+            l_len := l_chr10 - 1;
+            l_len2 := l_chr10 + 1;
+         ELSE
+            l_len2 := l_len + 1;
+         END IF;
+
+         l_str := SUBSTR (str, 1, l_len);
+         DBMS_OUTPUT.put_line (l_str);
+         pl (SUBSTR (str, l_len2));
+      ELSE
+         l_str := str;
+         DBMS_OUTPUT.put_line (str);
+      END IF;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         DBMS_OUTPUT.ENABLE (1000000);
+         DBMS_OUTPUT.put_line (l_str);
+   END pl;
+
+   FUNCTION add_title (
+      issue_found_in IN BOOLEAN
+    , issues_in IN CLOB
+    , title_in IN VARCHAR2
+    , delim_in IN VARCHAR2
+   )
+      RETURN CLOB
+   IS
+   BEGIN
+      IF issue_found_in
+      THEN
+         RETURN title_in || delim_in || issues_in;
+      ELSE
+         RETURN NULL;
+      END IF;
+   END add_title;
+
+   PROCEDURE gen_table_control_code
+   IS
+   BEGIN
+      FOR rec IN (SELECT   table_name, column_name, data_type, column_id
+                      FROM all_tab_columns atc
+                     WHERE atc.owner = USER
+                       AND SUBSTR (table_name, 1, 3) = 'QU_'
+                  ORDER BY table_name, column_id)
+      LOOP
+         DBMS_OUTPUT.put_line (   'IF '''
+                               || rec.table_name
+                               || ''' LIKE table_filter_in THEN '
+                              );
+         DBMS_OUTPUT.put_line (   'col_info_out('
+                               || ''''
+                               || rec.table_name
+                               || ''')('
+                               || rec.column_id
+                               || ').column_name := '''
+                               || rec.column_name
+                               || ''';'
+                              );
+         DBMS_OUTPUT.put_line (   'col_info_out('
+                               || ''''
+                               || rec.table_name
+                               || ''')('
+                               || rec.column_id
+                               || ').data_type := '''
+                               || rec.data_type
+                               || ''';'
+                              );
+         DBMS_OUTPUT.put_line ('END IF;');
+      END LOOP;
+   END gen_table_control_code;
+
+   FUNCTION verify_table_structure (
+      schema_in IN VARCHAR2
+    , table_filter_in IN VARCHAR2 DEFAULT '%'
+    , show_in IN BOOLEAN DEFAULT FALSE
+    , delim_in IN VARCHAR2 DEFAULT c_new_line_character
+   )
+      RETURN CLOB
+   IS
+      l_issues        CLOB;
+      l_issue_found   BOOLEAN                    DEFAULT FALSE;
+
+      TYPE key_col_info_rt IS RECORD (
+         column_name   all_tab_columns.column_name%TYPE
+       , data_type     all_tab_columns.data_type%TYPE
+      );
+
+      TYPE key_col_info_tt IS TABLE OF key_col_info_rt
+         INDEX BY PLS_INTEGER;
+
+      TYPE key_col_info_by_tabname_tt IS TABLE OF key_col_info_tt
+         INDEX BY all_tab_columns.table_name%TYPE;
+
+      l_control       key_col_info_by_tabname_tt;
+      l_actual        key_col_info_by_tabname_tt;
+
+      PROCEDURE load_control (col_info_out OUT key_col_info_by_tabname_tt)
+      IS
+         indx   PLS_INTEGER;
+      BEGIN
+         /* Generate code for this section by running gen_table_control_code above */
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (1).column_name := 'ID';
+            col_info_out ('QU_ALL_ARGUMENTS') (1).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (2).column_name := 'OWNER';
+            col_info_out ('QU_ALL_ARGUMENTS') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (3).column_name :=
+                                                                'OBJECT_NAME';
+            col_info_out ('QU_ALL_ARGUMENTS') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (4).column_name :=
+                                                               'PACKAGE_NAME';
+            col_info_out ('QU_ALL_ARGUMENTS') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (5).column_name := 'OBJECT_ID';
+            col_info_out ('QU_ALL_ARGUMENTS') (5).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (6).column_name := 'OVERLOAD';
+            col_info_out ('QU_ALL_ARGUMENTS') (6).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (7).column_name :=
+                                                              'ARGUMENT_NAME';
+            col_info_out ('QU_ALL_ARGUMENTS') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (8).column_name := 'POSITION';
+            col_info_out ('QU_ALL_ARGUMENTS') (8).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (9).column_name := 'SEQUENCE';
+            col_info_out ('QU_ALL_ARGUMENTS') (9).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (10).column_name :=
+                                                                 'DATA_LEVEL';
+            col_info_out ('QU_ALL_ARGUMENTS') (10).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (11).column_name := 'DATA_TYPE';
+            col_info_out ('QU_ALL_ARGUMENTS') (11).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (12).column_name :=
+                                                             'DATA_TYPE_NAME';
+            col_info_out ('QU_ALL_ARGUMENTS') (12).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (13).column_name :=
+                                                             'DEFAULT_LENGTH';
+            col_info_out ('QU_ALL_ARGUMENTS') (13).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (14).column_name := 'IN_OUT';
+            col_info_out ('QU_ALL_ARGUMENTS') (14).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (15).column_name :=
+                                                                'DATA_LENGTH';
+            col_info_out ('QU_ALL_ARGUMENTS') (15).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (16).column_name :=
+                                                             'DATA_PRECISION';
+            col_info_out ('QU_ALL_ARGUMENTS') (16).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (17).column_name :=
+                                                                 'DATA_SCALE';
+            col_info_out ('QU_ALL_ARGUMENTS') (17).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (18).column_name := 'RADIX';
+            col_info_out ('QU_ALL_ARGUMENTS') (18).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (19).column_name :=
+                                                         'CHARACTER_SET_NAME';
+            col_info_out ('QU_ALL_ARGUMENTS') (19).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (20).column_name :=
+                                                                 'TYPE_OWNER';
+            col_info_out ('QU_ALL_ARGUMENTS') (20).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (21).column_name := 'TYPE_NAME';
+            col_info_out ('QU_ALL_ARGUMENTS') (21).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (22).column_name :=
+                                                               'TYPE_SUBNAME';
+            col_info_out ('QU_ALL_ARGUMENTS') (22).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (23).column_name := 'TYPE_LINK';
+            col_info_out ('QU_ALL_ARGUMENTS') (23).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (24).column_name := 'PLS_TYPE';
+            col_info_out ('QU_ALL_ARGUMENTS') (24).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (25).column_name :=
+                                                                'CHAR_LENGTH';
+            col_info_out ('QU_ALL_ARGUMENTS') (25).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (26).column_name := 'CHAR_USED';
+            col_info_out ('QU_ALL_ARGUMENTS') (26).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ALL_ARGUMENTS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ALL_ARGUMENTS') (27).column_name :=
+                                                              'DEFAULT_VALUE';
+            col_info_out ('QU_ALL_ARGUMENTS') (27).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_ASSERTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION') (1).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_ASSERTION') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION') (2).column_name := 'NAME';
+            col_info_out ('QU_ASSERTION') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION') (3).column_name := 'DESCRIPTION';
+            col_info_out ('QU_ASSERTION') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION') (4).column_name := 'FP_DT_GUID';
+            col_info_out ('QU_ASSERTION') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION') (5).column_name := 'OPERATOR_GUID';
+            col_info_out ('QU_ASSERTION') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION') (6).column_name := 'EXP_DT_GUID';
+            col_info_out ('QU_ASSERTION') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION') (7).column_name :=
+                                                           'SUBSTITUTABILITY';
+            col_info_out ('QU_ASSERTION') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION') (8).column_name :=
+                                                          'DEFINITION_STATUS';
+            col_info_out ('QU_ASSERTION') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION') (9).column_name := 'TE_INDEPENDENT';
+            col_info_out ('QU_ASSERTION') (9).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION') (10).column_name := 'DISPLAY_ORDER';
+            col_info_out ('QU_ASSERTION') (10).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ASSERTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION') (11).column_name := 'CREATED_ON';
+            col_info_out ('QU_ASSERTION') (11).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_ASSERTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION') (12).column_name := 'CREATED_BY';
+            col_info_out ('QU_ASSERTION') (12).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION') (13).column_name := 'CHANGED_ON';
+            col_info_out ('QU_ASSERTION') (13).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_ASSERTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION') (14).column_name := 'CHANGED_BY';
+            col_info_out ('QU_ASSERTION') (14).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION') (15).column_name :=
+                                                             'DEFINE_IN_GRID';
+            col_info_out ('QU_ASSERTION') (15).data_type := 'CHAR';
+         END IF;
+
+         IF 'QU_ASSERTION_CODE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_CODE') (1).column_name :=
+                                                               'UNIVERSAL_ID';
+            col_info_out ('QU_ASSERTION_CODE') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_CODE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_CODE') (2).column_name :=
+                                                             'ASSERTION_GUID';
+            col_info_out ('QU_ASSERTION_CODE') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_CODE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_CODE') (3).column_name :=
+                                                              'TEMPLATE_GUID';
+            col_info_out ('QU_ASSERTION_CODE') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_CODE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_CODE') (4).column_name :=
+                                                              'OPERATOR_GUID';
+            col_info_out ('QU_ASSERTION_CODE') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_CODE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_CODE') (5).column_name :=
+                                                                 'FP_DT_GUID';
+            col_info_out ('QU_ASSERTION_CODE') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_CODE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_CODE') (6).column_name :=
+                                                                'EXP_DT_GUID';
+            col_info_out ('QU_ASSERTION_CODE') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_CODE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_CODE') (7).column_name :=
+                                                                 'CREATED_ON';
+            col_info_out ('QU_ASSERTION_CODE') (7).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_ASSERTION_CODE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_CODE') (8).column_name :=
+                                                                 'CREATED_BY';
+            col_info_out ('QU_ASSERTION_CODE') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_CODE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_CODE') (9).column_name :=
+                                                                 'CHANGED_ON';
+            col_info_out ('QU_ASSERTION_CODE') (9).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_ASSERTION_CODE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_CODE') (10).column_name :=
+                                                                 'CHANGED_BY';
+            col_info_out ('QU_ASSERTION_CODE') (10).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_GROUP') (1).column_name :=
+                                                               'UNIVERSAL_ID';
+            col_info_out ('QU_ASSERTION_GROUP') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_GROUP') (2).column_name :=
+                                                         'ASSERTION_HDR_GUID';
+            col_info_out ('QU_ASSERTION_GROUP') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_GROUP') (3).column_name :=
+                                                             'ASSERTION_GUID';
+            col_info_out ('QU_ASSERTION_GROUP') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_GROUP') (4).column_name :=
+                                                                 'CREATED_ON';
+            col_info_out ('QU_ASSERTION_GROUP') (4).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_ASSERTION_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_GROUP') (5).column_name :=
+                                                                 'CREATED_BY';
+            col_info_out ('QU_ASSERTION_GROUP') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_GROUP') (6).column_name :=
+                                                                 'CHANGED_ON';
+            col_info_out ('QU_ASSERTION_GROUP') (6).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_ASSERTION_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_GROUP') (7).column_name :=
+                                                                 'CHANGED_BY';
+            col_info_out ('QU_ASSERTION_GROUP') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_HDR') (1).column_name :=
+                                                               'UNIVERSAL_ID';
+            col_info_out ('QU_ASSERTION_HDR') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_HDR') (2).column_name := 'NAME';
+            col_info_out ('QU_ASSERTION_HDR') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_HDR') (3).column_name :=
+                                                                'DESCRIPTION';
+            col_info_out ('QU_ASSERTION_HDR') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_HDR') (4).column_name :=
+                                                              'DATATYPE_GUID';
+            col_info_out ('QU_ASSERTION_HDR') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_HDR') (5).column_name :=
+                                                              'DISPLAY_ORDER';
+            col_info_out ('QU_ASSERTION_HDR') (5).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ASSERTION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_HDR') (6).column_name := 'CREATED_ON';
+            col_info_out ('QU_ASSERTION_HDR') (6).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_ASSERTION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_HDR') (7).column_name := 'CREATED_BY';
+            col_info_out ('QU_ASSERTION_HDR') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_HDR') (8).column_name := 'CHANGED_ON';
+            col_info_out ('QU_ASSERTION_HDR') (8).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_ASSERTION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_HDR') (9).column_name := 'CHANGED_BY';
+            col_info_out ('QU_ASSERTION_HDR') (9).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_PH' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_PH') (1).column_name :=
+                                                               'UNIVERSAL_ID';
+            col_info_out ('QU_ASSERTION_PH') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_PH' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_PH') (2).column_name :=
+                                                             'ASSERTION_GUID';
+            col_info_out ('QU_ASSERTION_PH') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_PH' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_PH') (3).column_name :=
+                                                           'PLACEHOLDER_NAME';
+            col_info_out ('QU_ASSERTION_PH') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_PH' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_PH') (4).column_name := 'CREATED_ON';
+            col_info_out ('QU_ASSERTION_PH') (4).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_ASSERTION_PH' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_PH') (5).column_name := 'CREATED_BY';
+            col_info_out ('QU_ASSERTION_PH') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_PH' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_PH') (6).column_name := 'CHANGED_ON';
+            col_info_out ('QU_ASSERTION_PH') (6).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_ASSERTION_PH' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_PH') (7).column_name := 'CHANGED_BY';
+            col_info_out ('QU_ASSERTION_PH') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ASSERTION_PH' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ASSERTION_PH') (8).column_name := 'VALUE';
+            col_info_out ('QU_ASSERTION_PH') (8).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (1).column_name := 'PARENT_GUID';
+            col_info_out ('QU_ATTRIBUTES') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (2).column_name := 'USAGE_TYPE';
+            col_info_out ('QU_ATTRIBUTES') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (3).column_name :=
+                                                             'INTERNAL_VALUE';
+            col_info_out ('QU_ATTRIBUTES') (3).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (4).column_name :=
+                                                             'EXTERNAL_VALUE';
+            col_info_out ('QU_ATTRIBUTES') (4).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (5).column_name := 'IS_EXPRESSION';
+            col_info_out ('QU_ATTRIBUTES') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (6).column_name :=
+                                                             'VALUE1_IS_EXPR';
+            col_info_out ('QU_ATTRIBUTES') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (7).column_name :=
+                                                             'VALUE2_IS_EXPR';
+            col_info_out ('QU_ATTRIBUTES') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (8).column_name :=
+                                                             'VALUE3_IS_EXPR';
+            col_info_out ('QU_ATTRIBUTES') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (9).column_name :=
+                                                             'VALUE4_IS_EXPR';
+            col_info_out ('QU_ATTRIBUTES') (9).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (10).column_name :=
+                                                             'VALUE5_IS_EXPR';
+            col_info_out ('QU_ATTRIBUTES') (10).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (11).column_name :=
+                                                             'VALUE6_IS_EXPR';
+            col_info_out ('QU_ATTRIBUTES') (11).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (12).column_name :=
+                                                          'TEST_ELEMENT_GUID';
+            col_info_out ('QU_ATTRIBUTES') (12).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (13).column_name :=
+                                                            'ASSIGN_IN_SETUP';
+            col_info_out ('QU_ATTRIBUTES') (13).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (14).column_name :=
+                                                             'ARGUMENT_ALIAS';
+            col_info_out ('QU_ATTRIBUTES') (14).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (15).column_name :=
+                                                       'NO_LOCAL_DECLARATION';
+            col_info_out ('QU_ATTRIBUTES') (15).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (16).column_name := 'CREATED_ON';
+            col_info_out ('QU_ATTRIBUTES') (16).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (17).column_name := 'CREATED_BY';
+            col_info_out ('QU_ATTRIBUTES') (17).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (18).column_name := 'CHANGED_ON';
+            col_info_out ('QU_ATTRIBUTES') (18).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (19).column_name := 'CHANGED_BY';
+            col_info_out ('QU_ATTRIBUTES') (19).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (20).column_name :=
+                                                           'DATATYPE_DECLARE';
+            col_info_out ('QU_ATTRIBUTES') (20).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (21).column_name := 'VALUE1';
+            col_info_out ('QU_ATTRIBUTES') (21).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (22).column_name := 'VALUE2';
+            col_info_out ('QU_ATTRIBUTES') (22).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (23).column_name := 'VALUE3';
+            col_info_out ('QU_ATTRIBUTES') (23).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (24).column_name := 'VALUE4';
+            col_info_out ('QU_ATTRIBUTES') (24).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (25).column_name := 'VALUE5';
+            col_info_out ('QU_ATTRIBUTES') (25).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_ATTRIBUTES' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ATTRIBUTES') (26).column_name := 'VALUE6';
+            col_info_out ('QU_ATTRIBUTES') (26).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_COLUMN_SET' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_COLUMN_SET') (1).column_name := 'HARNESS_GUID';
+            col_info_out ('QU_COLUMN_SET') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_COLUMN_SET' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_COLUMN_SET') (2).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_COLUMN_SET') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_COLUMN_SET' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_COLUMN_SET') (3).column_name := 'COLUMN_SET';
+            col_info_out ('QU_COLUMN_SET') (3).data_type :=
+                                                          'QU_COLUMN_SET_VAT';
+         END IF;
+
+         IF 'QU_COLUMN_SET' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_COLUMN_SET') (4).column_name := 'CREATED_ON';
+            col_info_out ('QU_COLUMN_SET') (4).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_COLUMN_SET' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_COLUMN_SET') (5).column_name := 'CREATED_BY';
+            col_info_out ('QU_COLUMN_SET') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_COLUMN_SET' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_COLUMN_SET') (6).column_name := 'CHANGED_ON';
+            col_info_out ('QU_COLUMN_SET') (6).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_COLUMN_SET' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_COLUMN_SET') (7).column_name := 'CHANGED_BY';
+            col_info_out ('QU_COLUMN_SET') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DATATYPE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DATATYPE') (1).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_DATATYPE') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DATATYPE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DATATYPE') (2).column_name := 'NAME';
+            col_info_out ('QU_DATATYPE') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DATATYPE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DATATYPE') (3).column_name := 'DECLARATION';
+            col_info_out ('QU_DATATYPE') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DATATYPE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DATATYPE') (4).column_name := 'DESCRIPTION';
+            col_info_out ('QU_DATATYPE') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DATATYPE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DATATYPE') (5).column_name := 'FAMILY_GUID';
+            col_info_out ('QU_DATATYPE') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DATATYPE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DATATYPE') (6).column_name :=
+                                                     'DEFAULT_ASSERTION_GUID';
+            col_info_out ('QU_DATATYPE') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DATATYPE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DATATYPE') (7).column_name := 'IS_PRIMARY';
+            col_info_out ('QU_DATATYPE') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DATATYPE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DATATYPE') (8).column_name := 'IS_FAMILY';
+            col_info_out ('QU_DATATYPE') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DATATYPE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DATATYPE') (9).column_name := 'IDENTIFIER_ONLY';
+            col_info_out ('QU_DATATYPE') (9).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DATATYPE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DATATYPE') (10).column_name := 'IS_DBOBJECT';
+            col_info_out ('QU_DATATYPE') (10).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DATATYPE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DATATYPE') (11).column_name := 'CREATED_ON';
+            col_info_out ('QU_DATATYPE') (11).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_DATATYPE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DATATYPE') (12).column_name := 'CREATED_BY';
+            col_info_out ('QU_DATATYPE') (12).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DATATYPE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DATATYPE') (13).column_name := 'CHANGED_ON';
+            col_info_out ('QU_DATATYPE') (13).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_DATATYPE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DATATYPE') (14).column_name := 'CHANGED_BY';
+            col_info_out ('QU_DATATYPE') (14).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DATATYPE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DATATYPE') (15).column_name :=
+                                                          'SHOW_FOR_CBP_TYPE';
+            col_info_out ('QU_DATATYPE') (15).data_type := 'CHAR';
+         END IF;
+
+         IF 'QU_DATATYPE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DATATYPE') (16).column_name :=
+                                                           'SUBSTITUTABILITY';
+            col_info_out ('QU_DATATYPE') (16).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DATATYPE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DATATYPE') (17).column_name :=
+                                                           'SHOW_FOR_ER_TYPE';
+            col_info_out ('QU_DATATYPE') (17).data_type := 'CHAR';
+         END IF;
+
+         IF 'QU_DATATYPE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DATATYPE') (18).column_name := 'DISPLAY_NAME';
+            col_info_out ('QU_DATATYPE') (18).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DEMO_CATEGORY' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_CATEGORY') (1).column_name :=
+                                                               'UNIVERSAL_ID';
+            col_info_out ('QU_DEMO_CATEGORY') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DEMO_CATEGORY' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_CATEGORY') (2).column_name := 'NAME';
+            col_info_out ('QU_DEMO_CATEGORY') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DEMO_CATEGORY' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_CATEGORY') (3).column_name :=
+                                                                'DESCRIPTION';
+            col_info_out ('QU_DEMO_CATEGORY') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DEMO_CATEGORY' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_CATEGORY') (4).column_name :=
+                                                            'REFERENCE_TABLE';
+            col_info_out ('QU_DEMO_CATEGORY') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DEMO_CATEGORY' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_CATEGORY') (5).column_name := 'CREATED_ON';
+            col_info_out ('QU_DEMO_CATEGORY') (5).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_DEMO_CATEGORY' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_CATEGORY') (6).column_name := 'CREATED_BY';
+            col_info_out ('QU_DEMO_CATEGORY') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DEMO_CATEGORY' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_CATEGORY') (7).column_name := 'CHANGED_ON';
+            col_info_out ('QU_DEMO_CATEGORY') (7).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_DEMO_CATEGORY' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_CATEGORY') (8).column_name := 'CHANGED_BY';
+            col_info_out ('QU_DEMO_CATEGORY') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DEMO_TOPIC' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_TOPIC') (1).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_DEMO_TOPIC') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DEMO_TOPIC' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_TOPIC') (2).column_name := 'CATEGORY_GUID';
+            col_info_out ('QU_DEMO_TOPIC') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DEMO_TOPIC' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_TOPIC') (3).column_name :=
+                                                             'REFERENCE_GUID';
+            col_info_out ('QU_DEMO_TOPIC') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DEMO_TOPIC' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_TOPIC') (4).column_name := 'DEMO_GUID';
+            col_info_out ('QU_DEMO_TOPIC') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DEMO_TOPIC' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_TOPIC') (5).column_name := 'NAME';
+            col_info_out ('QU_DEMO_TOPIC') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DEMO_TOPIC' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_TOPIC') (6).column_name := 'DESCRIPTION';
+            col_info_out ('QU_DEMO_TOPIC') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DEMO_TOPIC' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_TOPIC') (7).column_name := 'DEMO_LEVEL';
+            col_info_out ('QU_DEMO_TOPIC') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DEMO_TOPIC' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_TOPIC') (8).column_name := 'DEMO_SUBLEVEL';
+            col_info_out ('QU_DEMO_TOPIC') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DEMO_TOPIC' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_TOPIC') (9).column_name := 'CREATED_ON';
+            col_info_out ('QU_DEMO_TOPIC') (9).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_DEMO_TOPIC' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_TOPIC') (10).column_name := 'CREATED_BY';
+            col_info_out ('QU_DEMO_TOPIC') (10).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_DEMO_TOPIC' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_TOPIC') (11).column_name := 'CHANGED_ON';
+            col_info_out ('QU_DEMO_TOPIC') (11).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_DEMO_TOPIC' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_DEMO_TOPIC') (12).column_name := 'CHANGED_BY';
+            col_info_out ('QU_DEMO_TOPIC') (12).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERROR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERROR') (1).column_name := 'ID';
+            col_info_out ('QU_ERROR') (1).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ERROR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERROR') (2).column_name := 'ERROR_CATEGORY_ID';
+            col_info_out ('QU_ERROR') (2).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ERROR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERROR') (3).column_name :=
+                                                        'ERROR_CATEGORY_NAME';
+            col_info_out ('QU_ERROR') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERROR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERROR') (4).column_name := 'APPLICATION_ID';
+            col_info_out ('QU_ERROR') (4).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ERROR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERROR') (5).column_name := 'APPLICATION_NAME';
+            col_info_out ('QU_ERROR') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERROR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERROR') (6).column_name := 'CODE';
+            col_info_out ('QU_ERROR') (6).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ERROR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERROR') (7).column_name := 'NAME';
+            col_info_out ('QU_ERROR') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERROR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERROR') (8).column_name := 'DESCRIPTION';
+            col_info_out ('QU_ERROR') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERROR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERROR') (9).column_name := 'IDENTIFIER_NAME';
+            col_info_out ('QU_ERROR') (9).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERROR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERROR') (10).column_name := 'DEFAULT_TEXT';
+            col_info_out ('QU_ERROR') (10).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERROR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERROR') (11).column_name := 'CREATED_ON';
+            col_info_out ('QU_ERROR') (11).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_ERROR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERROR') (12).column_name := 'CREATED_BY';
+            col_info_out ('QU_ERROR') (12).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERROR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERROR') (13).column_name := 'CHANGED_ON';
+            col_info_out ('QU_ERROR') (13).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_ERROR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERROR') (14).column_name := 'CHANGED_BY';
+            col_info_out ('QU_ERROR') (14).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERROR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERROR') (15).column_name :=
+                                                         'DEFAULT_ERROR_CODE';
+            col_info_out ('QU_ERROR') (15).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ERROR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERROR') (16).column_name := 'SUBSTITUTE_STRING';
+            col_info_out ('QU_ERROR') (16).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERROR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERROR') (17).column_name := 'RECOMMENDATION';
+            col_info_out ('QU_ERROR') (17).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERR_CONTEXT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_CONTEXT') (1).column_name := 'ID';
+            col_info_out ('QU_ERR_CONTEXT') (1).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ERR_CONTEXT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_CONTEXT') (2).column_name :=
+                                                            'ERR_INSTANCE_ID';
+            col_info_out ('QU_ERR_CONTEXT') (2).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ERR_CONTEXT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_CONTEXT') (3).column_name := 'NAME';
+            col_info_out ('QU_ERR_CONTEXT') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERR_CONTEXT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_CONTEXT') (4).column_name := 'VALUE';
+            col_info_out ('QU_ERR_CONTEXT') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERR_CONTEXT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_CONTEXT') (5).column_name := 'CREATED_ON';
+            col_info_out ('QU_ERR_CONTEXT') (5).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_ERR_CONTEXT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_CONTEXT') (6).column_name := 'CREATED_BY';
+            col_info_out ('QU_ERR_CONTEXT') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERR_CONTEXT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_CONTEXT') (7).column_name := 'CHANGED_ON';
+            col_info_out ('QU_ERR_CONTEXT') (7).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_ERR_CONTEXT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_CONTEXT') (8).column_name := 'CHANGED_BY';
+            col_info_out ('QU_ERR_CONTEXT') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERR_INSTANCE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_INSTANCE') (1).column_name := 'ID';
+            col_info_out ('QU_ERR_INSTANCE') (1).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ERR_INSTANCE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_INSTANCE') (2).column_name := 'ERROR_ID';
+            col_info_out ('QU_ERR_INSTANCE') (2).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ERR_INSTANCE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_INSTANCE') (3).column_name := 'ERROR_STACK';
+            col_info_out ('QU_ERR_INSTANCE') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERR_INSTANCE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_INSTANCE') (4).column_name := 'CALL_STACK';
+            col_info_out ('QU_ERR_INSTANCE') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERR_INSTANCE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_INSTANCE') (5).column_name := 'MESSAGE';
+            col_info_out ('QU_ERR_INSTANCE') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERR_INSTANCE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_INSTANCE') (6).column_name :=
+                                                          'SYSTEM_ERROR_CODE';
+            col_info_out ('QU_ERR_INSTANCE') (6).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_ERR_INSTANCE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_INSTANCE') (7).column_name :=
+                                                       'SYSTEM_ERROR_MESSAGE';
+            col_info_out ('QU_ERR_INSTANCE') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERR_INSTANCE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_INSTANCE') (8).column_name :=
+                                                           'ENVIRONMENT_INFO';
+            col_info_out ('QU_ERR_INSTANCE') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERR_INSTANCE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_INSTANCE') (9).column_name := 'CREATED_ON';
+            col_info_out ('QU_ERR_INSTANCE') (9).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_ERR_INSTANCE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_INSTANCE') (10).column_name := 'CREATED_BY';
+            col_info_out ('QU_ERR_INSTANCE') (10).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_ERR_INSTANCE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_INSTANCE') (11).column_name := 'CHANGED_ON';
+            col_info_out ('QU_ERR_INSTANCE') (11).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_ERR_INSTANCE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_ERR_INSTANCE') (12).column_name := 'CHANGED_BY';
+            col_info_out ('QU_ERR_INSTANCE') (12).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (1).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_HARNESS') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (2).column_name := 'HARNESS_OWNER';
+            col_info_out ('QU_HARNESS') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (3).column_name := 'NAME';
+            col_info_out ('QU_HARNESS') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (4).column_name := 'DESCRIPTION';
+            col_info_out ('QU_HARNESS') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (5).column_name := 'TEST_ENGINE_TYPE';
+            col_info_out ('QU_HARNESS') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (6).column_name := 'HARNESS_TYPE';
+            col_info_out ('QU_HARNESS') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (7).column_name := 'PROGRAM_OWNER';
+            col_info_out ('QU_HARNESS') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (8).column_name := 'PROGRAM_NAME';
+            col_info_out ('QU_HARNESS') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (9).column_name := 'PROGRAM_TYPE';
+            col_info_out ('QU_HARNESS') (9).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (10).column_name := 'PREFIX';
+            col_info_out ('QU_HARNESS') (10).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (11).column_name := 'SUFFIX';
+            col_info_out ('QU_HARNESS') (11).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (12).column_name := 'IS_TEST_HARNESS';
+            col_info_out ('QU_HARNESS') (12).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (13).column_name := 'EXT_SETUP_CODE';
+            col_info_out ('QU_HARNESS') (13).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (14).column_name :=
+                                                          'EXT_TEARDOWN_CODE';
+            col_info_out ('QU_HARNESS') (14).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (15).column_name := 'SPEC_CODE';
+            col_info_out ('QU_HARNESS') (15).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (16).column_name := 'BODY_CODE';
+            col_info_out ('QU_HARNESS') (16).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (17).column_name := 'IS_EXAMPLE';
+            col_info_out ('QU_HARNESS') (17).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (18).column_name :=
+                                                          'DEFINITION_STATUS';
+            col_info_out ('QU_HARNESS') (18).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (19).column_name := 'CREATED_ON';
+            col_info_out ('QU_HARNESS') (19).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (20).column_name := 'CREATED_BY';
+            col_info_out ('QU_HARNESS') (20).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (21).column_name := 'CHANGED_ON';
+            col_info_out ('QU_HARNESS') (21).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (22).column_name := 'CHANGED_BY';
+            col_info_out ('QU_HARNESS') (22).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (23).column_name := 'DECLARATIONS';
+            col_info_out ('QU_HARNESS') (23).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (24).column_name := 'SETUP_CODE';
+            col_info_out ('QU_HARNESS') (24).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (25).column_name := 'TEARDOWN_CODE';
+            col_info_out ('QU_HARNESS') (25).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (26).column_name := 'IS_LOCKED';
+            col_info_out ('QU_HARNESS') (26).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (27).column_name :=
+                                                           'EXT_TC_EXEC_CODE';
+            col_info_out ('QU_HARNESS') (27).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (28).column_name := 'LAST_RUN_STATUS';
+            col_info_out ('QU_HARNESS') (28).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (29).column_name := 'PROGRAM_STATUS';
+            col_info_out ('QU_HARNESS') (29).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (30).column_name :=
+                                                           'TEST_CODE_STATUS';
+            col_info_out ('QU_HARNESS') (30).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (31).column_name :=
+                                                          'TEST_CODE_CURRENT';
+            col_info_out ('QU_HARNESS') (31).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (32).column_name :=
+                                                    'TEST_DEFINITION_CURRENT';
+            col_info_out ('QU_HARNESS') (32).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (33).column_name :=
+                                                           'DECLARE_PROGRAMS';
+            col_info_out ('QU_HARNESS') (33).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (34).column_name := 'LAST_RUN_ON';
+            col_info_out ('QU_HARNESS') (34).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (35).column_name :=
+                                                       'PRIVATE_DECLARATIONS';
+            col_info_out ('QU_HARNESS') (35).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_HARNESS') (36).column_name :=
+                                                   'PRIVATE_DECLARE_PROGRAMS';
+            col_info_out ('QU_HARNESS') (36).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_INPUT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INPUT') (1).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_INPUT') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INPUT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INPUT') (2).column_name := 'TEST_CASE_GUID';
+            col_info_out ('QU_INPUT') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INPUT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INPUT') (3).column_name := 'TEST_ELEMENT_GUID';
+            col_info_out ('QU_INPUT') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INPUT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INPUT') (4).column_name := 'INTERNAL_VALUE';
+            col_info_out ('QU_INPUT') (4).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_INPUT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INPUT') (5).column_name := 'EXTERNAL_VALUE';
+            col_info_out ('QU_INPUT') (5).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_INPUT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INPUT') (6).column_name := 'IS_EXPRESSION';
+            col_info_out ('QU_INPUT') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INPUT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INPUT') (7).column_name := 'ASSIGN_IN_SETUP';
+            col_info_out ('QU_INPUT') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INPUT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INPUT') (8).column_name := 'ARGUMENT_ALIAS';
+            col_info_out ('QU_INPUT') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INPUT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INPUT') (9).column_name := 'CREATED_ON';
+            col_info_out ('QU_INPUT') (9).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_INPUT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INPUT') (10).column_name := 'CREATED_BY';
+            col_info_out ('QU_INPUT') (10).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INPUT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INPUT') (11).column_name := 'CHANGED_ON';
+            col_info_out ('QU_INPUT') (11).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_INPUT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INPUT') (12).column_name := 'CHANGED_BY';
+            col_info_out ('QU_INPUT') (12).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INPUT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INPUT') (13).column_name := 'SETUP_CODE';
+            col_info_out ('QU_INPUT') (13).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_INPUT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INPUT') (14).column_name := 'TEARDOWN_CODE';
+            col_info_out ('QU_INPUT') (14).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_INPUT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INPUT') (15).column_name := 'INTVAL_HDR_GUID';
+            col_info_out ('QU_INPUT') (15).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL') (1).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_INTVAL') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL') (2).column_name := 'INTVAL_HDR_GUID';
+            col_info_out ('QU_INTVAL') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL') (3).column_name := 'NAME';
+            col_info_out ('QU_INTVAL') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL') (4).column_name := 'DATATYPE_GUID';
+            col_info_out ('QU_INTVAL') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL') (5).column_name := 'INTERNAL_VALUE';
+            col_info_out ('QU_INTVAL') (5).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL') (6).column_name := 'EXTERNAL_VALUE';
+            col_info_out ('QU_INTVAL') (6).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL') (7).column_name := 'IS_EXPRESSION';
+            col_info_out ('QU_INTVAL') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL') (8).column_name := 'CREATED_ON';
+            col_info_out ('QU_INTVAL') (8).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL') (9).column_name := 'CREATED_BY';
+            col_info_out ('QU_INTVAL') (9).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL') (10).column_name := 'CHANGED_ON';
+            col_info_out ('QU_INTVAL') (10).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL') (11).column_name := 'CHANGED_BY';
+            col_info_out ('QU_INTVAL') (11).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL') (12).column_name := 'POSITION';
+            col_info_out ('QU_INTVAL') (12).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL') (13).column_name := 'SETUP_CODE';
+            col_info_out ('QU_INTVAL') (13).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL') (14).column_name := 'TEARDOWN_CODE';
+            col_info_out ('QU_INTVAL') (14).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_INTVAL_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL_HDR') (1).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_INTVAL_HDR') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL_HDR') (2).column_name := 'NAME';
+            col_info_out ('QU_INTVAL_HDR') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL_HDR') (3).column_name := 'DESCRIPTION';
+            col_info_out ('QU_INTVAL_HDR') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL_HDR') (4).column_name := 'DATATYPE_GUID';
+            col_info_out ('QU_INTVAL_HDR') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL_HDR') (5).column_name := 'IS_DEFAULT';
+            col_info_out ('QU_INTVAL_HDR') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL_HDR') (6).column_name := 'CREATED_ON';
+            col_info_out ('QU_INTVAL_HDR') (6).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_INTVAL_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL_HDR') (7).column_name := 'CREATED_BY';
+            col_info_out ('QU_INTVAL_HDR') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL_HDR') (8).column_name := 'CHANGED_ON';
+            col_info_out ('QU_INTVAL_HDR') (8).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_INTVAL_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL_HDR') (9).column_name := 'CHANGED_BY';
+            col_info_out ('QU_INTVAL_HDR') (9).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL_HDR') (10).column_name := 'VALUE_TYPE';
+            col_info_out ('QU_INTVAL_HDR') (10).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL_HDR') (11).column_name := 'QUERY_SOURCE';
+            col_info_out ('QU_INTVAL_HDR') (11).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL_HDR') (12).column_name := 'QCTO_GROUP';
+            col_info_out ('QU_INTVAL_HDR') (12).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL_HDR') (13).column_name := 'HIDE_GROUP';
+            col_info_out ('QU_INTVAL_HDR') (13).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL_HDR') (14).column_name :=
+                                                              'IS_EXPRESSION';
+            col_info_out ('QU_INTVAL_HDR') (14).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_INTVAL_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_INTVAL_HDR') (15).column_name := 'PARENT_GUID';
+            col_info_out ('QU_INTVAL_HDR') (15).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_LOG' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_LOG') (1).column_name := 'ID';
+            col_info_out ('QU_LOG') (1).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_LOG' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_LOG') (2).column_name := 'CONTEXT';
+            col_info_out ('QU_LOG') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_LOG' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_LOG') (3).column_name := 'TEXT';
+            col_info_out ('QU_LOG') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_LOG' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_LOG') (4).column_name := 'CALL_STACK';
+            col_info_out ('QU_LOG') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_LOG' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_LOG') (5).column_name := 'CREATED_ON';
+            col_info_out ('QU_LOG') (5).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_LOG' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_LOG') (6).column_name := 'CREATED_BY';
+            col_info_out ('QU_LOG') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_LOG' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_LOG') (7).column_name := 'CHANGED_ON';
+            col_info_out ('QU_LOG') (7).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_LOG' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_LOG') (8).column_name := 'CHANGED_BY';
+            col_info_out ('QU_LOG') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OPERATOR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OPERATOR') (1).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_OPERATOR') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OPERATOR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OPERATOR') (2).column_name := 'NAME';
+            col_info_out ('QU_OPERATOR') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OPERATOR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OPERATOR') (3).column_name := 'OPERATOR_SYMBOL';
+            col_info_out ('QU_OPERATOR') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OPERATOR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OPERATOR') (4).column_name := 'OPERATOR_TYPE';
+            col_info_out ('QU_OPERATOR') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OPERATOR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OPERATOR') (5).column_name := 'DESCRIPTION';
+            col_info_out ('QU_OPERATOR') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OPERATOR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OPERATOR') (6).column_name := 'CREATED_ON';
+            col_info_out ('QU_OPERATOR') (6).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_OPERATOR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OPERATOR') (7).column_name := 'CREATED_BY';
+            col_info_out ('QU_OPERATOR') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OPERATOR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OPERATOR') (8).column_name := 'CHANGED_ON';
+            col_info_out ('QU_OPERATOR') (8).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_OPERATOR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OPERATOR') (9).column_name := 'CHANGED_BY';
+            col_info_out ('QU_OPERATOR') (9).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (1).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_OUTCOME') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (2).column_name := 'TEST_CASE_GUID';
+            col_info_out ('QU_OUTCOME') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (3).column_name :=
+                                                        'ASSERTION_TYPE_GUID';
+            col_info_out ('QU_OUTCOME') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (4).column_name := 'NULL_OK';
+            col_info_out ('QU_OUTCOME') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (5).column_name := 'RAISE_EXCEPTION';
+            col_info_out ('QU_OUTCOME') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (6).column_name :=
+                                                         'CUSTOM_ASSERT_ONLY';
+            col_info_out ('QU_OUTCOME') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (7).column_name := 'NAME';
+            col_info_out ('QU_OUTCOME') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (8).column_name := 'TESTING_STATUS';
+            col_info_out ('QU_OUTCOME') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (9).column_name := 'CREATED_ON';
+            col_info_out ('QU_OUTCOME') (9).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (10).column_name := 'CREATED_BY';
+            col_info_out ('QU_OUTCOME') (10).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (11).column_name := 'CHANGED_ON';
+            col_info_out ('QU_OUTCOME') (11).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (12).column_name := 'CHANGED_BY';
+            col_info_out ('QU_OUTCOME') (12).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (13).column_name := 'TEMPLATE_GUID';
+            col_info_out ('QU_OUTCOME') (13).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (14).column_name := 'DESCRIPTION';
+            col_info_out ('QU_OUTCOME') (14).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (15).column_name := 'ASSERTION_CODE';
+            col_info_out ('QU_OUTCOME') (15).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (16).column_name := 'CODE_LOCATION';
+            col_info_out ('QU_OUTCOME') (16).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (17).column_name :=
+                                                           'DECLARE_PROGRAMS';
+            col_info_out ('QU_OUTCOME') (17).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (18).column_name := 'SETUP_CODE';
+            col_info_out ('QU_OUTCOME') (18).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (19).column_name := 'TEARDOWN_CODE';
+            col_info_out ('QU_OUTCOME') (19).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (20).column_name := 'COLUMN_SET_GUID';
+            col_info_out ('QU_OUTCOME') (20).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_OUTCOME') (21).column_name := 'INTVAL_HDR_GUID';
+            col_info_out ('QU_OUTCOME') (21).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PLACEHOLDER' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PLACEHOLDER') (1).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_PLACEHOLDER') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PLACEHOLDER' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PLACEHOLDER') (2).column_name :=
+                                                              'TEMPLATE_GUID';
+            col_info_out ('QU_PLACEHOLDER') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PLACEHOLDER' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PLACEHOLDER') (3).column_name := 'NAME';
+            col_info_out ('QU_PLACEHOLDER') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PLACEHOLDER' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PLACEHOLDER') (4).column_name := 'DESCRIPTION';
+            col_info_out ('QU_PLACEHOLDER') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PLACEHOLDER' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PLACEHOLDER') (5).column_name :=
+                                                              'REPLACE_ORDER';
+            col_info_out ('QU_PLACEHOLDER') (5).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_PLACEHOLDER' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PLACEHOLDER') (6).column_name := 'CREATED_ON';
+            col_info_out ('QU_PLACEHOLDER') (6).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_PLACEHOLDER' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PLACEHOLDER') (7).column_name := 'CREATED_BY';
+            col_info_out ('QU_PLACEHOLDER') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PLACEHOLDER' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PLACEHOLDER') (8).column_name := 'CHANGED_ON';
+            col_info_out ('QU_PLACEHOLDER') (8).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_PLACEHOLDER' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PLACEHOLDER') (9).column_name := 'CHANGED_BY';
+            col_info_out ('QU_PLACEHOLDER') (9).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PLACEHOLDER' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PLACEHOLDER') (10).column_name :=
+                                                           'SET_BY_EXECUTING';
+            col_info_out ('QU_PLACEHOLDER') (10).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_PROFILE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE') (1).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_PROFILE') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE') (2).column_name := 'NAME';
+            col_info_out ('QU_PROFILE') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE') (3).column_name := 'DESCRIPTION';
+            col_info_out ('QU_PROFILE') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE') (4).column_name := 'ACTIVE_STATUS';
+            col_info_out ('QU_PROFILE') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE') (5).column_name :=
+                                                         'PROFILE_GROUP_GUID';
+            col_info_out ('QU_PROFILE') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE') (6).column_name := 'ACTION_TRIGGER';
+            col_info_out ('QU_PROFILE') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE') (7).column_name := 'CREATED_ON';
+            col_info_out ('QU_PROFILE') (7).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_PROFILE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE') (8).column_name := 'CREATED_BY';
+            col_info_out ('QU_PROFILE') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE') (9).column_name := 'CHANGED_ON';
+            col_info_out ('QU_PROFILE') (9).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_PROFILE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE') (10).column_name := 'CHANGED_BY';
+            col_info_out ('QU_PROFILE') (10).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (1).column_name :=
+                                                       'PROFILE_OUTCOME_GUID';
+            col_info_out ('QU_PROFILE_ATTR') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (2).column_name := 'USAGE_TYPE';
+            col_info_out ('QU_PROFILE_ATTR') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (3).column_name :=
+                                                              'DATATYPE_GUID';
+            col_info_out ('QU_PROFILE_ATTR') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (4).column_name :=
+                                                             'INTERNAL_VALUE';
+            col_info_out ('QU_PROFILE_ATTR') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (5).column_name :=
+                                                             'EXTERNAL_VALUE';
+            col_info_out ('QU_PROFILE_ATTR') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (6).column_name :=
+                                                              'IS_EXPRESSION';
+            col_info_out ('QU_PROFILE_ATTR') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (7).column_name := 'VALUE1';
+            col_info_out ('QU_PROFILE_ATTR') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (8).column_name := 'VALUE2';
+            col_info_out ('QU_PROFILE_ATTR') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (9).column_name := 'VALUE3';
+            col_info_out ('QU_PROFILE_ATTR') (9).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (10).column_name := 'VALUE4';
+            col_info_out ('QU_PROFILE_ATTR') (10).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (11).column_name := 'VALUE5';
+            col_info_out ('QU_PROFILE_ATTR') (11).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (12).column_name := 'VALUE6';
+            col_info_out ('QU_PROFILE_ATTR') (12).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (13).column_name :=
+                                                             'VALUE1_IS_EXPR';
+            col_info_out ('QU_PROFILE_ATTR') (13).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (14).column_name :=
+                                                             'VALUE2_IS_EXPR';
+            col_info_out ('QU_PROFILE_ATTR') (14).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (15).column_name :=
+                                                             'VALUE3_IS_EXPR';
+            col_info_out ('QU_PROFILE_ATTR') (15).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (16).column_name :=
+                                                             'VALUE4_IS_EXPR';
+            col_info_out ('QU_PROFILE_ATTR') (16).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (17).column_name :=
+                                                             'VALUE5_IS_EXPR';
+            col_info_out ('QU_PROFILE_ATTR') (17).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (18).column_name :=
+                                                             'VALUE6_IS_EXPR';
+            col_info_out ('QU_PROFILE_ATTR') (18).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (19).column_name := 'CREATED_ON';
+            col_info_out ('QU_PROFILE_ATTR') (19).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (20).column_name := 'CREATED_BY';
+            col_info_out ('QU_PROFILE_ATTR') (20).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (21).column_name := 'CHANGED_ON';
+            col_info_out ('QU_PROFILE_ATTR') (21).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_PROFILE_ATTR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_ATTR') (22).column_name := 'CHANGED_BY';
+            col_info_out ('QU_PROFILE_ATTR') (22).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_GROUP') (1).column_name :=
+                                                               'UNIVERSAL_ID';
+            col_info_out ('QU_PROFILE_GROUP') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_GROUP') (2).column_name := 'NAME';
+            col_info_out ('QU_PROFILE_GROUP') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_GROUP') (3).column_name :=
+                                                                'DESCRIPTION';
+            col_info_out ('QU_PROFILE_GROUP') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_GROUP') (4).column_name :=
+                                                                'PARENT_GUID';
+            col_info_out ('QU_PROFILE_GROUP') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_GROUP') (5).column_name :=
+                                                               'QCTO_PROFILE';
+            col_info_out ('QU_PROFILE_GROUP') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_GROUP') (6).column_name :=
+                                                              'DATATYPE_GUID';
+            col_info_out ('QU_PROFILE_GROUP') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_GROUP') (7).column_name := 'USAGE_TYPE';
+            col_info_out ('QU_PROFILE_GROUP') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_GROUP') (8).column_name :=
+                                                              'ACTIVE_STATUS';
+            col_info_out ('QU_PROFILE_GROUP') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_GROUP') (9).column_name :=
+                                                             'ACTION_TRIGGER';
+            col_info_out ('QU_PROFILE_GROUP') (9).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_GROUP') (10).column_name :=
+                                                                 'CREATED_ON';
+            col_info_out ('QU_PROFILE_GROUP') (10).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_PROFILE_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_GROUP') (11).column_name :=
+                                                                 'CREATED_BY';
+            col_info_out ('QU_PROFILE_GROUP') (11).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_GROUP') (12).column_name :=
+                                                                 'CHANGED_ON';
+            col_info_out ('QU_PROFILE_GROUP') (12).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_PROFILE_GROUP' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_GROUP') (13).column_name :=
+                                                                 'CHANGED_BY';
+            col_info_out ('QU_PROFILE_GROUP') (13).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_OUTCOME') (1).column_name :=
+                                                               'UNIVERSAL_ID';
+            col_info_out ('QU_PROFILE_OUTCOME') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_OUTCOME') (2).column_name :=
+                                                               'PROFILE_GUID';
+            col_info_out ('QU_PROFILE_OUTCOME') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_OUTCOME') (3).column_name := 'NAME';
+            col_info_out ('QU_PROFILE_OUTCOME') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_OUTCOME') (4).column_name :=
+                                                              'ACTIVE_STATUS';
+            col_info_out ('QU_PROFILE_OUTCOME') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_OUTCOME') (5).column_name :=
+                                                                'DESCRIPTION';
+            col_info_out ('QU_PROFILE_OUTCOME') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_OUTCOME') (6).column_name :=
+                                                        'ASSERTION_TYPE_GUID';
+            col_info_out ('QU_PROFILE_OUTCOME') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_OUTCOME') (7).column_name :=
+                                                              'TEMPLATE_GUID';
+            col_info_out ('QU_PROFILE_OUTCOME') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_OUTCOME') (8).column_name :=
+                                                                 'SETUP_CODE';
+            col_info_out ('QU_PROFILE_OUTCOME') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_OUTCOME') (9).column_name :=
+                                                              'TEARDOWN_CODE';
+            col_info_out ('QU_PROFILE_OUTCOME') (9).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_OUTCOME') (10).column_name :=
+                                                                 'CREATED_ON';
+            col_info_out ('QU_PROFILE_OUTCOME') (10).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_PROFILE_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_OUTCOME') (11).column_name :=
+                                                                 'CREATED_BY';
+            col_info_out ('QU_PROFILE_OUTCOME') (11).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_PROFILE_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_OUTCOME') (12).column_name :=
+                                                                 'CHANGED_ON';
+            col_info_out ('QU_PROFILE_OUTCOME') (12).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_PROFILE_OUTCOME' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_PROFILE_OUTCOME') (13).column_name :=
+                                                                 'CHANGED_BY';
+            col_info_out ('QU_PROFILE_OUTCOME') (13).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RESULT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RESULT') (1).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_RESULT') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RESULT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RESULT') (2).column_name := 'RESULT_LEVEL';
+            col_info_out ('QU_RESULT') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RESULT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RESULT') (3).column_name :=
+                                                        'RESULT_UNIVERSAL_ID';
+            col_info_out ('QU_RESULT') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RESULT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RESULT') (4).column_name :=
+                                                        'PARENT_UNIVERSAL_ID';
+            col_info_out ('QU_RESULT') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RESULT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RESULT') (5).column_name := 'RESULT_STATUS';
+            col_info_out ('QU_RESULT') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RESULT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RESULT') (6).column_name := 'DESCRIPTION';
+            col_info_out ('QU_RESULT') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RESULT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RESULT') (7).column_name := 'START_ON';
+            col_info_out ('QU_RESULT') (7).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_RESULT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RESULT') (8).column_name := 'END_ON';
+            col_info_out ('QU_RESULT') (8).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_RESULT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RESULT') (9).column_name := 'HARNESS_GUID';
+            col_info_out ('QU_RESULT') (9).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RESULT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RESULT') (10).column_name := 'CREATED_ON';
+            col_info_out ('QU_RESULT') (10).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_RESULT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RESULT') (11).column_name := 'CREATED_BY';
+            col_info_out ('QU_RESULT') (11).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RESULT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RESULT') (12).column_name := 'CHANGED_ON';
+            col_info_out ('QU_RESULT') (12).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_RESULT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RESULT') (13).column_name := 'CHANGED_BY';
+            col_info_out ('QU_RESULT') (13).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RESULT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RESULT') (14).column_name := 'NAME';
+            col_info_out ('QU_RESULT') (14).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RESULT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RESULT') (15).column_name := 'ITERATION';
+            col_info_out ('QU_RESULT') (15).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_RULE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RULE') (1).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_RULE') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RULE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RULE') (2).column_name := 'NAME';
+            col_info_out ('QU_RULE') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RULE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RULE') (3).column_name := 'IDENTIFIER';
+            col_info_out ('QU_RULE') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RULE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RULE') (4).column_name := 'SEVERITY_LEVEL';
+            col_info_out ('QU_RULE') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RULE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RULE') (5).column_name := 'DESCRIPTION';
+            col_info_out ('QU_RULE') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RULE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RULE') (6).column_name := 'RECOMMENDED_ACTION';
+            col_info_out ('QU_RULE') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RULE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RULE') (7).column_name := 'RULE_LEVEL';
+            col_info_out ('QU_RULE') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RULE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RULE') (8).column_name := 'RULE_SCOPE';
+            col_info_out ('QU_RULE') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RULE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RULE') (9).column_name := 'RULE_CODE';
+            col_info_out ('QU_RULE') (9).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RULE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RULE') (10).column_name := 'CREATED_ON';
+            col_info_out ('QU_RULE') (10).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_RULE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RULE') (11).column_name := 'CREATED_BY';
+            col_info_out ('QU_RULE') (11).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_RULE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RULE') (12).column_name := 'CHANGED_ON';
+            col_info_out ('QU_RULE') (12).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_RULE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_RULE') (13).column_name := 'CHANGED_BY';
+            col_info_out ('QU_RULE') (13).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_SUBSTITUTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUBSTITUTION') (1).column_name := 'OWNER';
+            col_info_out ('QU_SUBSTITUTION') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_SUBSTITUTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUBSTITUTION') (2).column_name := 'OBJECT_NAME';
+            col_info_out ('QU_SUBSTITUTION') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_SUBSTITUTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUBSTITUTION') (3).column_name := 'OBJECT_TYPE';
+            col_info_out ('QU_SUBSTITUTION') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_SUBSTITUTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUBSTITUTION') (4).column_name :=
+                                                            'ORIGINAL_STRING';
+            col_info_out ('QU_SUBSTITUTION') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_SUBSTITUTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUBSTITUTION') (5).column_name :=
+                                                        'SUBSTITUTION_STRING';
+            col_info_out ('QU_SUBSTITUTION') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_SUBSTITUTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUBSTITUTION') (6).column_name := 'CREATED_ON';
+            col_info_out ('QU_SUBSTITUTION') (6).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_SUBSTITUTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUBSTITUTION') (7).column_name := 'CREATED_BY';
+            col_info_out ('QU_SUBSTITUTION') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_SUBSTITUTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUBSTITUTION') (8).column_name := 'CHANGED_ON';
+            col_info_out ('QU_SUBSTITUTION') (8).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_SUBSTITUTION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUBSTITUTION') (9).column_name := 'CHANGED_BY';
+            col_info_out ('QU_SUBSTITUTION') (9).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_SUITE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUITE') (1).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_SUITE') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_SUITE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUITE') (2).column_name := 'NAME';
+            col_info_out ('QU_SUITE') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_SUITE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUITE') (3).column_name := 'DESCRIPTION';
+            col_info_out ('QU_SUITE') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_SUITE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUITE') (4).column_name := 'IS_EXAMPLE';
+            col_info_out ('QU_SUITE') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_SUITE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUITE') (5).column_name := 'CREATED_ON';
+            col_info_out ('QU_SUITE') (5).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_SUITE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUITE') (6).column_name := 'CREATED_BY';
+            col_info_out ('QU_SUITE') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_SUITE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUITE') (7).column_name := 'CHANGED_ON';
+            col_info_out ('QU_SUITE') (7).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_SUITE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUITE') (8).column_name := 'CHANGED_BY';
+            col_info_out ('QU_SUITE') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_SUITE_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUITE_HARNESS') (1).column_name :=
+                                                               'UNIVERSAL_ID';
+            col_info_out ('QU_SUITE_HARNESS') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_SUITE_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUITE_HARNESS') (2).column_name := 'SUITE_GUID';
+            col_info_out ('QU_SUITE_HARNESS') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_SUITE_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUITE_HARNESS') (3).column_name :=
+                                                               'HARNESS_GUID';
+            col_info_out ('QU_SUITE_HARNESS') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_SUITE_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUITE_HARNESS') (4).column_name :=
+                                                                'TEST_STATUS';
+            col_info_out ('QU_SUITE_HARNESS') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_SUITE_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUITE_HARNESS') (5).column_name := 'CREATED_ON';
+            col_info_out ('QU_SUITE_HARNESS') (5).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_SUITE_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUITE_HARNESS') (6).column_name := 'CREATED_BY';
+            col_info_out ('QU_SUITE_HARNESS') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_SUITE_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUITE_HARNESS') (7).column_name := 'CHANGED_ON';
+            col_info_out ('QU_SUITE_HARNESS') (7).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_SUITE_HARNESS' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_SUITE_HARNESS') (8).column_name := 'CHANGED_BY';
+            col_info_out ('QU_SUITE_HARNESS') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEMPLATE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEMPLATE') (1).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_TEMPLATE') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEMPLATE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEMPLATE') (2).column_name := 'NAME';
+            col_info_out ('QU_TEMPLATE') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEMPLATE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEMPLATE') (3).column_name := 'DESCRIPTION';
+            col_info_out ('QU_TEMPLATE') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEMPLATE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEMPLATE') (4).column_name := 'CODE_SCOPE';
+            col_info_out ('QU_TEMPLATE') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEMPLATE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEMPLATE') (5).column_name := 'CODE_TYPE';
+            col_info_out ('QU_TEMPLATE') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEMPLATE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEMPLATE') (6).column_name := 'INDICATOR_TYPE';
+            col_info_out ('QU_TEMPLATE') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEMPLATE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEMPLATE') (7).column_name := 'REPLACE_ORDER';
+            col_info_out ('QU_TEMPLATE') (7).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_TEMPLATE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEMPLATE') (8).column_name := 'CODE';
+            col_info_out ('QU_TEMPLATE') (8).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_TEMPLATE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEMPLATE') (9).column_name := 'CREATED_ON';
+            col_info_out ('QU_TEMPLATE') (9).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_TEMPLATE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEMPLATE') (10).column_name := 'CREATED_BY';
+            col_info_out ('QU_TEMPLATE') (10).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEMPLATE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEMPLATE') (11).column_name := 'CHANGED_ON';
+            col_info_out ('QU_TEMPLATE') (11).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_TEMPLATE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEMPLATE') (12).column_name := 'CHANGED_BY';
+            col_info_out ('QU_TEMPLATE') (12).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEMPLATE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEMPLATE') (13).column_name :=
+                                                        'USER_INPUT_REQUIRED';
+            col_info_out ('QU_TEMPLATE') (13).data_type := 'CHAR';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (1).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_TEST_CASE') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (2).column_name := 'UNIT_TEST_GUID';
+            col_info_out ('QU_TEST_CASE') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (3).column_name := 'NAME';
+            col_info_out ('QU_TEST_CASE') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (4).column_name := 'DESCRIPTION';
+            col_info_out ('QU_TEST_CASE') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (5).column_name := 'REQUIREMENT';
+            col_info_out ('QU_TEST_CASE') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (6).column_name := 'TESTING_STATUS';
+            col_info_out ('QU_TEST_CASE') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (7).column_name := 'PROGRAM_NAME';
+            col_info_out ('QU_TEST_CASE') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (8).column_name :=
+                                                       'EXCEPTION_ON_FAILURE';
+            col_info_out ('QU_TEST_CASE') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (9).column_name := 'CREATED_ON';
+            col_info_out ('QU_TEST_CASE') (9).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (10).column_name := 'CREATED_BY';
+            col_info_out ('QU_TEST_CASE') (10).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (11).column_name := 'CHANGED_ON';
+            col_info_out ('QU_TEST_CASE') (11).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (12).column_name := 'CHANGED_BY';
+            col_info_out ('QU_TEST_CASE') (12).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (13).column_name := 'DECLARATIONS';
+            col_info_out ('QU_TEST_CASE') (13).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (14).column_name := 'SETUP_CODE';
+            col_info_out ('QU_TEST_CASE') (14).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (15).column_name :=
+                                                         'PRE_EXECUTION_CODE';
+            col_info_out ('QU_TEST_CASE') (15).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (16).column_name :=
+                                                        'POST_EXECUTION_CODE';
+            col_info_out ('QU_TEST_CASE') (16).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (17).column_name :=
+                                                         'ALT_EXECUTION_CODE';
+            col_info_out ('QU_TEST_CASE') (17).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (18).column_name :=
+                                                             'ASSERTION_CODE';
+            col_info_out ('QU_TEST_CASE') (18).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (19).column_name := 'TEARDOWN_CODE';
+            col_info_out ('QU_TEST_CASE') (19).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (20).column_name := 'EXCEPTIONS';
+            col_info_out ('QU_TEST_CASE') (20).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (21).column_name :=
+                                                        'PARAMETER_HASH_LIST';
+            col_info_out ('QU_TEST_CASE') (21).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (22).column_name := 'GENERATED_ON';
+            col_info_out ('QU_TEST_CASE') (22).data_type := 'TIMESTAMP(6)';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (23).column_name := 'IS_SIMPLE';
+            col_info_out ('QU_TEST_CASE') (23).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (24).column_name := 'CODE_LOCATION';
+            col_info_out ('QU_TEST_CASE') (24).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (25).column_name :=
+                                                           'DECLARE_PROGRAMS';
+            col_info_out ('QU_TEST_CASE') (25).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (26).column_name :=
+                                                             'GENERATION_TAG';
+            col_info_out ('QU_TEST_CASE') (26).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (27).column_name := 'IS_DYNAMIC';
+            col_info_out ('QU_TEST_CASE') (27).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_CASE' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_CASE') (28).column_name :=
+                                                           'CORRELATE_VALUES';
+            col_info_out ('QU_TEST_CASE') (28).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (1).column_name :=
+                                                               'UNIVERSAL_ID';
+            col_info_out ('QU_TEST_ELEMENT') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (2).column_name :=
+                                                             'UNIT_TEST_GUID';
+            col_info_out ('QU_TEST_ELEMENT') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (3).column_name := 'NAME';
+            col_info_out ('QU_TEST_ELEMENT') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (4).column_name := 'DESCRIPTION';
+            col_info_out ('QU_TEST_ELEMENT') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (5).column_name :=
+                                                             'DATA_TYPE_GUID';
+            col_info_out ('QU_TEST_ELEMENT') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (6).column_name :=
+                                                             'DATA_TYPE_NAME';
+            col_info_out ('QU_TEST_ELEMENT') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (7).column_name := 'DEFINITION';
+            col_info_out ('QU_TEST_ELEMENT') (7).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (8).column_name :=
+                                                              'DEFAULT_VALUE';
+            col_info_out ('QU_TEST_ELEMENT') (8).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (9).column_name :=
+                                                             'EXTERNAL_VALUE';
+            col_info_out ('QU_TEST_ELEMENT') (9).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (10).column_name :=
+                                                              'IS_EXPRESSION';
+            col_info_out ('QU_TEST_ELEMENT') (10).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (11).column_name :=
+                                                            'ASSIGN_IN_SETUP';
+            col_info_out ('QU_TEST_ELEMENT') (11).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (12).column_name :=
+                                                               'ELEMENT_TYPE';
+            col_info_out ('QU_TEST_ELEMENT') (12).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (13).column_name := 'POSITION';
+            col_info_out ('QU_TEST_ELEMENT') (13).data_type := 'NUMBER';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (14).column_name :=
+                                                              'ARGUMENT_MODE';
+            col_info_out ('QU_TEST_ELEMENT') (14).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (15).column_name :=
+                                                             'ARGUMENT_ALIAS';
+            col_info_out ('QU_TEST_ELEMENT') (15).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (16).column_name :=
+                                                              'CONTROL_ALIAS';
+            col_info_out ('QU_TEST_ELEMENT') (16).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (17).column_name := 'CREATED_ON';
+            col_info_out ('QU_TEST_ELEMENT') (17).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (18).column_name := 'CREATED_BY';
+            col_info_out ('QU_TEST_ELEMENT') (18).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (19).column_name := 'CHANGED_ON';
+            col_info_out ('QU_TEST_ELEMENT') (19).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_TEST_ELEMENT' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TEST_ELEMENT') (20).column_name := 'CHANGED_BY';
+            col_info_out ('QU_TEST_ELEMENT') (20).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TE_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TE_INTVAL') (1).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_TE_INTVAL') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TE_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TE_INTVAL') (2).column_name :=
+                                                          'TEST_ELEMENT_GUID';
+            col_info_out ('QU_TE_INTVAL') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TE_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TE_INTVAL') (3).column_name := 'NAME';
+            col_info_out ('QU_TE_INTVAL') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TE_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TE_INTVAL') (4).column_name := 'INTERNAL_VALUE';
+            col_info_out ('QU_TE_INTVAL') (4).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_TE_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TE_INTVAL') (5).column_name := 'EXTERNAL_VALUE';
+            col_info_out ('QU_TE_INTVAL') (5).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_TE_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TE_INTVAL') (6).column_name := 'IS_EXPRESSION';
+            col_info_out ('QU_TE_INTVAL') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TE_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TE_INTVAL') (7).column_name := 'CREATED_ON';
+            col_info_out ('QU_TE_INTVAL') (7).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_TE_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TE_INTVAL') (8).column_name := 'CREATED_BY';
+            col_info_out ('QU_TE_INTVAL') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_TE_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TE_INTVAL') (9).column_name := 'CHANGED_ON';
+            col_info_out ('QU_TE_INTVAL') (9).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_TE_INTVAL' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_TE_INTVAL') (10).column_name := 'CHANGED_BY';
+            col_info_out ('QU_TE_INTVAL') (10).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_UNIT_TEST' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_UNIT_TEST') (1).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_UNIT_TEST') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_UNIT_TEST' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_UNIT_TEST') (2).column_name := 'HARNESS_GUID';
+            col_info_out ('QU_UNIT_TEST') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_UNIT_TEST' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_UNIT_TEST') (3).column_name := 'NAME';
+            col_info_out ('QU_UNIT_TEST') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_UNIT_TEST' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_UNIT_TEST') (4).column_name := 'DESCRIPTION';
+            col_info_out ('QU_UNIT_TEST') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_UNIT_TEST' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_UNIT_TEST') (5).column_name := 'PROGRAM_NAME';
+            col_info_out ('QU_UNIT_TEST') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_UNIT_TEST' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_UNIT_TEST') (6).column_name := 'PROGRAM_TYPE';
+            col_info_out ('QU_UNIT_TEST') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_UNIT_TEST' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_UNIT_TEST') (7).column_name := 'OVERLOAD';
+            col_info_out ('QU_UNIT_TEST') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_UNIT_TEST' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_UNIT_TEST') (8).column_name :=
+                                                            'UT_PROGRAM_NAME';
+            col_info_out ('QU_UNIT_TEST') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_UNIT_TEST' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_UNIT_TEST') (9).column_name := 'TESTING_STATUS';
+            col_info_out ('QU_UNIT_TEST') (9).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_UNIT_TEST' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_UNIT_TEST') (10).column_name :=
+                                                       'EXCEPTION_ON_FAILURE';
+            col_info_out ('QU_UNIT_TEST') (10).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_UNIT_TEST' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_UNIT_TEST') (11).column_name := 'CREATED_ON';
+            col_info_out ('QU_UNIT_TEST') (11).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_UNIT_TEST' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_UNIT_TEST') (12).column_name := 'CREATED_BY';
+            col_info_out ('QU_UNIT_TEST') (12).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_UNIT_TEST' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_UNIT_TEST') (13).column_name := 'CHANGED_ON';
+            col_info_out ('QU_UNIT_TEST') (13).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_UNIT_TEST' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_UNIT_TEST') (14).column_name := 'CHANGED_BY';
+            col_info_out ('QU_UNIT_TEST') (14).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_UNIT_TEST' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_UNIT_TEST') (15).column_name := 'DECLARATIONS';
+            col_info_out ('QU_UNIT_TEST') (15).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_UNIT_TEST' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_UNIT_TEST') (16).column_name := 'SETUP_CODE';
+            col_info_out ('QU_UNIT_TEST') (16).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_UNIT_TEST' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_UNIT_TEST') (17).column_name := 'TEARDOWN_CODE';
+            col_info_out ('QU_UNIT_TEST') (17).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_UNIT_TEST' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_UNIT_TEST') (18).column_name := 'EXCEPTIONS';
+            col_info_out ('QU_UNIT_TEST') (18).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_UNIT_TEST' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_UNIT_TEST') (19).column_name :=
+                                                           'DECLARE_PROGRAMS';
+            col_info_out ('QU_UNIT_TEST') (19).data_type := 'CLOB';
+         END IF;
+
+         IF 'QU_VALIDATION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION') (1).column_name := 'UNIVERSAL_ID';
+            col_info_out ('QU_VALIDATION') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION') (2).column_name :=
+                                                        'VALIDATION_HDR_GUID';
+            col_info_out ('QU_VALIDATION') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION') (3).column_name := 'RULE_GUID';
+            col_info_out ('QU_VALIDATION') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION') (4).column_name := 'SOURCE_GUID';
+            col_info_out ('QU_VALIDATION') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION') (5).column_name :=
+                                                         'SOURCE_PARENT_GUID';
+            col_info_out ('QU_VALIDATION') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION') (6).column_name := 'NAME';
+            col_info_out ('QU_VALIDATION') (6).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION') (7).column_name := 'DESCRIPTION';
+            col_info_out ('QU_VALIDATION') (7).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION') (8).column_name := 'STATUS';
+            col_info_out ('QU_VALIDATION') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION') (9).column_name := 'CREATED_ON';
+            col_info_out ('QU_VALIDATION') (9).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_VALIDATION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION') (10).column_name := 'CREATED_BY';
+            col_info_out ('QU_VALIDATION') (10).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION') (11).column_name := 'CHANGED_ON';
+            col_info_out ('QU_VALIDATION') (11).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_VALIDATION' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION') (12).column_name := 'CHANGED_BY';
+            col_info_out ('QU_VALIDATION') (12).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION_HDR') (1).column_name :=
+                                                               'UNIVERSAL_ID';
+            col_info_out ('QU_VALIDATION_HDR') (1).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION_HDR') (2).column_name :=
+                                                               'HARNESS_GUID';
+            col_info_out ('QU_VALIDATION_HDR') (2).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION_HDR') (3).column_name := 'STATUS';
+            col_info_out ('QU_VALIDATION_HDR') (3).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION_HDR') (4).column_name :=
+                                                                'DESCRIPTION';
+            col_info_out ('QU_VALIDATION_HDR') (4).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION_HDR') (5).column_name :=
+                                                             'SEVERITY_LEVEL';
+            col_info_out ('QU_VALIDATION_HDR') (5).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION_HDR') (6).column_name :=
+                                                          'VALIDATE_EXISTING';
+            col_info_out ('QU_VALIDATION_HDR') (6).data_type := 'CHAR';
+         END IF;
+
+         IF 'QU_VALIDATION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION_HDR') (7).column_name :=
+                                                          'VALIDATED_FROM_TB';
+            col_info_out ('QU_VALIDATION_HDR') (7).data_type := 'CHAR';
+         END IF;
+
+         IF 'QU_VALIDATION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION_HDR') (8).column_name :=
+                                                              'IGNORED_RULES';
+            col_info_out ('QU_VALIDATION_HDR') (8).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION_HDR') (9).column_name :=
+                                                      'UNIT_TEST_GUID_FILTER';
+            col_info_out ('QU_VALIDATION_HDR') (9).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION_HDR') (10).column_name :=
+                                                      'TEST_CASE_GUID_FILTER';
+            col_info_out ('QU_VALIDATION_HDR') (10).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION_HDR') (11).column_name :=
+                                                        'OUTCOME_GUID_FILTER';
+            col_info_out ('QU_VALIDATION_HDR') (11).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION_HDR') (12).column_name :=
+                                                          'INPUT_GUID_FILTER';
+            col_info_out ('QU_VALIDATION_HDR') (12).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION_HDR') (13).column_name :=
+                                                      'ATTRIBUTE_GUID_FILTER';
+            col_info_out ('QU_VALIDATION_HDR') (13).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION_HDR') (14).column_name :=
+                                                                 'CREATED_ON';
+            col_info_out ('QU_VALIDATION_HDR') (14).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_VALIDATION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION_HDR') (15).column_name :=
+                                                                 'CREATED_BY';
+            col_info_out ('QU_VALIDATION_HDR') (15).data_type := 'VARCHAR2';
+         END IF;
+
+         IF 'QU_VALIDATION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION_HDR') (16).column_name :=
+                                                                 'CHANGED_ON';
+            col_info_out ('QU_VALIDATION_HDR') (16).data_type := 'DATE';
+         END IF;
+
+         IF 'QU_VALIDATION_HDR' LIKE table_filter_in
+         THEN
+            col_info_out ('QU_VALIDATION_HDR') (17).column_name :=
+                                                                 'CHANGED_BY';
+            col_info_out ('QU_VALIDATION_HDR') (17).data_type := 'VARCHAR2';
+         END IF;
+      END load_control;
+
+      PROCEDURE load_actual (col_info_out OUT key_col_info_by_tabname_tt)
+      IS
+         TYPE key_col_info_rt IS RECORD (
+            table_name    all_tab_columns.table_name%TYPE
+          , column_name   all_tab_columns.column_name%TYPE
+          , data_type     all_tab_columns.data_type%TYPE
+          , column_id     all_tab_columns.column_id%TYPE
+         );
+
+         TYPE temp_col_info_tt IS TABLE OF key_col_info_rt
+            INDEX BY PLS_INTEGER;
+
+         l_temp   temp_col_info_tt;
+         indx     PLS_INTEGER;
+      BEGIN
+         SELECT table_name
+              , column_name
+              , data_type
+              , column_id
+         BULK COLLECT INTO l_temp
+           FROM all_tab_columns atc
+          WHERE atc.owner = schema_in AND atc.table_name LIKE table_filter_in;
+
+         FOR indx IN 1 .. l_temp.COUNT
+         LOOP
+            col_info_out (l_temp (indx).table_name) (l_temp (indx).column_id).column_name :=
+                                                    l_temp (indx).column_name;
+            col_info_out (l_temp (indx).table_name) (l_temp (indx).column_id).data_type :=
+                                                      l_temp (indx).data_type;
+         END LOOP;
+      END load_actual;
+
+      PROCEDURE compare_actual_to_control (
+         control_in IN key_col_info_by_tabname_tt
+       , actual_in IN key_col_info_by_tabname_tt
+      )
+      IS
+         indx     VARCHAR2 (32767);
+         l_diff   VARCHAR2 (32767);
+      BEGIN
+         IF show_in
+         THEN
+            pl ('Count of Actual tables: ' || actual_in.COUNT);
+            pl ('Count of Control tables: ' || control_in.COUNT);
+         END IF;
+
+         indx := control_in.FIRST;
+
+         WHILE (indx IS NOT NULL)
+         LOOP
+            IF show_in
+            THEN
+               pl ('Table: ' || indx);
+            END IF;
+
+            FOR indx1 IN 1 .. control_in (indx).COUNT
+            LOOP
+               IF show_in
+               THEN
+                  pl ('   Position: ' || indx1);
+               END IF;
+
+               l_diff := NULL;
+
+               BEGIN
+                  IF NVL (   actual_in (indx) (indx1).column_name !=
+                                         control_in (indx) (indx1).column_name
+                          OR actual_in (indx) (indx1).data_type !=
+                                           control_in (indx) (indx1).data_type
+                        , TRUE
+                         )
+                  THEN
+                     l_diff :=
+                           'Differences found in table '
+                        || indx
+                        || ' between CONTROL '
+                        || control_in (indx) (indx1).column_name
+                        || '.'
+                        || control_in (indx) (indx1).data_type
+                        || '.'
+                        || indx1
+                        || ' and ACTUAL '
+                        || actual_in (indx) (indx1).column_name
+                        || '.'
+                        || actual_in (indx) (indx1).data_type
+                        || '.'
+                        || indx1;
+
+                     IF show_in AND l_diff IS NOT NULL
+                     THEN
+                        DBMS_OUTPUT.put_line (l_diff);
+                     END IF;
+                  END IF;
+               EXCEPTION
+                  WHEN NO_DATA_FOUND
+                  THEN
+                     l_diff :=
+                           'Mismatch on table caused NO_DATA_FOUND exception on index: '
+                        || indx;
+                  WHEN VALUE_ERROR
+                  THEN
+                     l_diff :=
+                           'Mismatch on table caused VALUE_ERROR exception on index: '
+                        || indx;
+               END;
+
+               IF show_in
+               THEN
+                  DBMS_OUTPUT.put_line (l_diff);
+               END IF;
+
+               IF l_diff IS NOT NULL
+               THEN
+                  l_issues := l_issues || CHR (10) || l_diff;
+                  l_issue_found := TRUE;
+               END IF;
+            END LOOP;
+
+            indx := l_control.NEXT (indx);
+         END LOOP;
+      EXCEPTION
+         WHEN VALUE_ERROR
+         THEN
+            -- Return what we've got; obviously major problems to deal with!
+            NULL;
+      END compare_actual_to_control;
+   BEGIN
+      DBMS_LOB.createtemporary (l_issues, TRUE, DBMS_LOB.CALL);
+      load_control (l_control);
+      load_actual (l_actual);
+      compare_actual_to_control (l_control, l_actual);
+      RETURN add_title (l_issue_found
+                      , l_issues
+                      , 'Table Structure Errors'
+                      , delim_in
+                       );
+   END verify_table_structure;
+
+   FUNCTION verify_metadata (
+      show_in IN BOOLEAN DEFAULT FALSE
+    , delim_in IN VARCHAR2 DEFAULT c_new_line_character
+   )
+      RETURN CLOB
+   IS
+      l_issues        CLOB;
+      l_issue_found   BOOLEAN DEFAULT FALSE;
+
+      PROCEDURE add_string (string_in IN VARCHAR2)
+      IS
+      BEGIN
+         IF show_in
+         THEN
+            pl (string_in);
+         ELSE
+            l_issues := l_issues || delim_in || string_in || delim_in;
+         END IF;
+
+         l_issue_found := TRUE;
+      EXCEPTION
+         WHEN VALUE_ERROR
+         THEN
+            -- Just keep going and fit whatever is possible in....
+            NULL;
+      END add_string;
+
+      PROCEDURE check_table (root_in IN VARCHAR2)
+      IS
+         l_string   VARCHAR2 (32767);
+      BEGIN
+         BEGIN
+            EXECUTE IMMEDIATE    'BEGIN :l_string := qv_qu_'
+                              || root_in
+                              || '.qv_qu_'
+                              || root_in
+                              || '_str; END;'
+                        USING OUT l_string;
+         EXCEPTION
+            WHEN OTHERS
+            THEN
+               l_string :=
+                     'Unable to verify '
+                  || root_in
+                  || ' data: '
+                  || DBMS_UTILITY.format_error_stack;
+         END;
+
+         IF l_string IS NOT NULL
+         THEN
+            add_string (INITCAP (root_in) || ' Discrepancies: ' || l_string);
+         END IF;
+      END check_table;
+   BEGIN
+      DBMS_LOB.createtemporary (l_issues, TRUE, DBMS_LOB.CALL);
+      check_table ('assertion');
+      check_table ('assertion_code');
+      check_table ('operator');
+      check_table ('datatype');
+      check_table ('template');
+      check_table ('test_element');
+      check_table ('intval_hdr');
+      check_table ('intval');
+      check_table ('profile_group');
+      /*
+      Does not have a single primary key.
+      check_table ('profile_attr');
+      */
+      check_table ('profile_outcome');
+      check_table ('profile');
+      RETURN add_title (l_issue_found
+                      , l_issues
+                      , 'Product Metadata Errors'
+                      , delim_in
+                       );
+   END verify_metadata;
+
+   FUNCTION verify_compilation (
+      schema_in IN VARCHAR2
+    , show_in IN BOOLEAN DEFAULT FALSE
+    , delim_in IN VARCHAR2 DEFAULT c_new_line_character
+   )
+      RETURN CLOB
+   IS
+      l_issues            CLOB;
+      l_issue_found       BOOLEAN          DEFAULT FALSE;
+      l_progerror_found   BOOLEAN          DEFAULT FALSE;
+      l_index             VARCHAR2 (32767);
+
+      PROCEDURE add_string (string_in IN VARCHAR2)
+      IS
+      BEGIN
+         IF show_in
+         THEN
+            pl (string_in);
+         ELSE
+            l_issues := l_issues || delim_in || string_in || delim_in;
+         END IF;
+
+         l_issue_found := TRUE;
+      EXCEPTION
+         WHEN VALUE_ERROR
+         THEN
+            -- Just keep going and fit whatever is possible in....
+            NULL;
+      END add_string;
+   BEGIN
+      DBMS_LOB.createtemporary (l_issues, TRUE, DBMS_LOB.CALL);
+      l_index := g_code_object_names.FIRST;
+
+      WHILE (l_index IS NOT NULL)
+      LOOP
+         l_progerror_found := FALSE;
+
+         FOR drec IN (SELECT   SEQUENCE, line, text
+                          FROM all_errors
+                         WHERE owner = NVL (schema_in, USER)
+                           AND NAME =
+                                     SUBSTR (l_index, INSTR (l_index, '.') + 1)
+                           AND TYPE =
+                                  SUBSTR (l_index, 1, INSTR (l_index, '.') - 1)
+                           /* BM 1590: ignore warnings */
+                           AND text NOT LIKE 'PLW-%'
+                      ORDER BY SEQUENCE, line)
+         LOOP
+            l_issue_found := TRUE;
+
+            IF NOT l_progerror_found
+            THEN
+               add_string ('Errors for ' || l_index);
+               l_progerror_found := TRUE;
+            END IF;
+
+            add_string (   LPAD (drec.SEQUENCE, 5)
+                        || ' '
+                        || LPAD (drec.line, 5)
+                        || ' '
+                        || drec.text
+                       );
+         END LOOP;
+
+         l_index := g_code_object_names.NEXT (l_index);
+      END LOOP;
+
+      RETURN add_title (l_issue_found
+                      , l_issues
+                      , 'Program Compilation Errors'
+                      , delim_in
+                       );
+   END verify_compilation;
+
+   FUNCTION verify_install (
+      schema_in IN VARCHAR2
+    , delim_in IN VARCHAR2 DEFAULT c_new_line_character
+    , show_in IN BOOLEAN DEFAULT FALSE
+   )
+      RETURN CLOB
+   IS
+      --l_xmldom VARCHAR2 (1000);
+      l_metadata_clob          CLOB;
+      l_compilation_clob       CLOB;
+      l_table_structure_clob   CLOB;
+      l_clob                   CLOB;
+   BEGIN
+      l_table_structure_clob :=
+                   verify_table_structure (schema_in, '%', show_in, delim_in);
+      l_compilation_clob := verify_compilation (schema_in, show_in, delim_in);
+      l_metadata_clob := verify_metadata (show_in, delim_in);
+
+      /*-- Is XML functionality present?
+      DECLARE
+      BEGIN
+         EXECUTE IMMEDIATE 'DECLARE l PLS_INTEGER BEGIN l := DBMS_XMLDOM.ERROR_NODE; END;';
+      EXCEPTION
+         WHEN OTHERS
+         THEN
+            l_xmldom :=
+                  'The Oracle XML DB package DBMS_XMLDOM is required, but is not available. '
+               || 'Please have your DBA install this package.';
+      END;*/
+
+      -- 1.2.4 : If no utPLSQL, then remove the qu_utplsql_api package.
+      BEGIN
+         qu_runtime.TRACE ('qu_verify'
+                         , 'checking for presence of utPLSQL'
+                         , TRUE
+                          );
+
+         EXECUTE IMMEDIATE 'DECLARE ver VARCHAR2(32767); BEGIN ver := utPLSQL.version; END;';
+
+         -- utPLSQL exists, so leave the package intact.
+         NULL;
+      EXCEPTION
+         WHEN OTHERS
+         THEN
+            BEGIN
+               qu_runtime.TRACE ('qu_verify'
+                               , 'dropping PACKAGE qu_utplsql_api'
+                               , TRUE
+                                );
+
+               EXECUTE IMMEDIATE 'DROP PACKAGE qu_utplsql_api';
+            EXCEPTION
+               WHEN OTHERS
+               THEN
+                  NULL;
+            END;
+      END;
+
+      DBMS_LOB.createtemporary (l_clob, TRUE, DBMS_LOB.CALL);
+      l_clob :=
+         RTRIM (LTRIM (   l_table_structure_clob
+                       || delim_in
+                       || delim_in
+                       || l_compilation_clob
+                       || delim_in
+                       || delim_in
+                       || l_metadata_clob
+                       || delim_in
+                       || delim_in
+                     --|| l_xmldom
+                ,      delim_in
+                      )
+              , delim_in
+               );
+
+      IF l_clob IS NULL OR DBMS_LOB.getlength (l_clob) = 0
+      THEN
+         l_clob := 'OK';
+      END IF;
+
+      RETURN l_clob;
+   EXCEPTION
+      WHEN VALUE_ERROR
+      THEN
+         RETURN 'Error constructing install verification report.';
+   END verify_install;
+
+   PROCEDURE verify_install (schema_in IN VARCHAR2)
+   IS
+      l_dummy   CLOB;
+   BEGIN
+      l_dummy :=
+         verify_install (schema_in      => schema_in
+                       , delim_in       => NULL
+                       , show_in        => TRUE
+                        );
+   END verify_install;
+
+   -- Called from front end
+   FUNCTION verify_install (delim_in IN VARCHAR2, show_in IN BOOLEAN)
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      RETURN SUBSTR (verify_install (USER, delim_in, show_in), 1, 32767);
+   END verify_install;
+
+   PROCEDURE verify_install (show_in IN BOOLEAN DEFAULT TRUE)
+   IS
+      l_dummy   CLOB;
+   BEGIN
+      l_dummy := verify_install (USER, c_new_line_character, show_in);
+   END verify_install;
+
+   FUNCTION verify_upgrade (
+      schema_in IN VARCHAR2
+    , delim_in IN VARCHAR2 DEFAULT c_new_line_character
+    , show_in IN BOOLEAN DEFAULT FALSE
+   )
+      RETURN CLOB
+   IS
+   BEGIN
+      RETURN verify_install (schema_in      => schema_in
+                           , delim_in       => delim_in
+                           , show_in        => show_in
+                            );
+   END verify_upgrade;
+BEGIN
+   load_objects;
+END qu_verify;
+/

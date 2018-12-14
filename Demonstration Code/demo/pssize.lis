@@ -1,0 +1,169 @@
+
+Fri Dec 12                                                                                                     page    1
+                                           Size of PL/SQL Objects > 10 KBytes
+
+NAME                           TYPE            SOURCE_SIZE PARSED_SIZE CODE_SIZE
+------------------------------ --------------- ----------- ----------- ---------
+SG_ENGINE                      PACKAGE BODY         214211           0    136790
+PLGDOIR                        PACKAGE BODY         148358           0     95169
+PLGTE                          PACKAGE BODY         104527           0     77637
+SG_SCRIPT_QP                   PACKAGE BODY          43263           0     51529
+PLGDESC                        PACKAGE BODY          55006           0     41053
+SG_CUSTOM_QP                   PACKAGE BODY          34020           0     39395
+SA_OBJECT_GRP_QP               PACKAGE BODY          26838           0     34359
+SD_ERROR_QP                    PACKAGE BODY          27569           0     34271
+SU_ARGVALUE_QP                 PACKAGE BODY          33259           0     34119
+SU_APPLY                       PACKAGE BODY          71612           0     33376
+SA_ERROR_CATEGORY_QP           PACKAGE BODY          26347           0     29734
+PLGDOIR                        PACKAGE               52836       74406     29403
+SL_PROGRAM_QP                  PACKAGE BODY          23236           0     28943
+SD_SWYG                        PACKAGE BODY          38072           0     26431
+SA_OBJECT_QP                   PACKAGE BODY          21470           0     26266
+PLGPLSQL                       PACKAGE BODY          46133           0     25976
+SG_SCRIPT_ARGUMENT_QP          PACKAGE BODY          24317           0     25764
+SA_ERROR_QP                    PACKAGE BODY          20755           0     25712
+SU_ROADMAP_QP                  PACKAGE BODY          22075           0     24899
+ST_APPLICATION_TASK_INT_QP     PACKAGE BODY          24190           0     24868
+ST_COMPONENT_TASK_INT_QP       PACKAGE BODY          23740           0     24756
+ST_TASK_ROADMAP_INT_QP         PACKAGE BODY          23563           0     24740
+ST_TASK_OBJECT_INT_QP          PACKAGE BODY          23227           0     24654
+PLGCGML                        PACKAGE BODY          30344           0     24520
+SG_APPLICATION_SCRIPT_INT_QP   PACKAGE BODY          23986           0     24216
+SD_ERROR_MESSAGE_QP            PACKAGE BODY          20461           0     23153
+SG_ENGINE                      PACKAGE               15654       30107     23080
+SU_OBJECT_ROADMAP_INT_QP       PACKAGE BODY          22269           0     22422
+SU_OBJECT_QP                   PACKAGE BODY          18897           0     22307
+SG_CUSTOM_SOURCE_QP            PACKAGE BODY          21244           0     22040
+SA_APPLICATION_QP              PACKAGE BODY          17474           0     21776
+SA_OBJECT_GRP_CP               PACKAGE BODY          27647           0     20694
+SR_ROADMAP_INT_QP              PACKAGE BODY          17095           0     20531
+SU_ROADMAP_INT_QP              PACKAGE BODY          17095           0     20531
+SA_OBJECT_INT_QP               PACKAGE BODY          16972           0     20511
+SG_SCRIPT_INT_QP               PACKAGE BODY          16972           0     20511
+ST_TASK_INT_QP                 PACKAGE BODY          16726           0     20479
+SR_ROADMAP_QP                  PACKAGE BODY          17531           0     20395
+SG_SCRIPT_CP                   PACKAGE BODY          29212           0     20374
+SR_APPLICATION_ROADMAP_INT_QP  PACKAGE BODY          19846           0     20277
+SU_TASK_RUN_INT_QP             PACKAGE BODY          16804           0     20133
+SL_PROGRAM_INT_QP              PACKAGE BODY          16681           0     20117
+SU_ROADMAP_SOURCE_QP           PACKAGE BODY          19077           0     19726
+SG_SCRIPT_SOURCE_QP            PACKAGE BODY          18496           0     19582
+SA_COMPONENT_QP                PACKAGE BODY          17325           0     19375
+SU_ROADMAP_GRP_QP              PACKAGE BODY          17591           0     19356
+SF_SNAPSHOT_SOURCE_QP          PACKAGE BODY          18548           0     19292
+SD_ERROR_CP                    PACKAGE BODY          25196           0     18663
+SL_USAGE_QP                    PACKAGE BODY          16647           0     18481
+SF_CONFIGURATION_QP            PACKAGE BODY          15085           0     18218
+SA_APPLICATION_CP              PACKAGE BODY          26346           0     17848
+SD_CONTEXT_QP                  PACKAGE BODY          15606           0     17526
+SL_PROGRAM_CP                  PACKAGE BODY          22357           0     17332
+SG_CUSTOM_CP                   PACKAGE BODY          23870           0     17030
+SA_OBJECT_CP                   PACKAGE BODY          22278           0     16925
+SA_ERROR_CP                    PACKAGE BODY          21844           0     16786
+SA_OBJECT_INT_CP               PACKAGE BODY          22769           0     16700
+SA_ERROR_CATEGORY_CP           PACKAGE BODY          22478           0     16474
+SG_SCRIPT_INT_CP               PACKAGE BODY          22769           0     16455
+SA_OBJECT_TYPE_QP              PACKAGE BODY          14053           0     16323
+
+Fri Dec 12                                                                                                     page    2
+                                           Size of PL/SQL Objects > 10 KBytes
+
+NAME                           TYPE            SOURCE_SIZE PARSED_SIZE CODE_SIZE
+------------------------------ --------------- ----------- ----------- ---------
+ST_TASK_DIARY_QP               PACKAGE BODY          14047           0     16323
+SL_PROGRAM_INT_CP              PACKAGE BODY          22588           0     16199
+SU_ROADMAP_INT_CP              PACKAGE BODY          22606           0     16178
+SU_TASK_RUN_INT_CP             PACKAGE BODY          22713           0     16141
+ST_TASK_INT_CP                 PACKAGE BODY          22240           0     16078
+SR_ROADMAP_INT_CP              PACKAGE BODY          22890           0     16070
+SF_CONFIGURATION_CP            PACKAGE BODY          22857           0     15884
+SG_DRIVER_TYPE_QP              PACKAGE BODY          13988           0     15383
+SL_SOURCE_QP                   PACKAGE BODY          13544           0     15113
+SU_TASK_RUN_GRP_QP             PACKAGE BODY          13458           0     14941
+SU_OBJECT_CP                   PACKAGE BODY          19171           0     14897
+ST_TASK_QP                     PACKAGE BODY          12281           0     14879
+SD_ERROR_MESSAGE_CP            PACKAGE BODY          19808           0     14837
+SU_TASK_RUN_QP                 PACKAGE BODY          12902           0     14821
+SR_ROADMAP_CP                  PACKAGE BODY          20360           0     14636
+SA_OBJECT_TYPE_CP              PACKAGE BODY          20981           0     14626
+SU_ROADMAP_CP                  PACKAGE BODY          19131           0     14520
+SG_ARGUMENT_TYPE_QP            PACKAGE BODY          13559           0     14192
+SG_CUSTACT_TYPE_QP             PACKAGE BODY          13436           0     14172
+SG_CUSTOM_TYPE_QP              PACKAGE BODY          13313           0     14148
+SG_ENGINE_TYPE_QP              PACKAGE BODY          13313           0     14148
+SG_SCRIPT_ARGUMENT_CP          PACKAGE BODY          19177           0     14146
+SR_ROADMAP_GRP_QP              PACKAGE BODY          12378           0     14048
+SG_SCRIPT_GRP_QP               PACKAGE BODY          12281           0     14029
+SG_APPLICATION_SCRIPT_INT_CP   PACKAGE BODY          19155           0     13847
+ST_APPLICATION_TASK_INT_CP     PACKAGE BODY          18863           0     13797
+ST_COMPONENT_TASK_INT_CP       PACKAGE BODY          18639           0     13759
+SU_ROADMAP_GRP_CP              PACKAGE BODY          18331           0     13750
+ST_TASK_ROADMAP_INT_CP         PACKAGE BODY          18526           0     13739
+ST_TASK_CP                     PACKAGE BODY          18702           0     13734
+ST_TASK_OBJECT_INT_CP          PACKAGE BODY          18371           0     13718
+SA_MIN_CONTEXT_QP              PACKAGE BODY          12431           0     13684
+SD_MIN_CONTEXT_QP              PACKAGE BODY          12451           0     13684
+SR_APPLICATION_ROADMAP_INT_CP  PACKAGE BODY          18931           0     13643
+SA_COMPONENT_CP                PACKAGE BODY          17930           0     13635
+SU_ARGVALUE_CP                 PACKAGE BODY          18031           0     13467
+ST_TASK_DIARY_CP               PACKAGE BODY          17173           0     13282
+SR_ROADMAP_GRP_CP              PACKAGE BODY          18401           0     13246
+SG_SCRIPT_GRP_CP               PACKAGE BODY          18316           0     13231
+SU_OBJECT_ROADMAP_INT_CP       PACKAGE BODY          18053           0     13218
+SD_CONTEXT_CP                  PACKAGE BODY          16835           0     13002
+SR_CONTENT_TYPE_QP             PACKAGE BODY          11772           0     12969
+ST_TASK_GRP_QP                 PACKAGE BODY          11392           0     12897
+SU_TASK_RUN_GRP_CP             PACKAGE BODY          16961           0     12848
+SL_USAGE_CP                    PACKAGE BODY          16715           0     12846
+SG_DRIVER_TYPE_CP              PACKAGE BODY          17608           0     12795
+SU_TASK_RUN_CP                 PACKAGE BODY          16555           0     12776
+SL_PROGRAM_GRP_QP              PACKAGE BODY          11475           0     12748
+SF_FONT_QP                     PACKAGE BODY          10978           0     12695
+SF_SNAPSHOT_CP                 PACKAGE BODY          16273           0     12607
+SR_CONTENT_TYPE_CP             PACKAGE BODY          17384           0     12597
+SL_PROGRAM_GRP_CP              PACKAGE BODY          17306           0     12590
+ST_TASK_GRP_CP                 PACKAGE BODY          17072           0     12549
+SF_FONT_CP                     PACKAGE BODY          17000           0     12541
+SD_LOG_CP                      PACKAGE BODY          15713           0     12448
+SG_CUSTOM_SOURCE_CP            PACKAGE BODY          16142           0     12272
+SA_MIN_CONTEXT_CP              PACKAGE BODY          15925           0     12191
+SD_MIN_CONTEXT_CP              PACKAGE BODY          15931           0     12191
+PLGADMIN                       PACKAGE BODY          17742           0     12169
+SG_ARGUMENT_TYPE_CP            PACKAGE BODY          16785           0     12169
+
+Fri Dec 12                                                                                                     page    3
+                                           Size of PL/SQL Objects > 10 KBytes
+
+NAME                           TYPE            SOURCE_SIZE PARSED_SIZE CODE_SIZE
+------------------------------ --------------- ----------- ----------- ---------
+SG_CUSTACT_TYPE_CP             PACKAGE BODY          16709           0     12161
+SG_CUSTOM_TYPE_CP              PACKAGE BODY          16633           0     12153
+SG_ENGINE_TYPE_CP              PACKAGE BODY          16633           0     12153
+SF_UTIL                        PACKAGE BODY          20763           0     12141
+SU_ROADMAP_SOURCE_CP           PACKAGE BODY          15846           0     12038
+SF_SNAPSHOT_SOURCE_CP          PACKAGE BODY          15790           0     12036
+SG_SCRIPT_SOURCE_CP            PACKAGE BODY          15566           0     11990
+SL_STORAGE_TYPE_CP             PACKAGE BODY          16402           0     11955
+SG_OUTPUT_TYPE_CP              PACKAGE BODY          16331           0     11948
+SL_LANGUAGE_CP                 PACKAGE BODY          16118           0     11907
+SG_OUTPUT_TYPE_QP              PACKAGE BODY          11060           0     11845
+PLGLST                         PACKAGE BODY          20282           0     11823
+SL_SOURCE_CP                   PACKAGE BODY          14907           0     11713
+SL_STORAGE_TYPE_QP             PACKAGE BODY          10951           0     11662
+SD_RUNTIME                     PACKAGE BODY          19310           0     11622
+SL_LANGUAGE_QP                 PACKAGE BODY          10579           0     11590
+PLGOBJ                         PACKAGE BODY          13666           0     11510
+SL_USAGE_TYPE_CP               PACKAGE BODY          14785           0     11383
+SD_MESSAGE_CP                  PACKAGE BODY          14418           0     11241
+SF_SNAPSHOT_QP                 PACKAGE BODY           9366           0     11207
+SD_LOG_QP                      PACKAGE BODY           9012           0     11143
+SA_APPLICATION_XP              PACKAGE BODY           9594           0     11099
+SA_OBJECT_GRP_UP               PACKAGE BODY          13060           0     10725
+SA_SYNONYM_CP                  PACKAGE BODY          13811           0     10635
+SL_PROGRAM_DEPENDENCY_QP       PACKAGE BODY          11448           0     10442
+PLGVAL                         PACKAGE BODY          13256           0     10390
+SL_PROGRAM_DEPENDENCY_CP       PACKAGE BODY          14135           0     10387
+SG_SCRIPT_UP                   PACKAGE BODY          12454           0     10058
+
+148 rows selected.
+

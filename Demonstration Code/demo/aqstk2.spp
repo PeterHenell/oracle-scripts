@@ -1,0 +1,50 @@
+CREATE OR REPLACE TYPE aqstk_objtype IS OBJECT (item VARCHAR2(2000));
+/
+CREATE OR REPLACE PACKAGE aqstk
+
+/* Stack built on AQ which persists through Oracle connections. */
+
+IS
+   PROCEDURE push (item IN VARCHAR2);
+   PROCEDURE pop (item OUT VARCHAR2);
+END;
+/
+CREATE OR REPLACE PACKAGE BODY aqstk
+IS
+   c_queue CONSTANT aq.name_type := 'aqstk';
+
+   g_msgid aq.msgid_type;
+
+   PROCEDURE push (item IN VARCHAR2)
+   IS
+      queueopts DBMS_AQ.ENQUEUE_OPTIONS_T;
+      msgprops DBMS_AQ.MESSAGE_PROPERTIES_T;
+      item_obj aqstk_objtype;
+   BEGIN
+      item_obj := aqstk_objtype (item);
+      queueopts.sequence_deviation := DBMS_AQ.TOP;
+      queueopts.visibility := DBMS_AQ.IMMEDIATE;
+      DBMS_AQ.ENQUEUE (c_queue, queueopts, msgprops, item_obj, g_msgid);
+   END;
+
+   PROCEDURE pop (item OUT VARCHAR2)
+   IS
+      queueopts DBMS_AQ.DEQUEUE_OPTIONS_T;
+      msgprops DBMS_AQ.MESSAGE_PROPERTIES_T;
+      msgid aq.msgid_type;
+      item_obj aqstk_objtype;
+   BEGIN
+      /* Workaround for 8.0.3 bug; insist on dequeuing of first message. */
+      queueopts.navigation := DBMS_AQ.FIRST_MESSAGE; 
+
+      queueopts.wait := DBMS_AQ.NO_WAIT;
+      queueopts.visibility := DBMS_AQ.IMMEDIATE;
+      DBMS_AQ.DEQUEUE (c_queue, queueopts, msgprops, item_obj, g_msgid);
+      item := item_obj.item;
+   END;
+
+BEGIN
+   /* Create the queue table and queue as necessary. */
+   aq.create_queue ('aqstk_table', 'aqstk_objtype', c_queue);
+END;
+/

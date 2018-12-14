@@ -1,0 +1,32 @@
+create or replace PACKAGE sessinit
+IS
+   show_lov CHAR(1);
+   show_toolbar CHAR(1);
+   printer VARCHAR2(60);
+END sessinit;
+/
+create or replace PACKAGE BODY sessinit
+IS
+   /* No declared package elements at all! */
+BEGIN
+   /* Get user preferences for this user. */
+   SELECT show_lov, show_toolbar, printer
+     INTO show_lov, show_toolbar, printer   
+     FROM user_config
+    WHERE username = USER;
+
+EXCEPTION
+   WHEN NO_DATA_FOUND 
+   THEN
+      /* No record for this user. */
+      show_lov      := 'Y';
+      show_toolbar  := 'Y';
+      printer       := 'lpt1';
+
+   WHEN OTHERS 
+   THEN
+      RAISE_APPLICATION_ERROR 
+        (-20000, 
+         'No profile for ' || USER);
+END sessinit;
+/

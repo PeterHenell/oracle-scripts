@@ -1,0 +1,447 @@
+
+Procedure created.
+
+
+PL/SQL procedure successfully completed.
+
+DROP TABLE table_w_excessively_long_nm
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist 
+
+
+DROP TABLE JOB
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist 
+
+
+DROP TABLE DEPARTMENT
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist 
+
+
+DROP TABLE locemp
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist 
+
+
+DROP TABLE loc
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist 
+
+
+DROP TABLE salhist
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist 
+
+
+DROP TABLE EMPLOYEE
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist 
+
+
+drop sequence employee_id_seq
+              *
+ERROR at line 1:
+ORA-02289: sequence does not exist 
+
+
+drop sequence loc_id_seq
+              *
+ERROR at line 1:
+ORA-02289: sequence does not exist 
+
+
+drop sequence department_id_seq
+              *
+ERROR at line 1:
+ORA-02289: sequence does not exist 
+
+
+drop sequence seq$job
+              *
+ERROR at line 1:
+ORA-02289: sequence does not exist 
+
+
+DROP PACKAGE TE_EMPLOYEE
+*
+ERROR at line 1:
+ORA-04043: object TE_EMPLOYEE does not exist 
+
+
+DROP PACKAGE TE_JOB
+*
+ERROR at line 1:
+ORA-04043: object TE_JOB does not exist 
+
+
+DROP PACKAGE TE_DEPARTMENT
+*
+ERROR at line 1:
+ORA-04043: object TE_DEPARTMENT does not exist 
+
+
+DROP PACKAGE TE_locemp
+*
+ERROR at line 1:
+ORA-04043: object TE_LOCEMP does not exist 
+
+
+DROP PACKAGE TE_loc
+*
+ERROR at line 1:
+ORA-04043: object TE_LOC does not exist 
+
+
+DROP PACKAGE TE_salhist
+*
+ERROR at line 1:
+ORA-04043: object TE_SALHIST does not exist 
+
+
+DROP PACKAGE TE_table_w_excessively_long_nm
+*
+ERROR at line 1:
+ORA-04043: object TE_TABLE_W_EXCESSIVELY_LONG_NM does not exist 
+
+
+DROP PACKAGE TE_EMPLOYEE_TST
+*
+ERROR at line 1:
+ORA-04043: object TE_EMPLOYEE_TST does not exist 
+
+
+DROP PACKAGE TE_JOB_TST
+*
+ERROR at line 1:
+ORA-04043: object TE_JOB_TST does not exist 
+
+
+DROP PACKAGE TE_DEPARTMENT_TST
+*
+ERROR at line 1:
+ORA-04043: object TE_DEPARTMENT_TST does not exist 
+
+
+DROP PACKAGE TE_locemp_TST
+*
+ERROR at line 1:
+ORA-04043: object TE_LOCEMP_TST does not exist 
+
+
+DROP PACKAGE TE_loc_TST
+*
+ERROR at line 1:
+ORA-04043: object TE_LOC_TST does not exist 
+
+
+DROP PACKAGE TE_salhist_TST
+*
+ERROR at line 1:
+ORA-04043: object TE_SALHIST_TST does not exist 
+
+
+DROP PACKAGE TE_table_w_excessively_long_nm_TST
+             *
+ERROR at line 1:
+ORA-00972: identifier is too long 
+
+
+
+Procedure dropped.
+
+
+Table created.
+
+
+Table created.
+
+
+Table created.
+
+
+Table created.
+
+
+Table created.
+
+
+Table created.
+
+
+Table created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+128 rows created.
+
+
+32 rows created.
+
+
+32 rows created.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Table altered.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Index created.
+
+
+Index created.
+
+
+Index created.
+
+
+Index created.
+
+
+Index created.
+
+
+PL/SQL procedure successfully completed.
+

@@ -1,0 +1,436 @@
+CREATE OR REPLACE PACKAGE p
+-- Adapted from PL/Vision library copyright 2002 Quest Software Inc.
+IS
+   c_linelen   CONSTANT PLS_INTEGER := 80;
+
+   -- Set line length before wrap
+   PROCEDURE set_linelen (len IN PLS_INTEGER := c_linelen);
+
+   FUNCTION linelen
+      RETURN PLS_INTEGER;
+
+   PROCEDURE l (dt IN DATE, mask_in IN VARCHAR2 := NULL);
+
+   PROCEDURE l (num IN NUMBER);
+
+   PROCEDURE l (stg IN VARCHAR2);
+
+   PROCEDURE l (stg IN VARCHAR2, num IN NUMBER);
+
+   PROCEDURE l (stg IN VARCHAR2, dt IN DATE, mask_in IN VARCHAR2 := NULL);
+
+   PROCEDURE l (bool IN BOOLEAN);
+
+   PROCEDURE l (stg IN VARCHAR2, bool IN BOOLEAN);
+
+   PROCEDURE l (file_in IN UTL_FILE.file_type);
+
+   PROCEDURE l (string_in IN VARCHAR2, file_in IN UTL_FILE.file_type);
+
+   PROCEDURE l (num1 IN NUMBER, num2 IN NUMBER);
+
+   PROCEDURE l (str IN VARCHAR2, num1 IN NUMBER, num2 IN NUMBER);
+
+   PROCEDURE l (bool1 IN BOOLEAN, bool2 IN BOOLEAN);
+
+   PROCEDURE l (stg1 IN VARCHAR2, stg2 IN VARCHAR2);
+
+   PROCEDURE l (dt1 IN DATE, dt2 IN DATE, mask_in IN VARCHAR2 := NULL);
+
+   PROCEDURE l (num IN NUMBER, dt IN DATE, mask_in IN VARCHAR2 := NULL);
+
+   PROCEDURE l (bool IN BOOLEAN, num IN NUMBER);
+
+   PROCEDURE l (bool IN BOOLEAN, dt IN DATE, mask_in IN VARCHAR2 := NULL);
+
+   PROCEDURE l (bool IN BOOLEAN, stg IN VARCHAR2);
+
+   PROCEDURE l (xml_in IN XMLTYPE);
+
+   PROCEDURE l (clob_in IN CLOB);
+END p;
+/
+
+CREATE OR REPLACE PACKAGE BODY p
+IS
+   c_max_dopl_line         PLS_INTEGER    := 255;
+   c_delim        CONSTANT CHAR (3)       := ' - ';
+   v_linelen               PLS_INTEGER    := c_linelen;
+   -- Insertion of code from PLVprs package, PL/Vision library copyright 2002 Quest Software Inc.
+   c_delimiters   CONSTANT VARCHAR2 (100)
+                   := '!@%^&*()-=+\|`~{[]};:''",<.>/? ' || CHR (10)
+                      || CHR (9);
+
+   TYPE wrap_aat IS TABLE OF VARCHAR2 (32767)
+      INDEX BY BINARY_INTEGER;
+
+   FUNCTION a_delimiter (
+      character_in       IN   VARCHAR2
+    , delimiters_in      IN   VARCHAR2
+    , one_delimiter_in   IN   BOOLEAN := FALSE
+   )
+      RETURN BOOLEAN
+   IS
+      retval   BOOLEAN := character_in IS NOT NULL;
+   BEGIN
+      IF retval
+      THEN
+         IF one_delimiter_in
+         THEN
+            retval := delimiters_in = character_in;
+         ELSE
+            retval := INSTR (delimiters_in, character_in) > 0;
+         END IF;
+      END IF;
+
+      RETURN retval;
+   END;
+
+   FUNCTION next_atom_loc (
+      string_in       IN   VARCHAR2
+    , start_loc_in    IN   NUMBER
+    , direction_in    IN   NUMBER
+    , delimiters_in   IN   VARCHAR2
+   )
+      RETURN INTEGER
+   IS
+      was_a_delimiter   BOOLEAN
+          := a_delimiter (SUBSTR (string_in, start_loc_in, 1), delimiters_in);
+      was_a_word        BOOLEAN      := NOT was_a_delimiter;
+      next_char         VARCHAR2 (1);
+      return_value      NUMBER       := start_loc_in + direction_in;
+   BEGIN
+      LOOP
+         next_char := SUBSTR (string_in, return_value, 1);
+         EXIT WHEN
+                  /* On a delimiter, since that is always an atomic */
+                  a_delimiter (next_char, delimiters_in)
+               OR 
+                  /* Was a delimiter, but am now in a word. */
+                  (    was_a_delimiter
+                   AND NOT a_delimiter (next_char, delimiters_in)
+                  )
+               OR
+                  /* Reached end of string scanning forward. */
+                  next_char IS NULL
+               OR
+                  /* Reached beginning of string scanning backward. */
+                  return_value < 0;
+         /* Shift return_value to move the next character. */
+         return_value := return_value + direction_in;
+      END LOOP;
+
+      RETURN GREATEST (return_value, 0);
+   END next_atom_loc;
+
+   PROCEDURE wrap_string (
+      text_in              IN       VARCHAR2
+    , list_inout           IN OUT   wrap_aat
+    , line_length_in       IN       INTEGER DEFAULT 255
+    , keep_linebreaks_in   IN       BOOLEAN DEFAULT FALSE
+    , delimiters_in        IN       VARCHAR2 DEFAULT c_delimiters
+   )
+   IS
+      v_text             VARCHAR2 (32767);
+      len_text           INTEGER;
+      start_loc          INTEGER          := 1;
+      end_loc            INTEGER          := 1;
+      cr_loc             INTEGER;
+      last_space_loc     INTEGER;
+      curr_line          VARCHAR2 (32767);
+      break_on_newline   BOOLEAN          := FALSE;
+   BEGIN
+      IF LTRIM (text_in) IS NOT NULL
+      THEN
+         IF NOT keep_linebreaks_in
+         THEN
+            v_text := REPLACE (text_in, CHR (10), ' ');
+         ELSE
+            v_text := text_in;
+         END IF;
+
+         len_text := LENGTH (v_text);
+
+         LOOP
+            EXIT WHEN end_loc > len_text;
+            end_loc := LEAST (end_loc + line_length_in, len_text + 1);
+
+            IF keep_linebreaks_in
+            THEN
+               cr_loc := INSTR (text_in, CHR (10), start_loc);
+               break_on_newline := cr_loc > 0 AND end_loc > cr_loc;
+            END IF;
+
+            /* Get the next possible line of text */
+            IF break_on_newline
+            THEN
+               list_inout (list_inout.COUNT + 1) :=
+                               SUBSTR (v_text, start_loc, cr_loc - start_loc);
+               --PLVstr.betwn (v_text, start_loc, cr_loc-1);
+               end_loc := cr_loc + 1;
+               break_on_newline := FALSE;
+            ELSE
+               curr_line :=
+                        SUBSTR (v_text || ' ', start_loc, line_length_in + 1);
+               last_space_loc :=
+                  next_atom_loc (curr_line
+                               , LENGTH (curr_line)
+                               , -1                               -- backwards
+                               , delimiters_in
+                                );
+
+               IF last_space_loc > 0
+               THEN
+                  end_loc := start_loc + last_space_loc;
+               END IF;
+
+               /* Add this line to the paragraph */
+               list_inout (list_inout.COUNT + 1) :=
+                               SUBSTR (v_text, start_loc, end_loc - start_loc);
+            END IF;
+
+            start_loc := end_loc;
+         END LOOP;
+      END IF;
+   END wrap_string;
+
+   -- Core p package functionality
+   FUNCTION boolstg (val IN BOOLEAN)
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      IF val
+      THEN
+         RETURN 'TRUE';
+      ELSIF NOT val
+      THEN
+         RETURN 'FALSE';
+      ELSE
+         RETURN 'NULL';
+      END IF;
+   END boolstg;
+
+   FUNCTION datestg (val IN DATE, MASK IN VARCHAR2 DEFAULT NULL)
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      IF MASK IS NULL
+      THEN
+         RETURN TO_CHAR (val);
+      ELSE
+         RETURN TO_CHAR (val, MASK);
+      END IF;
+   END datestg;
+
+   PROCEDURE put_line (str IN VARCHAR2)
+   IS
+      v_len     PLS_INTEGER     := linelen;
+      v_len2    PLS_INTEGER;
+      v_chr10   PLS_INTEGER;
+      v_str     VARCHAR2 (2000);
+   BEGIN
+      IF LENGTH (str) > linelen
+      THEN
+         v_chr10 := INSTR (str, CHR (10));
+
+         IF v_chr10 > 0 AND linelen >= v_chr10
+         THEN
+            v_len := v_chr10 - 1;
+            v_len2 := v_chr10 + 1;
+         ELSE
+            v_len2 := v_len + 1;
+         END IF;
+
+         v_str := SUBSTR (str, 1, v_len);
+         DBMS_OUTPUT.put_line (v_str);
+         put_line (SUBSTR (str, v_len2));
+      ELSE
+	     v_str := str;
+         DBMS_OUTPUT.put_line (str);
+      END IF;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         DBMS_OUTPUT.ENABLE (1000000);
+         DBMS_OUTPUT.put_line (v_str);
+   END;
+
+   PROCEDURE display_line (line_in IN VARCHAR2)
+   IS
+      l_lines   wrap_aat;
+      l_row     PLS_INTEGER;
+   BEGIN
+      IF LENGTH (line_in) > linelen
+      THEN
+         wrap_string (line_in
+                    , l_lines
+                    , linelen - 2
+                    , keep_linebreaks_in      => TRUE
+                     );
+         l_row := l_lines.FIRST;
+
+         WHILE (l_row IS NOT NULL)
+         LOOP
+            l (l_lines (l_row));
+            l_row := l_lines.NEXT (l_row);
+         END LOOP;
+      ELSE
+         put_line (line_in);
+      END IF;
+   END display_line;
+
+   -- Set line length before wrap
+   PROCEDURE set_linelen (len IN PLS_INTEGER := c_linelen)
+   IS
+   BEGIN
+      v_linelen :=
+                  LEAST (c_max_dopl_line, GREATEST (NVL (len, c_linelen), 1));
+   END;
+
+   FUNCTION linelen
+      RETURN PLS_INTEGER
+   IS
+   BEGIN
+      RETURN v_linelen;
+   END;
+
+   -------------------- The p.l Procedures ----------------
+   PROCEDURE l (dt IN DATE, mask_in IN VARCHAR2 := NULL)
+   IS
+   BEGIN
+      display_line (datestg (dt, mask_in));
+   END;
+
+   PROCEDURE l (num IN NUMBER)
+   IS
+   BEGIN
+      display_line (TO_CHAR (num));
+   END;
+
+   PROCEDURE l (stg IN VARCHAR2)
+   IS
+   BEGIN
+      display_line (stg);
+   END;
+
+   PROCEDURE l (stg IN VARCHAR2, num IN NUMBER)
+   IS
+   BEGIN
+      display_line (stg || c_delim || TO_CHAR (num));
+   END;
+
+   PROCEDURE l (stg IN VARCHAR2, dt IN DATE, mask_in IN VARCHAR2 := NULL)
+   IS
+   BEGIN
+      display_line (stg || c_delim || datestg (dt, mask_in));
+   END;
+
+   PROCEDURE l (bool IN BOOLEAN)
+   IS
+   BEGIN
+      display_line (boolstg (bool));
+   END;
+
+   PROCEDURE l (stg IN VARCHAR2, bool IN BOOLEAN)
+   IS
+   BEGIN
+      display_line (stg || c_delim || boolstg (bool));
+   END;
+
+   PROCEDURE l (file_in IN UTL_FILE.file_type)
+   IS
+   BEGIN
+      display_line (TO_CHAR (file_in.ID));
+   END;
+
+   PROCEDURE l (string_in IN VARCHAR2, file_in IN UTL_FILE.file_type)
+   IS
+   BEGIN
+      l (string_in, file_in.ID);
+   END;
+
+   -- Additional overloadings
+   PROCEDURE l (num1 IN NUMBER, num2 IN NUMBER)
+   IS
+   BEGIN
+      display_line (TO_CHAR (num1) || c_delim || TO_CHAR (num2));
+   END;
+
+   PROCEDURE l (str IN VARCHAR2, num1 IN NUMBER, num2 IN NUMBER)
+   IS
+   BEGIN
+      display_line (str || c_delim || TO_CHAR (num1) || c_delim
+                    || TO_CHAR (num2)
+                   );
+   END;
+
+   PROCEDURE l (bool1 IN BOOLEAN, bool2 IN BOOLEAN)
+   IS
+   BEGIN
+      display_line (boolstg (bool1) || c_delim || boolstg (bool2));
+   END;
+
+   PROCEDURE l (stg1 IN VARCHAR2, stg2 IN VARCHAR2)
+   IS
+   BEGIN
+      display_line (stg1 || c_delim || stg2);
+   END;
+
+   PROCEDURE l (dt1 IN DATE, dt2 IN DATE, mask_in IN VARCHAR2 := NULL)
+   IS
+   BEGIN
+      display_line (datestg (dt1, mask_in) || c_delim
+                    || datestg (dt2, mask_in)
+                   );
+   END;
+
+   PROCEDURE l (num IN NUMBER, dt IN DATE, mask_in IN VARCHAR2 := NULL)
+   IS
+   BEGIN
+      display_line (TO_CHAR (num) || c_delim || datestg (dt, mask_in));
+   END;
+
+   PROCEDURE l (bool IN BOOLEAN, num IN NUMBER)
+   IS
+   BEGIN
+      display_line (boolstg (bool) || c_delim || TO_CHAR (num));
+   END;
+
+   PROCEDURE l (bool IN BOOLEAN, dt IN DATE, mask_in IN VARCHAR2 := NULL)
+   IS
+   BEGIN
+      display_line (boolstg (bool) || c_delim || datestg (dt, mask_in));
+   END;
+
+   PROCEDURE l (bool IN BOOLEAN, stg IN VARCHAR2)
+   IS
+   BEGIN
+      display_line (stg || c_delim || boolstg (bool));
+   END;
+
+   PROCEDURE l (xml_in IN XMLTYPE)
+   IS
+   BEGIN
+      p.l (xml_in.getstringval ());
+   END;
+
+   PROCEDURE l (clob_in IN CLOB)
+   IS
+      buffer     VARCHAR2 (32767);
+      amount     BINARY_INTEGER;
+      POSITION   PLS_INTEGER      := 1;
+   BEGIN
+      LOOP
+         amount := linelen;
+         DBMS_LOB.READ (clob_in, amount, POSITION, buffer);
+         -- Display the buffer contents:
+         p.l (buffer);
+         POSITION := POSITION + amount;
+      END LOOP;
+   EXCEPTION
+      WHEN NO_DATA_FOUND OR VALUE_ERROR
+      THEN
+         NULL;
+   END;
+END p;
+/

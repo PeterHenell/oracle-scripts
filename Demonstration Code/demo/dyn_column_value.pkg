@@ -1,0 +1,205 @@
+CREATE OR REPLACE PACKAGE dyn_column_value
+IS
+   FUNCTION xml_column_value (
+      owner_in IN VARCHAR2
+    , table_in IN VARCHAR2
+    , column_in IN VARCHAR2
+    , where_in IN VARCHAR2
+    , raise_ndf_in IN BOOLEAN := FALSE
+   )
+      RETURN XMLTYPE;
+
+   FUNCTION string_column_value (
+      owner_in IN VARCHAR2
+    , table_in IN VARCHAR2
+    , column_in IN VARCHAR2
+    , where_in IN VARCHAR2
+    , raise_ndf_in IN BOOLEAN := FALSE
+    , ndf_value_in IN VARCHAR2 := NULL
+   )
+      RETURN VARCHAR2;
+
+   FUNCTION number_column_value (
+      owner_in IN VARCHAR2
+    , table_in IN VARCHAR2
+    , column_in IN VARCHAR2
+    , where_in IN VARCHAR2
+    , raise_ndf_in IN BOOLEAN := FALSE
+    , ndf_value_in IN NUMBER := NULL
+   )
+      RETURN NUMBER;
+
+   FUNCTION date_column_value (
+      owner_in IN VARCHAR2
+    , table_in IN VARCHAR2
+    , column_in IN VARCHAR2
+    , where_in IN VARCHAR2
+    , raise_ndf_in IN BOOLEAN := FALSE
+    , ndf_value_in IN DATE := NULL
+   )
+      RETURN DATE;
+END dyn_column_value;
+/
+
+CREATE OR REPLACE PACKAGE BODY dyn_column_value
+IS
+   FUNCTION dyn_string (
+      owner_in IN VARCHAR2
+    , table_in IN VARCHAR2
+    , column_in IN VARCHAR2
+    , where_in IN VARCHAR2
+   )
+      RETURN VARCHAR2
+   IS
+      l_return   VARCHAR2 (32767);
+   BEGIN
+      l_return :=
+            'select '
+         || column_in
+         || ' from '
+         || CASE
+               WHEN owner_in IS NULL
+                  THEN table_in
+               ELSE owner_in || '.' || table_in
+            END
+         || CASE
+               WHEN where_in IS NULL
+                  THEN NULL
+               WHEN UPPER (where_in) LIKE 'WHERE %'
+                  THEN ' ' || where_in
+               ELSE ' where ' || where_in
+            END;
+      RETURN l_return;
+   END dyn_string;
+
+   PROCEDURE rae (string_in IN VARCHAR2)
+   IS
+   BEGIN
+      raise_application_error (-20000
+                             ,    'DYN_COLUMN_VALUE ERROR: '
+                               || DBMS_UTILITY.format_error_stack
+                               || ' - '
+                               || string_in
+                              );
+   END rae;
+
+   FUNCTION xml_column_value (
+      owner_in IN VARCHAR2
+    , table_in IN VARCHAR2
+    , column_in IN VARCHAR2
+    , where_in IN VARCHAR2
+    , raise_ndf_in IN BOOLEAN := FALSE
+   )
+      RETURN XMLTYPE
+   IS
+      l_return   XMLTYPE;
+   BEGIN
+      EXECUTE IMMEDIATE dyn_string (owner_in, table_in, column_in, where_in)
+                   INTO l_return;
+
+      RETURN l_return;
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         IF raise_ndf_in
+         THEN
+            RAISE;
+         ELSE
+            RETURN l_return;
+         END IF;
+      WHEN OTHERS
+      THEN
+         rae (dyn_string (owner_in, table_in, column_in, where_in));
+   END xml_column_value;
+
+   FUNCTION string_column_value (
+      owner_in IN VARCHAR2
+    , table_in IN VARCHAR2
+    , column_in IN VARCHAR2
+    , where_in IN VARCHAR2
+    , raise_ndf_in IN BOOLEAN := FALSE
+    , ndf_value_in IN VARCHAR2 := NULL
+   )
+      RETURN VARCHAR2
+   IS
+      l_return   VARCHAR2 (32767);
+   BEGIN
+      EXECUTE IMMEDIATE dyn_string (owner_in, table_in, column_in, where_in)
+                   INTO l_return;
+
+      RETURN l_return;
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         IF raise_ndf_in
+         THEN
+            RAISE;
+         ELSE
+            RETURN ndf_value_in;
+         END IF;
+      WHEN OTHERS
+      THEN
+         rae (dyn_string (owner_in, table_in, column_in, where_in));
+   END string_column_value;
+
+   FUNCTION date_column_value (
+      owner_in IN VARCHAR2
+    , table_in IN VARCHAR2
+    , column_in IN VARCHAR2
+    , where_in IN VARCHAR2
+    , raise_ndf_in IN BOOLEAN := FALSE
+    , ndf_value_in IN DATE := NULL
+   )
+      RETURN DATE
+   IS
+      l_return   DATE;
+   BEGIN
+      EXECUTE IMMEDIATE dyn_string (owner_in, table_in, column_in, where_in)
+                   INTO l_return;
+
+      RETURN l_return;
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         IF raise_ndf_in
+         THEN
+            RAISE;
+         ELSE
+            RETURN ndf_value_in;
+         END IF;
+      WHEN OTHERS
+      THEN
+         rae (dyn_string (owner_in, table_in, column_in, where_in));
+   END date_column_value;
+
+   FUNCTION number_column_value (
+      owner_in IN VARCHAR2
+    , table_in IN VARCHAR2
+    , column_in IN VARCHAR2
+    , where_in IN VARCHAR2
+    , raise_ndf_in IN BOOLEAN := FALSE
+    , ndf_value_in IN NUMBER := NULL
+   )
+      RETURN NUMBER
+   IS
+      l_return   NUMBER;
+   BEGIN
+      EXECUTE IMMEDIATE dyn_string (owner_in, table_in, column_in, where_in)
+                   INTO l_return;
+
+      RETURN l_return;
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         IF raise_ndf_in
+         THEN
+            RAISE;
+         ELSE
+            RETURN ndf_value_in;
+         END IF;
+      WHEN OTHERS
+      THEN
+         rae (dyn_string (owner_in, table_in, column_in, where_in));
+   END number_column_value;
+END dyn_column_value;
+/

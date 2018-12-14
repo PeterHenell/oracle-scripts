@@ -1,0 +1,28 @@
+CREATE OR REPLACE PACKAGE data
+IS
+   val NUMBER;
+	PRAGMA RESTRICT_REFERENCES (data, WNDS);
+END;
+/
+
+CREATE OR REPLACE FUNCTION totcomp 
+   (sal_in IN PLS_INTEGER, 
+    comm_in IN NUMBER := NULL)
+   RETURN NUMBER
+
+/* Now the function modifies a package variable. */
+IS
+BEGIN
+   data.val := 10;
+   RETURN (sal_in + NVL (comm_in, 0));
+END;
+/
+
+SELECT ename, totcomp (sal, comm) total
+  FROM emp;
+
+/* Next one fails in 8.0.5 and earlier, but not in 8.1 */
+
+SELECT ename, totcomp (sal, comm) total
+  FROM emp
+ WHERE totcomp (sal, comm) > 0;

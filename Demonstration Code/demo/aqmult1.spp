@@ -1,0 +1,47 @@
+/* Create a package which provides an interface to change the major */
+CREATE OR REPLACE PACKAGE conc_pkg
+IS
+   PROCEDURE add_reviewer (name_in IN VARCHAR2);
+    
+   PROCEDURE change_it_again 
+      (student_in IN VARCHAR2, new_conc_in IN VARCHAR2);
+END conc_pkg;
+/ 
+CREATE OR REPLACE PACKAGE BODY conc_pkg
+IS
+   c_qtable CONSTANT aq.name_type := 'conc_qtable';
+   c_queue CONSTANT aq.name_type := 'conc_queue';
+   
+   g_msgid aq.msgid_type;
+
+   PROCEDURE add_reviewer (name_in IN VARCHAR2)
+   IS
+   BEGIN
+      /* Address is NULL, so no message propagation to other queues. */
+      DBMS_AQADM.ADD_SUBSCRIBER 
+         (c_queue, SYS.AQ$_AGENT (name_in, NULL, NULL));
+   END;
+    
+   PROCEDURE change_it_again 
+      (student_in IN VARCHAR2, new_conc_in IN VARCHAR2)
+   IS
+      queueopts DBMS_AQ.ENQUEUE_OPTIONS_T;
+      msgprops DBMS_AQ.MESSAGE_PROPERTIES_T;
+      conc_obj student_conc_t;
+   BEGIN
+      /* Update the database table. */
+      UPDATE student_intention
+         SET conc_study = new_conc_in
+       WHERE name = student_in;
+
+      /* Put a message on the queue so that everyone is
+         properly notified. Notice I will coordinate visibility
+         of this message with a COMMIT of the entire transaction.*/
+      /* Don't wait for a commit. */
+      queueopts.visibility := DBMS_AQ.ON_COMMIT;
+
+      DBMS_AQ.ENQUEUE (c_queue, queueopts, msgprops, conc_obj, g_msgid);
+   END;
+END conc_pkg;
+/ 
+

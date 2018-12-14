@@ -1,0 +1,16 @@
+SQL> SELECT '*********************  SUITE  ************ PACKAGE *********  Time
+  2  Stamp' junk,
+  3      s.DESCRIPTION suite,p.NAME PACKAGE,
+  4      to_char(p.last_end,'dd-mon-yy hh24:mi:ss') time_stamp,
+  5      '-----------------------------' junk2 ,
+  6      decode(p.last_end,NULL,'Unable to Execute',nvl(o.DESCRIPTION,'Passed all
+  7  Tests')) test
+  8  FROM utr_outcome O, ut_package p ,ut_suite s
+  9  WHERE o.run_id(+)=p.last_run_id
+ 10   AND o.status(+)='FAILURE'
+ 11   AND s.id=p.suite_id
+ 12   ORDER BY s.id,p.seq,p.last_end;
+
+no rows selected
+
+SQL> spool off

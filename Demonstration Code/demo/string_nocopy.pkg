@@ -1,0 +1,68 @@
+CREATE OR REPLACE PACKAGE string_nocopy
+IS
+   PROCEDURE manipulate_string (
+      string_inout IN OUT $IF $$include_nocopy $THEN NOCOPY $END
+                         VARCHAR2
+    , to_length_in IN PLS_INTEGER
+    , add_string_in IN VARCHAR2
+   );
+   
+   PROCEDURE time_manipulate_string (
+      count_in IN PLS_INTEGER
+    , string_in IN VARCHAR2
+    , to_length_in IN PLS_INTEGER
+    , add_string_in IN VARCHAR2
+   );
+END string_nocopy;
+/
+
+CREATE OR REPLACE PACKAGE BODY string_nocopy
+IS
+   PROCEDURE manipulate_string (
+      string_inout IN OUT $IF $$include_nocopy $THEN NOCOPY $END
+                         VARCHAR2
+    , to_length_in IN PLS_INTEGER
+    , add_string_in IN VARCHAR2
+   )
+   IS
+   BEGIN
+      WHILE (LENGTH (string_inout) <= to_length_in)
+      LOOP
+         string_inout := string_inout || add_string_in;
+      END LOOP;
+      string_inout := rpad ('abc', 32000, 'def');
+      string_inout := rpad ('abc', 32000, 'def');
+      string_inout := rpad ('abc', 32000, 'def');
+      string_inout := rpad ('abc', 32000, 'def');
+      string_inout := rpad ('abc', 32000, 'def');
+      string_inout := rpad ('abc', 32000, 'def');
+      string_inout := rpad ('abc', 32000, 'def');
+      string_inout := rpad ('abc', 32000, 'def');
+      string_inout := rpad ('abc', 32000, 'def');
+      string_inout := rpad ('abc', 32000, 'def');     
+   END manipulate_string;
+
+   PROCEDURE time_manipulate_string (
+      count_in IN PLS_INTEGER
+    , string_in IN VARCHAR2
+    , to_length_in IN PLS_INTEGER
+    , add_string_in IN VARCHAR2
+   )
+   IS
+      l_string   VARCHAR2 (32767);
+   BEGIN
+      PLVtmr.set_factor (count_in);
+      sf_timer.start_timer;
+
+      FOR indx IN 1 .. count_in
+      LOOP
+         manipulate_string (l_string, to_length_in, add_string_in);
+      END LOOP;
+
+      sf_timer.show_elapsed_time
+                    ('MANIPULATE_STRING ' || 
+                     $IF $$include_nocopy $THEN 'NOCOPY' $ELSE 'COPY' $END);
+   END time_manipulate_string;
+END string_nocopy;
+/
+

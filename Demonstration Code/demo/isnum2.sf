@@ -1,0 +1,77 @@
+Create or Replace Function isnum_ch (input in varchar2) 
+return boolean is
+	is_num				Boolean := TRUE;
+	int_count			Natural := 0;
+	decval  			Natural:=0;
+	ch				char(1);
+	Length_Of_Input			Natural := 0;
+	sign_position			Boolean := FALSE; 
+	sign				Natural := 0;
+Begin
+	Length_Of_Input := length(input);
+	if instr(input,'+') > 1 or instr(input,'-') > 1 then
+		return(FALSE);		
+	else 
+		sign_position := TRUE;
+	end if;
+	For i in 1..Length_Of_Input
+	Loop
+		ch := substr(input,i,1);
+		if ch between '0' and '9' then
+			int_count := int_count + 1;
+		elsif ch = '+' or ch = '-' then
+			sign := sign + 1;
+			if sign > 1 then
+				is_num := FALSE;
+				exit;
+			end if;
+		elsif ch = '.' then
+			decval := decval + 1;
+			if decval > 1 then
+				is_num := FALSE;
+				exit;
+			end if;
+		else
+			is_num := FALSE;
+			exit;
+		end if;
+	End Loop;
+	if int_count > 0 and is_num then
+		return(TRUE);
+	else
+		return(FALSE);
+	end if;
+
+-- exception handling for null strings
+exception When VALUE_ERROR Then
+	       return(FALSE);
+End;
+/
+CREATE OR REPLACE FUNCTION isnum_ch2 (stg_in IN VARCHAR2) 
+   RETURN BOOLEAN
+IS
+BEGIN
+   RETURN 
+      TRANSLATE 
+        (stg_in, 'A0123456789.+-', 'A')
+      IS NULL;
+END isnum_ch2;
+/
+CREATE OR REPLACE FUNCTION isnum (stg_in IN VARCHAR2) 
+      RETURN BOOLEAN
+IS
+   val NUMBER;
+   retval BOOLEAN;
+BEGIN
+   /* TVP 5/99 what if string is NULL? */
+   retval := stg_in IS NOT NULL;
+   IF retval
+   THEN
+      val := TO_NUMBER (stg_in);
+      retval := TRUE;
+   END IF;
+   RETURN retval;
+EXCEPTION
+   WHEN OTHERS THEN RETURN FALSE;
+END;   
+/

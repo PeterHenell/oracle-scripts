@@ -1,0 +1,17 @@
+create or replace FUNCTION empname 
+   (emp_in IN emp.empno%TYPE) RETURN emp.ename%TYPE 
+IS
+   CURSOR emp_cur 
+   IS
+      SELECT *
+        FROM emp
+       WHERE empno = emp_in;
+   
+   emp_rec emp_cur%ROWTYPE;
+BEGIN
+   OPEN emp_cur; 
+   FETCH emp_cur INTO emp_rec;
+   CLOSE emp_cur;
+   RETURN emp_rec.ename;
+END;
+/

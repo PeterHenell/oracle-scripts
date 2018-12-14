@@ -1,0 +1,89 @@
+CREATE OR REPLACE PACKAGE dt
+IS
+   /* The replacement for TO_DATE */
+   FUNCTION val (value_in IN VARCHAR2)
+      RETURN DATE;
+
+   PROCEDURE showfmts;
+END dt;
+/
+CREATE OR REPLACE PACKAGE BODY dt
+IS
+   /*
+   || Declare the structure of the PL/SQL table which will hold
+   || the masks. Then declare the table itself.
+   */
+   TYPE mask_tabtype IS TABLE OF VARCHAR2 (30)
+      INDEX BY BINARY_INTEGER;
+
+   fmts   mask_tabtype;
+
+   FUNCTION val (value_in IN VARCHAR2)
+      RETURN DATE
+   IS
+      retval           DATE    := NULL;
+      /* Loop index for the scan through the masks */
+      mask_index       INTEGER := fmts.FIRST;
+      /* Boolean to terminate loop if date was converted */
+      date_converted   BOOLEAN := FALSE;
+   BEGIN
+      -- Convert from masks in table 
+      IF value_in IS NULL
+      THEN
+         date_converted := TRUE;
+      ELSE
+         /* Loop through the rows in the table... */
+         WHILE mask_index IS NOT NULL
+           AND NOT date_converted
+         LOOP
+            BEGIN
+               /* Try to convert string using mask in table row */
+               retval :=
+                      TO_DATE (value_in, fmts (mask_index));
+               date_converted := TRUE;
+            EXCEPTION
+               WHEN OTHERS
+               THEN
+                  retval := NULL;
+                  mask_index := fmts.NEXT (mask_index);
+            END;
+         END LOOP;
+      END IF;
+
+      IF date_converted
+      THEN
+         RETURN retval;
+      ELSE
+         RAISE VALUE_ERROR;
+      END IF;
+   END val;
+
+   PROCEDURE showfmts
+   IS
+      v_row   PLS_INTEGER := fmts.FIRST;
+   BEGIN
+      p.l ('Support formats for String->Date Conversion');
+      LOOP
+         EXIT WHEN v_row IS NULL;
+         p.l (fmts (v_row));
+         v_row := fmts.NEXT (v_row);
+      END LOOP;
+   END;
+
+BEGIN
+/* ------------ Initialization Section of Package ------------*/
+   fmts (1) := 'DD-MON-RR';
+   fmts (2) := 'DD-MON-YYYY';
+   fmts (3) := 'DD-MON';
+   fmts (4) := 'MM/DD';
+   fmts (5) := 'MM/RR';
+   fmts (6) := 'MMDDRR';
+   fmts (7) := 'MM/YYYY';
+   fmts (8) := 'MM/DD/RR';
+   fmts (9) := 'MM/DD/YYYY';
+   fmts (10) := 'MMDDYYYY';
+   fmts (11) := 'YYYYMMDD';
+   fmts (12) := 'RRMMDD';
+END dt;
+/
+

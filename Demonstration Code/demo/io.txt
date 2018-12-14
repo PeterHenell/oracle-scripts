@@ -1,0 +1,345 @@
+NEWS 
+
+           
+           
+           
+           
+           
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                           I/O, I/O, It's Off To Work I
+                           Go 
+                           by Jonathan Knudsen 
+                     In school, they used to teach the three R's:
+                     readin', ritin', and 'rithmatic. In this column, I'll
+                     talk about reading and writing data in Java, on
+                     the theory that "two out of three ain't bad." The
+                     java.io package provides a rich suite of classes
+             that encapsulate data streams. I'll take you on a quick
+             fly-through of the concepts and classes in java.io,
+             progressing from basic byte streams through filtered
+             streams, object serialization, and the character-based
+             streams of JDK 1.1.
+
+             InputStream
+
+             The InputStream class represents a stream of input bytes.
+             You can read data from an InputStream using the
+             read() method, which comes in three flavors. read()
+             with no arguments returns the next byte in the stream. A
+             special return value, -1, signifies that the end of the input
+             stream has been reached. The other two overrides of
+             read() fill up byte arrays with data from the input stream.
+             They return the amount of data read, or -1 if there is no
+             more data to read.
+
+             One useful InputStream is FileInputStream, which
+             represents a byte input stream constructed from a disk file.
+             The following method shows how you could read an entire
+             file, one byte at a time. Every byte read is fed to another
+             method, processByte(), which is not shown here. When
+             you're finished with a stream, it's a good idea to clean up by
+             calling close(). This method releases any system
+             resources that the stream is consuming. 
+
+             public void readFileLaboriously(String filename)
+             throws IOException {
+             FileInputStream in = new
+             FileInputStream(filename);
+             int b;
+             while ((b = in.read()) != -1)
+             processByte(b);
+             in.close();
+             } 
+
+             Here's a slightly different approach; we read the file in 8K
+             blocks. The end result is the same; processByte() is
+             called for every byte in the file. 
+
+             public void readFileInBlocks(String filename)
+             throws IOException {
+             FileInputStream in = new FileInputStream(filename);
+             byte[] chunk = new byte[8192];
+             int length;
+             while ((length = in.read(chunk)) != -1) {
+             for (int i = 0; i < length; i++) 
+             processByte(chunk[i]);
+             }
+             in.close();
+             } 
+
+             OutputStream
+
+             The OutputStream class represents an output byte stream.
+             It's just as easy to use as InputStream. You can write
+             data to the stream using any of the overrides of write().
+             In the following example, we use a FileOutputStream to
+             write data to a file. As with input streams, it's a good idea to
+             clean up when you're done with an OutputStream by
+             calling close(). 
+
+             Some streams use a concept called buffering to increase
+             efficiency. This means that some of the data you ask to be
+             written to the stream is held in memory. Later, a whole
+             chunk of data is written to the physical device, usually a
+             disk or a network connection. You can tell the stream to
+             write out any buffered data with the flush() method.
+             Closing the stream implies a call to flush(), but I've
+             included an explicit call anyhow in the examples that follow.
+             This is good practice, especially in network applications,
+             where flush() is especially important. 
+
+             public void writeOneToTen(String filename)
+             throws IOException {
+             FileOutputStream out = new FileOutputStream(filename);
+             for (int i = 1; i <= 10; i++)
+             out.write(i);
+             out.flush();
+             out.close();
+             } 
+
+             One of the nice things about streams is that files and
+             network connections work the same way. With minimal
+             changes, we can make the previous example write data over
+             a network socket. 
+
+             public void writeOneToTen(String host, int port)
+             throws IOException {
+             Socket s = new Socket(host, port);
+             OutputStream out = s.getOutputStream();
+             for (int i = 1; i <= 10; i++)
+             out.write(i);
+             out.flush();
+             out.close();
+             } 
+
+             Filtered Streams
+
+             One of the most powerful concepts in Java's stream I/O is
+             filtered streams. A filtered stream acts just like a regular
+             stream, except that it performs some additional processing
+             on an underlying data stream. This concept will become
+             clearer as we discuss some of the filtered streams that are
+             provided in java.io: buffered streams, pushback streams,
+             data streams, and object streams. 
+
+             Buffering
+
+             We mentioned data buffering earlier; it's usually used to
+             increase the efficiency of a stream. Let's consider one
+             example of buffering, the BufferedInputStream class.
+             Let's re-write one of our InputStream examples to use
+             buffering: 
+
+             public void readFileWithBuffering(String filename)
+             throws IOException {
+             FileInputStream fileIn = new FileInputStream(filename);
+             BufferedInputStream in = new BufferedInputStream(fileIn);
+             int b;
+             while ((b = in.read()) != -1)
+             processByte(b);
+             in.close();
+             } 
+
+             Notice how the BufferedInputStream is "wrapped"
+             around the underlying stream, a FileInputStream. The
+             first time we call read() on the buffered stream, it fills an
+             internal buffer from the underlying FileInputStream.
+             Subsequent calls to read() return data directly from the
+             buffer, which is faster than reading the file again.
+
+             In this example, we've used a default-sized buffer, but there
+             are other BufferedInputStream constructors that let you
+             specify whatever buffer size you want.
+
+             There's a corresponding output stream class, called
+             BufferedOutputStream. When you write data using
+             write(), it accumulates the data in an internal buffer.
+             When the buffer is full, the whole thing is written to the
+             underlying stream. As we discussed, you can use flush()
+             to force the contents of the buffer to be written to the
+             underlying stream. 
+
+             Pushback
+
+             Another spiffy filtered stream is PushbackInputStream.
+             This stream is useful in situations where an application
+             needs to recognize a variety of file formats. Let's say you
+             have a method for each file format your application
+             recognizes. You might create a FileInputStream and
+             pass it to each method. When one of them succeeds
+             without throwing an exception, you've found the format of
+             the file. However, you'd need to "rewind" the file stream
+             between each method call so that each method started at the
+             beginning of the stream. This is where
+             PushbackInputStream comes in handy. If you discover
+             that you are not reading the format you expected, you can
+             "push back" any bytes you've read using the unread()
+             method. Subsequent calls to the PushbackInputStream
+             will return the pushed back data. 
+
+             Data and Object Streams
+
+             The java.io package includes useful filtered streams for
+             reading and writing primitive types and objects.
+             DataOutputStream, for example, includes a method for
+             writing each primitive type. These are conveniently named
+             writeInt(), writeDouble(), writeBoolean(), and
+             so forth. Data written with a DataOutputStream can be
+             read using a DataInputStream. This class has a
+             corresponding set of methods named readInt(),
+             readDouble(), readBoolean(), and so on. The
+             following example shows a pair of methods that
+             demonstrates use of the data streams. 
+
+             public void writeData(String filename)
+             throws IOException {
+             FileOutputStream fileOut = new FileOutputStream(filename);
+             DataOutputStream out = new DataOutputStream(fileOut);
+             out.writeInt(9);
+             out.writeDouble(Math.PI);
+             out.writeBoolean(true);
+             out.close();
+             } 
+
+             public void readData(String filename)
+             throws IOException {
+             FileInputStream fileIn = new FileInputStream(filename);
+             DataInputStream in = new DataInputStream(fileIn);
+             int i = in.readInt();
+             double d = in.readDouble();
+             boolean b = in.readBoolean();
+             in.close();
+             System.out.println("Read " + i + ", " + d + ", and " + b + ".");
+             } 
+
+             Object streams extend the concept of data streams by
+             allowing you to read and write entire objects. This is called
+             object serialization; it's a feature that was introduced in JDK
+             1.1. On the surface, it's simple, but underneath, it can get
+             pretty hairy. One of the big complications is that any
+             objects referenced by an object must also be serialialized.
+             So when you write an object, all objects it referenced also
+             get written. There are also some tricky issues involving class
+             resolution when objects are deserialized.
+
+             When it works right, though, it's very simple. Here I present
+             a pair of methods that write and read a java.awt.Color
+             object. The relevant filtered stream classes are
+             ObjectOutputStream and ObjectInputStream. 
+
+             public void writeColor(Color c, String filename)
+             throws IOException {
+             FileOutputStream fileOut = new FileOutputStream(filename);
+             ObjectOutputStream out = new ObjectOutputStream(fileOut);
+             out.writeObject(c);
+             out.close();
+             } 
+
+             public Color readColor(String filename)
+             throws IOException {
+             FileInputStream fileIn = new FileInputStream(filename);
+             ObjectInputStream in = new ObjectInputStream(fileIn);
+             Color c = null;
+             try { c = (Color)in.readObject(); } 
+             catch (Exception e) { /* Handle exceptions. */ }
+             in.close();
+             return c;
+             } 
+
+             Note that the object returned by readObject() must be
+             cast to the correct type. 
+
+             Character Streams
+
+             Thus far, we've talked exclusively about byte streams,
+             which only account for a little more than half of the classes
+             in java.io. The rest of the package provides support for
+             Unicode character streams. The character stream classes
+             are Reader and Writer, which are directly analagous to
+             InputStream and OutputStream. There's also a
+             corresponding set of filtered character streams, like
+             BufferedReader, PushbackReader, and others.
+
+             Reader, like InputStream, has a set of read() methods
+             that are used to retrieve data from the stream. They just
+             return characters and charaters arrays instead of bytes.
+             Likewise, Writer has a set of write() methods that work
+             just like the write() methods in OutputStream. 
+
+             Bridge Classes
+
+             Ultimately, devices are based on byte streams. A disk file,
+             for example, is a stream of bytes. So how do you use the
+             character stream classes with a file? You need a bridge
+             between the world of character streams and the world of
+             byte streams. There are two such bridge classes,
+             InputStreamReader and OutputStreamWriter. An
+             InputStreamReader acts like a Reader but wraps an
+             underlying InputStream. Likewise, an
+             OutputStreamWriter is a Writer that wraps around an
+             OutputStream. These classes use an encoding scheme to
+             convert between bytes and characters. Usually you can just
+             use the default encoding scheme. In the following example,
+             I use an OutputStreamWriter to write a Unicode string
+             to a file. 
+
+             public void writeString(String filename)
+             throws IOException {
+             FileOutputStream fileOut = new FileOutputStream(filename);
+             OutputStreamWriter out = new OutputStreamWriter(fileOut);
+             String message = "This is a Unicode string.";
+             out.write(message);
+             out.close();
+             } 
+
+             How am I doing?
+
+             Are these columns useful? Too easy? Too hard? Too
+             boring? Too theoretical? What would you like to see in this
+             space? Drop me an email at jonathan@oreilly.com; I'm
+             interested to hear what you think. Specific comments are the
+             most helpful. 
+
+
+
+             Jonathan Knudsen is a writer for O'Reilly and Associates.
+             For a head-spinning wealth of superb Java books, visit
+             O'Reilly's Java Resource Center at http://java.oreilly.com. 
+
+             Jonathan Knudsen 
+
+
+             O'Reilly Home | O'Reilly Bookstores | How to Order | O'Reilly Contacts
+                   International | About O'Reilly | Affiliated Companies
+
+                         © 1998, O'Reilly & Associates, Inc. 
+

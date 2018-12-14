@@ -1,0 +1,11 @@
+create or replace FUNCTION database_startup RETURN DATE IS
+ret_val DATE;
+BEGIN 
+SELECT logon_time
+INTO ret_val
+FROM v$session
+WHERE username IS NULL
+AND program LIKE '%(SMON)%';
+RETURN ret_val;
+END database_startup;
+/

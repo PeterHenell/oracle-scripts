@@ -1,0 +1,31 @@
+CREATE OR REPLACE FUNCTION howlong (
+   measure_in   IN   VARCHAR2
+         := 'D' -- D H M S
+)
+   RETURN NUMBER
+IS
+   timeup      NUMBER;
+   v_measure   CHAR (1)
+      := UPPER (SUBSTR (measure_in, 1, 1));
+BEGIN
+   SELECT SYSDATE - startup_time
+     INTO timeup
+     FROM v$instance;
+
+   IF v_measure = 'D'
+   THEN
+      NULL; -- All done
+   ELSIF v_measure = 'H'
+   THEN
+      timeup := timeup * 24;
+   ELSIF v_measure = 'M'
+   THEN
+      timeup := timeup * 24 * 60;
+   ELSIF v_measure = 'S'
+   THEN
+      timeup := timeup * 24 * 60 * 60;
+   END IF;
+
+   RETURN timeup;
+END howlong;
+/

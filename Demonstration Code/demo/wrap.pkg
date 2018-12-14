@@ -1,0 +1,228 @@
+CREATE OR REPLACE PACKAGE wrap_pkg
+-- Adapted from PL/Vision, Copyright 2002 Quest Software.
+IS
+   c_delimiters   CONSTANT VARCHAR2 (100)
+                   := '!@%^&*()-=+\|`~{[]};:''",<.>/? ' || CHR (10)
+                      || CHR (9);
+ 
+   TYPE wrap_aat IS TABLE OF VARCHAR2 (32767)
+      INDEX BY BINARY_INTEGER;
+ 
+   PROCEDURE wrap_string (
+      text_in              IN       VARCHAR2
+     ,list_inout           IN OUT   wrap_aat
+     ,line_length_in       IN       INTEGER DEFAULT 255
+     ,keep_linebreaks_in   IN       BOOLEAN DEFAULT FALSE
+     ,delimiters_in        IN       VARCHAR2 DEFAULT c_delimiters
+   );
+ 
+   PROCEDURE wrap_list (
+      list_in              IN       wrap_aat
+     ,list_inout           IN OUT   wrap_aat
+     ,line_length_in       IN       INTEGER DEFAULT 255
+     ,keep_linebreaks_in   IN       BOOLEAN DEFAULT FALSE
+     ,delimiters_in        IN       VARCHAR2 DEFAULT c_delimiters
+   );
+ 
+   PROCEDURE wrap_to_varchar2s (
+      list_in      IN       wrap_aat
+     ,list_inout   IN OUT   DBMS_SQL.varchar2s
+   );
+ 
+   PROCEDURE show_list (list_in IN wrap_aat);
+END wrap_pkg;
+/
+ 
+CREATE OR REPLACE PACKAGE BODY wrap_pkg
+IS
+   FUNCTION a_delimiter (
+      character_in       IN   VARCHAR2
+     ,delimiters_in      IN   VARCHAR2
+     ,one_delimiter_in   IN   BOOLEAN := FALSE
+   )
+      RETURN BOOLEAN
+   IS
+      retval   BOOLEAN := character_in IS NOT NULL;
+   BEGIN
+      IF retval
+      THEN
+         IF one_delimiter_in
+         THEN
+            retval := delimiters_in = character_in;
+         ELSE
+            retval := INSTR (delimiters_in, character_in) > 0;
+         END IF;
+      END IF;
+ 
+      RETURN retval;
+   END;
+ 
+   FUNCTION next_atom_loc (
+      string_in       IN   VARCHAR2
+     ,start_loc_in    IN   NUMBER
+     ,direction_in    IN   NUMBER
+     ,delimiters_in   IN   VARCHAR2
+   )
+      RETURN INTEGER
+   IS
+      was_a_delimiter   BOOLEAN
+          := a_delimiter (SUBSTR (string_in, start_loc_in, 1), delimiters_in);
+      was_a_word        BOOLEAN      := NOT was_a_delimiter;
+      next_char         VARCHAR2 (1);
+      return_value      NUMBER       := start_loc_in + direction_in;
+   BEGIN
+      LOOP
+         next_char := SUBSTR (string_in, return_value, 1);
+         EXIT WHEN
+                  /* On a delimiter, since that is always an atomic */
+                  a_delimiter (next_char, delimiters_in)
+               OR
+                  /* Was a delimiter, but am now in a word. */
+                  (    was_a_delimiter
+                   AND NOT a_delimiter (next_char, delimiters_in)
+                  )
+               OR
+                  /* Reached end of string scanning forward. */
+                  next_char IS NULL
+               OR
+                  /* Reached beginning of string scanning backward. */
+                  return_value < 0;
+         /* Shift return_value to move the next character. */
+         return_value := return_value + direction_in;
+      END LOOP;
+ 
+      RETURN GREATEST (return_value, 0);
+   END;
+ 
+   PROCEDURE wrap_string (
+      text_in              IN       VARCHAR2
+     ,list_inout           IN OUT   wrap_aat
+     ,line_length_in       IN       INTEGER DEFAULT 255
+     ,keep_linebreaks_in   IN       BOOLEAN DEFAULT FALSE
+     ,delimiters_in        IN       VARCHAR2 DEFAULT c_delimiters
+   )
+   IS
+      v_text             VARCHAR2 (32767);
+      len_text           INTEGER;
+      start_loc          INTEGER          := 1;
+      end_loc            INTEGER          := 1;
+      cr_loc             INTEGER;
+      last_space_loc     INTEGER;
+      curr_line          VARCHAR2 (32767);
+      break_on_newline   BOOLEAN          := FALSE;
+   BEGIN
+      IF LTRIM (text_in) IS NOT NULL
+      THEN
+         IF NOT keep_linebreaks_in
+         THEN
+            v_text := REPLACE (text_in, CHR (10), ' ');
+         ELSE
+            v_text := text_in;
+         END IF;
+ 
+         len_text := LENGTH (v_text);
+ 
+         LOOP
+            EXIT WHEN end_loc > len_text;
+            end_loc := LEAST (end_loc + line_length_in, len_text + 1);
+ 
+            IF keep_linebreaks_in
+            THEN
+               cr_loc := INSTR (text_in, CHR (10), start_loc);
+               break_on_newline := cr_loc > 0 AND end_loc > cr_loc;
+            END IF;
+ 
+            /* Get the next possible line of text */
+            IF break_on_newline
+            THEN
+               list_inout (list_inout.COUNT + 1) :=
+                               SUBSTR (v_text, start_loc, cr_loc - start_loc);
+               --PLVstr.betwn (v_text, start_loc, cr_loc-1);
+               end_loc := cr_loc + 1;
+               break_on_newline := FALSE;
+            ELSE
+               curr_line :=
+                        SUBSTR (v_text || ' ', start_loc, line_length_in + 1);
+               last_space_loc :=
+                  next_atom_loc (curr_line
+                                ,LENGTH (curr_line)
+                                ,-1                               -- backwards
+                                ,delimiters_in
+                                );
+ 
+               IF last_space_loc > 0
+               THEN
+                  end_loc := start_loc + last_space_loc;
+               END IF;
+ 
+               /* Add this line to the paragraph */
+               list_inout (list_inout.COUNT + 1) :=
+                               SUBSTR (v_text, start_loc, end_loc - start_loc);
+            END IF;
+ 
+            start_loc := end_loc;
+         END LOOP;
+      END IF;
+   END wrap_string;
+ 
+   PROCEDURE wrap_list (
+      list_in              IN       wrap_aat
+     ,list_inout           IN OUT   wrap_aat
+     ,line_length_in       IN       INTEGER DEFAULT 255
+     ,keep_linebreaks_in   IN       BOOLEAN DEFAULT FALSE
+     ,delimiters_in        IN       VARCHAR2 DEFAULT c_delimiters
+   )
+   IS
+      l_row   PLS_INTEGER := list_in.FIRST;
+   BEGIN
+      list_inout.DELETE;
+ 
+      WHILE (l_row IS NOT NULL)
+      LOOP
+         wrap_string (text_in                 => list_in (l_row)
+                     ,list_inout              => list_inout
+                     ,line_length_in          => line_length_in
+                     ,keep_linebreaks_in      => keep_linebreaks_in
+                     ,delimiters_in           => delimiters_in
+                     );
+         l_row := list_in.NEXT (l_row);
+      END LOOP;
+   END wrap_list;
+ 
+   PROCEDURE wrap_to_varchar2s (
+      list_in      IN       wrap_aat
+     ,list_inout   IN OUT   DBMS_SQL.varchar2s
+   )
+   IS
+      l_row    PLS_INTEGER;
+      l_temp   wrap_aat;
+   BEGIN
+      list_inout.DELETE;
+      -- Always max out at 255, do not treat : as a break character.
+      wrap_list (list_in                 => list_in
+                ,list_inout              => l_temp
+                ,line_length_in          => 255
+                ,keep_linebreaks_in      => TRUE
+                ,delimiters_in           => REPLACE (c_delimiters, 'A:', 'A')
+                );
+      l_row := l_temp.FIRST;
+ 
+      WHILE (l_row IS NOT NULL)
+      LOOP
+         list_inout (l_row) := l_temp (l_row);
+         l_row := l_temp.NEXT (l_row);
+      END LOOP;
+   END wrap_to_varchar2s;
+ 
+   PROCEDURE show_list (list_in IN wrap_aat)
+   IS
+      l_row   PLS_INTEGER := list_in.FIRST;
+   BEGIN
+      WHILE (l_row IS NOT NULL)
+      LOOP
+         DBMS_OUTPUT.put_line (list_in (l_row));
+         l_row := list_in.NEXT (l_row);
+      END LOOP;
+   END show_list;
+END wrap_pkg;
+/

@@ -1,0 +1,25 @@
+CREATE OR REPLACE FUNCTION base_convert (in_chr VARCHAR2, to_base INTEGER)
+   RETURN VARCHAR2
+IS
+   -- Author: Bob Rudolf, pcs@series2000.com.
+   
+   rtn_value VARCHAR2(20);
+
+BEGIN
+
+   SELECT DUMP (in_chr, to_base, 1, 1)
+     INTO rtn_value
+     FROM dual;
+
+   IF SUBSTR (rtn_value, LENGTH (rtn_value) - 2, 1) = ' '
+   THEN
+      rtn_value := SUBSTR (rtn_value, LENGTH (rtn_value) - 1, 2);
+   ELSE
+      rtn_value := SUBSTR (rtn_value, LENGTH (rtn_value) - 2, 3);
+   END IF;
+
+   RETURN rtn_value;
+
+END;
+/
+SHOW ERRORS

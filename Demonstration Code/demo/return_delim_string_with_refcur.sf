@@ -1,0 +1,49 @@
+CREATE OR REPLACE FUNCTION allrows_by (
+    append_to_from_in IN VARCHAR2 DEFAULT NULL
+   ,row_delimiter_in IN VARCHAR2 DEFAULT '|'
+   ,column_delimiter_in IN VARCHAR2 DEFAULT '^'
+   )
+   RETURN VARCHAR2
+IS
+   -- Weak REF CURSOR to return data from dynamic query
+   TYPE EMPLOYEE_rc IS REF CURSOR;
+   l_rows EMPLOYEE_rc;
+
+   -- String to hold the dynamic query
+   l_query VARCHAR2(32767);
+
+   -- Record type and variable to hold data retrieved from table.
+   TYPE EMPLOYEE_rt IS RECORD (
+      EMPLOYEE_ID NUMBER (4),
+      SALARY NUMBER (7,2)
+   );
+   l_employee EMPLOYEE_rt;
+
+   -- Returning a string...
+   l_return_value VARCHAR2(32767);
+BEGIN
+   -- Append to FROM clause any text supplied by the user.
+   l_query :=
+      'SELECT EMPLOYEE_ID, SALARY FROM EMPLOYEE' 
+	  || ' ' || append_to_from_in;
+
+   OPEN l_rows FOR l_query;
+
+   -- Retrieve each row, place in the associative array of records.
+   LOOP
+      FETCH l_rows INTO l_employee;
+      EXIT WHEN l_rows%NOTFOUND;
+
+      -- Add to string
+      l_return_value :=
+         l_return_value || row_delimiter_in ||
+                l_employee.EMPLOYEE_ID || column_delimiter_in ||
+                l_employee.SALARY;
+   END LOOP;
+   
+   CLOSE l_rows;
+
+   -- Return the entire collection.
+   RETURN LTRIM (l_return_value, row_delimiter_in);
+END allrows_by;
+/

@@ -1,0 +1,23 @@
+CREATE OR REPLACE FUNCTION traceit (
+   tab IN VARCHAR2,
+   rowid_in IN ROWID)
+   RETURN INTEGER
+IS
+BEGIN
+   DBMS_OUTPUT.PUT_LINE (
+      tab || '-' || ROWIDTOCHAR (rowid_in));
+   RETURN 0;
+END;
+/
+
+
+
+
+
+
+
+
+
+
+
+

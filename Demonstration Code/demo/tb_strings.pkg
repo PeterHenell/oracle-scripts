@@ -1,0 +1,268 @@
+CREATE OR REPLACE PACKAGE tb_strings
+IS
+   TYPE item_tt IS TABLE OF VARCHAR2 (2000)
+      INDEX BY PLS_INTEGER;
+
+   FUNCTION betwnstr (
+      string_in IN VARCHAR2
+    , start_in IN PLS_INTEGER
+    , end_in IN PLS_INTEGER
+    , inclusive_in IN BOOLEAN := TRUE
+   )
+      RETURN VARCHAR2;
+
+   FUNCTION string_to_list (string_in IN VARCHAR2, delim_in IN VARCHAR2
+            := ',')
+      RETURN item_tt;
+
+   /*
+   And the generic delimited string parser:
+      return items to your own global collection.
+   */
+   PROCEDURE parse (
+      str IN VARCHAR2
+    , delim IN VARCHAR2
+    , pkg IN VARCHAR2
+    , coll IN VARCHAR2
+    , datatype IN VARCHAR2 := 'VARCHAR2(32767)'
+    , extend_needed BOOLEAN := FALSE
+   );
+END tb_strings;
+/
+
+CREATE OR REPLACE PACKAGE BODY tb_strings
+IS
+   g_trc   BOOLEAN := FALSE;
+
+   FUNCTION betwnstr (
+      string_in IN VARCHAR2
+    , start_in IN PLS_INTEGER
+    , end_in IN PLS_INTEGER
+    , inclusive_in IN BOOLEAN := TRUE
+   )
+      RETURN VARCHAR2
+   IS
+      v_start      PLS_INTEGER;
+      v_numchars   PLS_INTEGER;
+   BEGIN
+      IF    string_in IS NULL
+         OR (start_in < 0 AND end_in > 0)
+         OR (start_in > 0 AND end_in < 0)
+         OR (start_in < 0 AND end_in > start_in)
+         OR (start_in > 0 AND end_in < start_in)
+      THEN
+         RETURN NULL;
+      ELSE
+         IF start_in < 0
+         THEN
+            v_numchars := ABS (end_in) - ABS (start_in) + 1;
+            v_start := GREATEST (end_in, -1 * LENGTH (string_in));
+         ELSIF start_in = 0
+         THEN
+            v_start := 1;
+            v_numchars := ABS (end_in) - ABS (v_start) + 1;
+         ELSE
+            v_start := start_in;
+            v_numchars := ABS (end_in) - ABS (v_start) + 1;
+         END IF;
+
+         IF NOT NVL (inclusive_in, FALSE)
+         THEN
+            v_start := v_start + 1;
+            v_numchars := v_numchars - 2;
+         END IF;
+
+         RETURN (SUBSTR (string_in, v_start, v_numchars));
+      END IF;
+   END betwnstr;
+
+   FUNCTION string_to_list (string_in IN VARCHAR2, delim_in IN VARCHAR2 := ',')
+      RETURN item_tt
+   IS
+      l_item       VARCHAR2 (32767);
+      l_loc        PLS_INTEGER;
+      l_startloc   PLS_INTEGER      := 1;
+      items_out    item_tt;
+
+      PROCEDURE add_item (item_in IN VARCHAR2)
+      IS
+      BEGIN
+         IF (item_in != delim_in OR item_in IS NULL)
+         THEN
+            items_out (NVL (items_out.LAST, 0) + 1) := item_in;
+         END IF;
+      END;
+   BEGIN
+      IF string_in IS NOT NULL
+      THEN
+         LOOP
+            -- Find next delimiter
+            l_loc := INSTR (string_in, delim_in, l_startloc);
+
+            IF l_loc = l_startloc                    -- Previous item is NULL
+            THEN
+               l_item := NULL;
+            ELSIF l_loc = 0                     -- Rest of string is last item
+            THEN
+               l_item := SUBSTR (string_in, l_startloc);
+            ELSE
+               l_item := SUBSTR (string_in, l_startloc, l_loc - l_startloc);
+            END IF;
+
+            add_item (l_item);
+
+            IF l_loc = 0
+            THEN
+               EXIT;
+            ELSE
+               l_startloc := l_loc + 1;
+            END IF;
+         END LOOP;
+      END IF;
+
+      RETURN items_out;
+   END string_to_list;
+
+   PROCEDURE parse (
+      str IN VARCHAR2
+    , delim IN VARCHAR2
+    , pkg IN VARCHAR2
+    , coll IN VARCHAR2
+    , datatype IN VARCHAR2 := 'VARCHAR2(32767)'
+    , extend_needed BOOLEAN := FALSE
+   )
+   IS
+      collname        VARCHAR2 (100)   := pkg || '.' || coll;
+      dynblock        VARCHAR2 (32767);
+      extstring       VARCHAR2 (100);
+      nextrowstring   VARCHAR2 (100);
+
+      PROCEDURE pl (
+         str IN VARCHAR2
+       , len IN INTEGER := 80
+       , expand_in IN BOOLEAN := TRUE
+      )
+      IS
+         v_len   PLS_INTEGER     := LEAST (len, 255);
+         v_str   VARCHAR2 (2000);
+      BEGIN
+         IF LENGTH (str) > v_len
+         THEN
+            v_str := SUBSTR (str, 1, v_len);
+            DBMS_OUTPUT.put_line (v_str);
+            pl (SUBSTR (str, len + 1), v_len, expand_in);
+         ELSE
+            v_str := str;
+            DBMS_OUTPUT.put_line (v_str);
+         END IF;
+      EXCEPTION
+         WHEN OTHERS
+         THEN
+            IF expand_in
+            THEN
+               DBMS_OUTPUT.ENABLE (1000000);
+               DBMS_OUTPUT.put_line (v_str);
+            ELSE
+               RAISE;
+            END IF;
+      END;
+
+      PROCEDURE trc
+      IS
+      BEGIN
+         g_trc := TRUE;
+      END;
+
+      PROCEDURE notrc
+      IS
+      BEGIN
+         g_trc := FALSE;
+      END;
+
+      FUNCTION tracing
+         RETURN BOOLEAN
+      IS
+      BEGIN
+         RETURN g_trc;
+      END;
+
+      PROCEDURE disperr (str IN VARCHAR2)
+      IS
+      BEGIN
+         DBMS_OUTPUT.put_line ('Compilation/Execution Error:');
+         DBMS_OUTPUT.put_line (DBMS_UTILITY.format_error_stack);
+         DBMS_OUTPUT.put_line ('In:');
+         DBMS_OUTPUT.put_line (str);
+         DBMS_OUTPUT.put_line ('Backtrack Error Stack:');
+         DBMS_OUTPUT.put_line (DBMS_UTILITY.format_error_backtrace);
+         DBMS_OUTPUT.put_line ('Call Stack:');
+         DBMS_OUTPUT.put_line (DBMS_UTILITY.format_call_stack);
+      END;
+   BEGIN
+      IF extend_needed
+      THEN
+         -- Nested table or VARRAY
+         extstring := collname || '.EXTEND;';
+         nextrowstring := collname || '.LAST';
+      ELSE
+         -- Index-by collection
+         extstring := NULL;
+         nextrowstring := collname || '.COUNT + 1';
+      END IF;
+
+      dynblock :=
+            'DECLARE 
+            v_loc PLS_INTEGER;
+            v_startloc PLS_INTEGER := 1;
+            v_item '
+         || datatype
+         || ';
+          BEGIN '
+         || collname
+         || '.DELETE;
+             IF :str IS NOT NULL 
+             THEN 
+                LOOP
+                   v_loc := INSTR (:str, :delim, v_startloc);
+                   IF v_loc = v_startloc
+                   THEN
+                      v_item := NULL;
+                   ELSIF v_loc = 0
+                   THEN
+                      v_item := SUBSTR (:str, v_startloc);
+                   ELSE
+                      v_item := SUBSTR (:str, v_startloc, v_loc - v_startloc);
+                   END IF;'
+         || extstring
+         || collname
+         || '('
+         || nextrowstring
+         || ') 
+                      := v_item;
+                      
+                   IF v_loc = 0
+                   THEN
+                      EXIT;
+                   ELSE 
+                      v_startloc := v_loc + 1;
+                   END IF;
+                END LOOP;
+             END IF;
+          END;';
+
+      IF tracing
+      THEN
+         pl ('STR2LIST: DIRECT ASSIGNMENT:');
+         pl (dynblock);
+      END IF;
+
+      EXECUTE IMMEDIATE dynblock
+                  USING str, delim;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         disperr (dynblock);
+         RAISE;                                                 -- TVP 5/2001
+   END;
+END tb_strings;
+/

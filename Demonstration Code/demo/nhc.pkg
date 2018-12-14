@@ -1,0 +1,135 @@
+/* Formatted on 2002/02/11 10:08 (Formatter Plus v4.6.0) */
+CREATE OR REPLACE PACKAGE nhc_pkg
+IS
+   g_context_set                 BOOLEAN       := FALSE ;
+   c_context            CONSTANT VARCHAR2 (30) := 'patient_restriction';
+   c_person_type_attr   CONSTANT VARCHAR2 (30) := 'person_type';
+   c_person_id_attr     CONSTANT VARCHAR2 (30) := 'person_id';
+   c_patient            CONSTANT CHAR (7)      := 'PATIENT';
+   c_doctor             CONSTANT CHAR (6)      := 'DOCTOR';
+   c_regulator          CONSTANT CHAR (9)      := 'REGULATOR';
+
+   PROCEDURE set_context;
+
+   PROCEDURE show_context;
+
+   FUNCTION person_predicate (schema_in VARCHAR2, name_in VARCHAR2)
+      RETURN VARCHAR2;
+END nhc_pkg;
+/
+CREATE OR REPLACE PACKAGE BODY nhc_pkg
+IS
+   PROCEDURE show_context
+   IS
+   BEGIN
+      DBMS_OUTPUT.put_line (   'Context Information for "'
+                            || USER
+                            || '":');
+      DBMS_OUTPUT.put_line (
+            '   Type: '
+         || SYS_CONTEXT (c_context, c_person_type_attr)
+      );
+      DBMS_OUTPUT.put_line (
+            '     ID: '
+         || SYS_CONTEXT (c_context, c_person_id_attr)
+      );
+      DBMS_OUTPUT.put_line ('   Predicate: ');
+      DBMS_OUTPUT.put_line (person_predicate (USER, 'PATIENT'));
+   END;
+
+   PROCEDURE set_context
+   IS
+      CURSOR doc_cur
+      IS
+         SELECT doctor_id
+           FROM doctor
+          WHERE schema_name = USER;
+
+      CURSOR reg_cur
+      IS
+         SELECT regulator_id
+           FROM regulator
+          WHERE schema_name = USER;
+
+      l_person_type   VARCHAR2 (10) := c_patient;
+      l_person_id     INTEGER;
+
+      PROCEDURE set_both (perstype IN VARCHAR2, persid IN VARCHAR2)
+      IS
+      BEGIN
+         DBMS_SESSION.set_context (c_context, c_person_type_attr, perstype);
+         DBMS_SESSION.set_context (c_context, c_person_id_attr, persid);
+      END;
+   BEGIN
+      IF NOT g_context_set
+      THEN
+         g_context_set := TRUE ;
+         /* If a doctor or regulator, set the ID.*/
+         OPEN doc_cur;
+         FETCH doc_cur INTO l_person_id;
+
+         IF doc_cur%FOUND
+         THEN
+            l_person_type := c_doctor;
+         ELSE
+            OPEN reg_cur;
+            FETCH reg_cur INTO l_person_id;
+
+            IF reg_cur%FOUND
+            THEN
+               l_person_type := c_regulator;
+            END IF;
+
+            CLOSE reg_cur;
+         END IF;
+
+         set_both (l_person_type, l_person_id);
+         CLOSE doc_cur;
+      END IF;
+   END;
+
+   FUNCTION person_predicate (schema_in VARCHAR2, name_in VARCHAR2)
+      RETURN VARCHAR2
+   IS
+      l_context   VARCHAR2 (100)
+                               := SYS_CONTEXT (c_context, c_person_type_attr);
+      retval      VARCHAR2 (2000);
+   BEGIN
+      IF l_context = 'DOCTOR'
+      THEN
+         retval :=
+                  'home_clinic_id IN 
+               (SELECT home_clinic_id FROM doctor 
+                 WHERE doctor_id = SYS_CONTEXT ('''
+               || c_context
+               || ''', '''
+               || c_person_id_attr
+               || '''))';
+      ELSIF l_context = 'REGULATOR'
+      THEN
+         retval :=
+                  'state IN 
+               (SELECT state FROM regulator 
+                 WHERE regulator_id = SYS_CONTEXT ('''
+               || c_context
+               || ''', '''
+               || c_person_id_attr
+               || '''))';
+      ELSIF l_context = 'PATIENT'
+      THEN
+         retval :=    'schema_name = '''
+                   || USER
+                   || '''';
+      ELSE
+         /* Refuse any access to information. */
+         retval := '1 = 2'; -- TVP 5/2001
+      END IF;
+
+      RETURN retval;
+   END person_predicate;
+END nhc_pkg;
+/
+SHOW ERR
+
+GRANT EXECUTE ON nhc_pkg TO PUBLIC;
+CREATE PUBLIC SYNONYM nhc_pkg FOR nhc_pkg;

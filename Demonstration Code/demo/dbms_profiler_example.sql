@@ -1,0 +1,390 @@
+BEGIN
+   DELETE FROM plsql_profiler_data;
+   DELETE FROM plsql_profiler_units;
+   DELETE FROM plsql_profiler_runs;
+
+   COMMIT;
+END;
+/
+
+BEGIN
+   DBMS_OUTPUT.put_line (DBMS_PROFILER.start_profiler ('INTAB 1'));
+   intab ('DEPARTMENTS');
+   DBMS_PROFILER.stop_profiler;
+END;
+/
+
+SPOOL profile.txt
+
+SET LINESIZE 240
+
+BEGIN
+   prof_report_utilities.print_summarized_report;
+END;
+/
+
+SPOOL OFF
+
+--=================================Profiler report - all runs rolled up=================================
+--Unit <anonymous>:
+--Unit INTAB:
+--     58                                                   * Datatypes of columns must be string, number or date -- or be of a type that can
+--     59                                                     implicitly converted to one of these types.
+--     60                                                
+--     61                                                   * Does not support table or column names that contain double quotes.
+--     62                                                */
+--     63                                                IS
+--     64                                                   -- Avoid repetitive "maximum size" declarations for VARCHAR2 variables.
+--     65                                                   SUBTYPE max_varchar2_t IS VARCHAR2 (32767);
+--     66                                                
+--     67                                                   -- Minimize size of a string column.
+--     68           1   .00000056  .00000056                c_min_length   CONSTANT PLS_INTEGER    := 10;
+--     69                                                
+--     70                                                   -- Collection to hold the column information for this table.
+--     71                                                   TYPE columns_tt IS TABLE OF all_tab_columns%ROWTYPE
+--     72                                                      INDEX BY PLS_INTEGER;
+--     73                                                
+--     74                                                   g_columns               columns_tt;
+--     75                                                   --
+--     76                                                   -- Open a cursor for use by DBMS_SQL subprograms throughout this procedure.
+--     77           1   .00006447  .00006447                g_cursor                INTEGER        := DBMS_SQL.open_cursor;
+--     78                                                   --
+--     79                                                   -- The constructed select statement
+--     80                                                   g_query                 max_varchar2_t;
+--     81                                                   -- Formatting and SELECT elements used throughout the program.
+--     82                                                   g_header                max_varchar2_t;
+--     83                                                   g_select_list           max_varchar2_t;
+--     84           1   .0000006  .0000006                  g_row_line_length       INTEGER        := 0;
+--     85                                                
+--     86                                                   /* Utility functions that determine the "family" of the column datatype.
+--     87                                                      They do NOT comprehensively cover the datatypes supported by Oracle.
+--     88                                                     You will need to expand on these programs if you want your version of
+--     89                                                     intab to support a wider range of datatypes.
+--     90                                                   */
+--     91           0   .00012129                           FUNCTION is_string (row_in IN INTEGER)
+--     92                                                      RETURN BOOLEAN
+--     93                                                   IS
+--     94                                                   BEGIN
+--     95         116   .00026385  .00000227                   RETURN (g_columns (row_in).data_type IN ('CHAR', 'VARCHAR2', 'VARCHAR')
+--     96                                                             );
+--     97         116   .00003794  .00000032                END;
+--     98                                                
+--     99           0   .00006601                           FUNCTION is_number (row_in IN INTEGER)
+--    100                                                      RETURN BOOLEAN
+--    101                                                   IS
+--    102                                                   BEGIN
+--    103          87   .00017556  .00000201                   RETURN (g_columns (row_in).data_type IN ('FLOAT', 'INTEGER', 'NUMBER')
+--    104                                                             );
+--    105          87   .00002220  .00000025                END;
+--    106                                                
+--    107           0   .00000356                           FUNCTION is_date (row_in IN INTEGER)
+--    108                                                      RETURN BOOLEAN
+--    109                                                   IS
+--    110                                                   BEGIN
+--    111           3   .00000572  .00000190                   RETURN (g_columns (row_in).data_type IN ('DATE', 'TIMESTAMP'));
+--    112           3   .00000109  .00000036                END;
+--    113                                                
+--    114           0   .00001413                           PROCEDURE load_column_information
+--    115                                                   IS
+--    116                                                      l_dot_location   PLS_INTEGER;
+--    117                                                      l_owner          VARCHAR2 (100);
+--    118                                                      l_table          VARCHAR2 (100);
+--    119                                                      l_index          PLS_INTEGER;
+--    120                                                      --
+--    121                                                      no_such_table    EXCEPTION;
+--    122                                                      PRAGMA EXCEPTION_INIT (no_such_table, -942);
+--    123                                                   BEGIN
+--    124                                                      -- Separate the schema and table names, if both are present.
+--    125           1   .00000619  .00000619                   l_dot_location := INSTR (table_in, '.');
+--    126                                                
+--    127           1   .00000121  .00000121                   IF l_dot_location > 0
+--    128                                                      THEN
+--    129           0   0                                         l_owner := SUBSTR (table_in, 1, l_dot_location - 1);
+--    130           0   0                                         l_table := SUBSTR (table_in, l_dot_location + 1);
+--    131                                                      ELSE
+--    132           1   .00004589  .00004589                      l_owner := USER;
+--    133           1   .00000120  .00000120                      l_table := table_in;
+--    134                                                      END IF;
+--    135                                                
+--    136                                                      -- Retrieve all the column information into a collection of records.
+--    137           1   .11385048  .11385048                   SELECT *
+--    138                                                      BULK COLLECT INTO g_columns
+--    139                                                        FROM all_tab_columns
+--    140                                                       WHERE owner = l_owner
+--    141                                                         AND table_name = l_table
+--    142                                                         AND column_name LIKE NVL (colname_like_in, '%');
+--    143                                                
+--    144           1   .00006702  .00006702                   l_index := g_columns.FIRST;
+--    145                                                
+--    146           1   .00000098  .00000098                   IF l_index IS NULL
+--    147                                                      THEN
+--    148           0   0                                         RAISE no_such_table;
+--    149                                                      ELSE
+--    150                                                           /* Add each column to the select list, calculate the length needed
+--    151                                                              to display each column, and also come up with the total line length.
+--    152                                                           Again, please note that the datatype support here is quite limited.
+--    153                                                         */
+--    154           4   .00000109  .00000027                      WHILE (l_index IS NOT NULL)
+--    155                                                         LOOP
+--    156           3   .00000241  .00000080                         IF g_select_list IS NULL
+--    157                                                            THEN
+--    158           1   .00000613  .00000613                            g_select_list := g_columns (l_index).column_name;
+--    159                                                            ELSE
+--    160           3   .00000812  .00000270                            g_select_list :=
+--    161                                                                     g_select_list || ', ' || g_columns (l_index).column_name;
+--    162                                                            END IF;
+--    163                                                
+--    164           4   .00001058  .00000264                         IF is_string (l_index)
+--    165                                                            THEN
+--    166           1   .00000231  .00000231                            g_columns (l_index).data_length :=
+--    167                                                                  GREATEST (LEAST (g_columns (l_index).data_length
+--    168                                                                                 , c_min_length
+--    169                                                                                  )
+--    170                                                                          , LENGTH (g_columns (l_index).column_name)
+--    171                                                                           );
+--    172           3   .00000199  .00000066                         ELSIF is_date (l_index)
+--    173                                                            THEN
+--    174           0   0                                               g_columns (l_index).data_length :=
+--    175                                                                  GREATEST (c_min_length
+--    176                                                                          , LENGTH (g_columns (l_index).column_name)
+--    177                                                                           );
+--    178           3   .00000216  .00000072                         ELSIF is_number (l_index)
+--    179                                                            THEN
+--    180           3   .00000905  .00000301                            g_columns (l_index).data_length :=
+--    181                                                                  GREATEST (NVL (g_columns (l_index).data_precision, 38)
+--    182                                                                          , LENGTH (g_columns (l_index).column_name)
+--    183                                                                           );
+--    184                                                            END IF;
+--    185                                                
+--    186           4   .00000697  .00000174                         g_row_line_length :=
+--    187                                                                       g_row_line_length + g_columns (l_index).data_length + 1;
+--    188                                                               --
+--    189                                                            -- Construct column header line incrementally.
+--    190           4   .00002135  .00000533                         g_header :=
+--    191                                                                  g_header
+--    192                                                               || ' '
+--    193                                                               || RPAD (g_columns (l_index).column_name
+--    194                                                                      , g_columns (l_index).data_length
+--    195                                                                       );
+--    196           4   .00000619  .00000154                         l_index := g_columns.NEXT (l_index);
+--    197                                                         END LOOP;
+--    198                                                      END IF;
+--    199           1   .00000644  .00000644                END load_column_information;
+--    200                                                
+--    201           0   .00000332                           PROCEDURE construct_and_parse_query
+--    202                                                   IS
+--    203           1   .00000457  .00000457                   l_where_clause   max_varchar2_t := LTRIM (UPPER (where_in));
+--    204                                                   BEGIN
+--    205                                                      -- Construct a where clause if a value was specified.
+--    206           1   .00000113  .00000113                   IF l_where_clause IS NOT NULL
+--    207                                                      THEN
+--    208                                                         --
+--    209           0   0                                         IF (    l_where_clause NOT LIKE 'GROUP BY%'
+--    210                                                             AND l_where_clause NOT LIKE 'ORDER BY%'
+--    211                                                            )
+--    212                                                         THEN
+--    213           0   0                                            l_where_clause := 'WHERE ' || LTRIM (l_where_clause, 'WHERE');
+--    214           0   0                                         END IF;
+--    215                                                      END IF;
+--    216                                                
+--    217                                                      -- Assign the dynamic string to a local variable so that it can be
+--    218                                                      -- easily used to report an error.
+--    219           1   .00000218  .00000218                   g_query :=
+--    220                                                            'SELECT '
+--    221                                                         || g_select_list
+--    222                                                         || '  FROM '
+--    223                                                         || table_in
+--    224                                                         || ' '
+--    225                                                         || l_where_clause;
+--    226                                                      /*
+--    227                                                        DBMS_SQL.PARSE
+--    228                                                
+--    229                                                         Parse the SELECT statement; it is a very generic one, combining
+--    230                                                         the list of columns drawn from ALL_TAB_COLUMNS, the table name
+--    231                                                         provided by the user, and the optional where clause.
+--    232                                                
+--    233                                                         Use the DBMS_SQL.NATIVE constant to indicate that DBMS_SQL should
+--    234                                                         use the native SQL parser for the current version of Oracle
+--    235                                                         to parse the statement.
+--    236                                                       */
+--    237           1   .00000397  .00000397                   DBMS_SQL.parse (g_cursor, g_query, DBMS_SQL.native);
+--    238                                                   EXCEPTION
+--    239           0   0                                      WHEN OTHERS
+--    240                                                      THEN
+--    241           0   0                                         DBMS_OUTPUT.put_line ('Error parsing query:');
+--    242           0   0                                         DBMS_OUTPUT.put_line (g_query);
+--    243           0   0                                         RAISE;
+--    244           1   .00000087  .00000087                END construct_and_parse_query;
+--    245                                                
+--    246           0   .00000735                           PROCEDURE define_columns_and_execute
+--    247                                                   IS
+--    248                                                      l_index      PLS_INTEGER;
+--    249                                                      l_feedback   PLS_INTEGER;
+--    250                                                   BEGIN
+--    251                                                      /*
+--    252                                                        DBMS_SQL.DEFINE_COLUMN
+--    253                                                
+--    254                                                         Before executing the query, I need to tell DBMS_SQL the datatype
+--    255                                                         of each the columns being selected in the query. I simply pass
+--    256                                                         a literal of the appropriate type to an overloading of
+--    257                                                         DBMS_SQL.DEFINE_COLUMN. With string types, I need to also specify
+--    258                                                         the maximum length of the value.
+--    259                                                      */
+--    260           1   .0000047  .0000047                     l_index := g_columns.FIRST;
+--    261                                                
+--    262           5   .00000196  .00000039                   WHILE (l_index IS NOT NULL)
+--    263                                                      LOOP
+--    264           4   .00000945  .00000236                      IF is_string (l_index)
+--    265                                                         THEN
+--    266           1   .0000029  .0000029                           DBMS_SQL.define_column (g_cursor
+--    267                                                                                  , l_index
+--    268                                                                                  , 'a'
+--    269                                                                                  , g_columns (l_index).data_length
+--    270                                                                                   );
+--    271           3   .00000185  .00000061                      ELSIF is_number (l_index)
+--    272                                                         THEN
+--    273           3   .00000669  .00000223                         DBMS_SQL.define_column (g_cursor, l_index, 1);
+--    274           0   0                                         ELSIF is_date (l_index)
+--    275                                                         THEN
+--    276           0   0                                            DBMS_SQL.define_column (g_cursor, l_index, SYSDATE);
+--    277                                                         END IF;
+--    278                                                
+--    279           4   .0000054  .00000135                       l_index := g_columns.NEXT (l_index);
+--    280                                                      END LOOP;
+--    281                                                
+--    282           1   .00000189  .00000189                   l_feedback := DBMS_SQL.EXECUTE (g_cursor);
+--    283           1   .00000047  .00000047                END define_columns_and_execute;
+--    284                                                
+--    285           1   .00000566  .00000566                PROCEDURE build_and_display_output
+--    286                                                   IS
+--    287                                                      -- Used to hold the retrieved column values.
+--    288                                                      l_string_value     VARCHAR2 (2000);
+--    289                                                      l_number_value     NUMBER;
+--    290                                                      l_date_value       DATE;
+--    291                                                      --
+--    292                                                      l_feedback         INTEGER;
+--    293                                                      l_index            PLS_INTEGER;
+--    294                                                      l_one_row_string   max_varchar2_t;
+--    295                                                
+--    296                                                      -- Formatting for the output of the header information
+--    297           0   .00000139                              PROCEDURE display_header
+--    298                                                      IS
+--    299           1   .00000947  .00000947                      l_border   max_varchar2_t := RPAD ('-', g_row_line_length, '-');
+--    300                                                
+--    301           0   .00000193                                 FUNCTION centered_string (string_in IN VARCHAR2, length_in IN INTEGER)
+--    302                                                            RETURN VARCHAR2
+--    303                                                         IS
+--    304           1   .00000125  .00000125                         len_string   INTEGER := LENGTH (string_in);
+--    305                                                         BEGIN
+--    306           1   .00000116  .00000116                         IF    len_string IS NULL
+--    307                                                               OR length_in <= 0
+--    308                                                            THEN
+--    309           0   0                                               RETURN NULL;
+--    310                                                            ELSE
+--    311           1   .00001398  .00001398                            RETURN    RPAD (' ', (length_in - len_string) / 2 - 1)
+--    312                                                                      || LTRIM (RTRIM (string_in));
+--    313                                                            END IF;
+--    314           1   .00000069  .00000069                      END centered_string;
+--    315                                                      BEGIN
+--    316           1   .00004728  .00004728                      DBMS_OUTPUT.put_line (l_border);
+--    317           1   .00000391  .00000391                      DBMS_OUTPUT.put_line (centered_string ('Contents of ' || table_in
+--    318                                                                                              , g_row_line_length
+--    319                                                                                               )
+--    320                                                                              );
+--    321           1   .00000071  .00000071                      DBMS_OUTPUT.put_line (l_border);
+--    322           1   .00000091  .00000091                      DBMS_OUTPUT.put_line (g_header);
+--    323           1   .00000051  .00000051                      DBMS_OUTPUT.put_line (l_border);
+--    324           1   .00000054  .00000054                   END display_header;
+--    325                                                   BEGIN
+--    326           1   .0000005  .0000005                     display_header;
+--    327                                                
+--    328                                                      -- Fetch one row at a time, until the last has been fetched.
+--    329          28   0  0                                   LOOP
+--    330                                                         /*
+--    331                                                         DBMS_SQL.FETCH_ROWS
+--    332                                                
+--    333                                                           Fetch a row, and return the numbers of rows fetched.
+--    334                                                           When 0, we are done.
+--    335                                                         */
+--    336          28   .00002829  .00000101                      l_feedback := DBMS_SQL.fetch_rows (g_cursor);
+--    337          28   .00001206  .00000043                      EXIT WHEN l_feedback = 0;
+--    338                                                         --
+--    339          27   .00000662  .00000024                      l_one_row_string := NULL;
+--    340          27   .00004541  .00000168                      l_index := g_columns.FIRST;
+--    341                                                
+--    342         135   .00002869  .00000021                      WHILE (l_index IS NOT NULL)
+--    343                                                         LOOP
+--    344                                                            /*
+--    345                                                            DBMS_SQL.COLUMN_VALUE
+--    346                                                
+--    347                                                               Retrieve each column value in the current row,
+--    348                                                               deposit it into a variable of the appropriate type,
+--    349                                                               then convert to a string and concatenate to the
+--    350                                                               full line variable.
+--    351                                                            */
+--    352         108   .00014243  .00000131                         IF is_string (l_index)
+--    353                                                            THEN
+--    354          27   .00004654  .00000172                            DBMS_SQL.COLUMN_VALUE (g_cursor, l_index, l_string_value);
+--    355          81   .00003979  .00000049                         ELSIF is_number (l_index)
+--    356                                                            THEN
+--    357          81   .00010238  .00000126                            DBMS_SQL.COLUMN_VALUE (g_cursor, l_index, l_number_value);
+--    358          81   .00014967  .00000184                            l_string_value := TO_CHAR (l_number_value);
+--    359           0   0                                            ELSIF is_date (l_index)
+--    360                                                            THEN
+--    361           0   0                                               DBMS_SQL.COLUMN_VALUE (g_cursor, l_index, l_date_value);
+--    362           0   0                                               l_string_value := TO_CHAR (l_date_value);
+--    363                                                            END IF;
+--    364                                                
+--    365         108   .00029899  .00000276                         l_one_row_string :=
+--    366                                                                  l_one_row_string
+--    367                                                               || ' '
+--    368                                                               || RPAD (NVL (l_string_value, ' ')
+--    369                                                                      , g_columns (l_index).data_length
+--    370                                                                       );
+--    371         108   .00009056  .00000083                         l_index := g_columns.NEXT (l_index);
+--    372                                                         END LOOP;
+--    373                                                
+--    374          27   .00003218  .00000119                      DBMS_OUTPUT.put_line (l_one_row_string);
+--    375                                                      END LOOP;
+--    376           1   .00000059  .00000059                END build_and_display_output;
+--    377                                                
+--    378           0   .00000191                           PROCEDURE cleanup
+--    379                                                   IS
+--    380                                                   BEGIN
+--    381                                                      /*
+--    382                                                        DBMS_SQL.CLOSE_CURSOR
+--    383                                                
+--    384                                                       Make sure to close the cursor on both successful completion
+--    385                                                         and when an error is raised.
+--    386                                                      */
+--    387                                                      -- De Meern (Patrick) Dec 2006: don't assume cursor is open!
+--    388           1   .00000222  .00000222                   IF DBMS_SQL.is_open (g_cursor)
+--    389                                                      THEN
+--    390           1   .00000144  .00000144                      DBMS_SQL.close_cursor (g_cursor);
+--    391                                                      END IF;
+--    392           1   .00000042  .00000042                END cleanup;
+--    393                                                BEGIN
+--    394                                                   /*
+--    395                                                      I keep the executable section small and very readable by creating
+--    396                                                      a series of local subprograms to perform the tasks required.
+--    397                                                   */
+--    398           1   .00000026  .00000026                load_column_information;
+--    399           1   .00000033  .00000033                construct_and_parse_query;
+--    400           1   .00000112  .00000112                define_columns_and_execute;
+--    401           1   .00000039  .00000039                build_and_display_output;
+--    402           1   .00000038  .00000038                cleanup;
+--    403                                                EXCEPTION
+--    404           0   0                                   WHEN OTHERS
+--    405                                                   THEN
+--    406           0   0                                      DBMS_OUTPUT.put_line (   'Dynamic Query Error: '
+--    407                                                                            || DBMS_UTILITY.format_error_stack
+--    408                                                                           );
+--    409                                                      /* Note: backtrace is only available in Oracle Database 10g and above. */
+--    410           0   0                                      DBMS_OUTPUT.put_line (   'Error backtrace: '
+--    411                                                                            || DBMS_UTILITY.format_error_backtrace
+--    412                                                                           );
+--    413           0   0                                      DBMS_OUTPUT.put_line (g_query);
+--    414           0   0                                      cleanup;
+--    415           0   0                                      RAISE;
+--    416           1   .00001182  .00001182             END intab
+--============================================================================

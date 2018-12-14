@@ -1,0 +1,11 @@
+CREATE OR REPLACE FUNCTION utctime (
+   from_in   IN   DATE DEFAULT SYSDATE
+)
+   RETURN NUMBER
+IS
+   retval NUMBER;
+BEGIN
+   retval := from_in - TO_DATE ('01011970', 'mmddyyyy');
+   RETURN (retval * 24 * 60 * 60);
+END;
+/

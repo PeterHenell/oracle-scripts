@@ -1,0 +1,268 @@
+{\rtf1\ansi\ansicpg1252\uc1 \deff0\deflang1033\deflangfe1033{\fonttbl{\f0\froman\fcharset0\fprq2{\*\panose 02020603050405020304}Times New Roman;}{\f1\fswiss\fcharset0\fprq2{\*\panose 020b0604020202020204}Arial;}{\f2\fmodern\fcharset0\fprq1{\*\panose 02070309020205020404}Courier New;}{\f16\froman\fcharset238\fprq2 Times New Roman CE;}{\f17\froman\fcharset204\fprq2 Times New Roman Cyr;}{\f19\froman\fcharset161\fprq2 Times New Roman Greek;}{\f20\froman\fcharset162\fprq2 Times New Roman Tur;}{\f21\froman\fcharset186\fprq2 Times New Roman Baltic;}{\f22\fswiss\fcharset238\fprq2 Arial CE;}{\f23\fswiss\fcharset204\fprq2 Arial Cyr;}{\f25\fswiss\fcharset161\fprq2 Arial Greek;}{\f26\fswiss\fcharset162\fprq2 Arial Tur;}{\f27\fswiss\fcharset186\fprq2 Arial Baltic;}{\f28\fmodern\fcharset238\fprq1 Courier New CE;}{\f29\fmodern\fcharset204\fprq1 Courier New Cyr;}{\f31\fmodern\fcharset161\fprq1 Courier New Greek;}{\f32\fmodern\fcharset162\fprq1 Courier New Tur;}{\f33\fmodern\fcharset186\fprq1 Courier New Baltic;}}{\colortbl;\red0\green0\blue0;\red0\green0\blue255;\red0\green255\blue255;\red0\green255\blue0;\red255\green0\blue255;\red255\green0\blue0;\red255\green255\blue0;\red255\green255\blue255;\red0\green0\blue128;\red0\green128\blue128;\red0\green128\blue0;\red128\green0\blue128;\red128\green0\blue0;\red128\green128\blue0;\red128\green128\blue128;\red192\green192\blue192;}{\stylesheet{\nowidctlpar\widctlpar\adjustright \fs20\cgrid \snext0 Normal;}{\s2\sb240\sa60\keepn\nowidctlpar\widctlpar\adjustright \b\i\f1\cgrid \sbasedon0 \snext0 heading 2;}{\*\cs10 \additive Default Paragraph Font;}}{\*\listtable{\list\listtemplateid-1757406990\listsimple{\listlevel\levelnfc0\leveljc0\levelfollow0\levelstartat1\levelold\levelspace0\levelindent360{\leveltext\'03\'00. ;}{\levelnumbers\'01;}\b0\i0\f0\fs20\ulnone\fbias0 \fi-360\li360 }{\listname ;}\listid1899323329}}{\*\listoverridetable{\listoverride\listid1899323329\listoverridecount0\ls1}}{\info{\title Browsing through Useful PL/SQL Code published in 1/26 - New Code Archive I noticed Program Recompilation utility}{\author Guy Souza}{\operator Steven Feuerstein}{\creatim\yr1998\mo2\dy23\hr12\min23}{\revtim\yr1998\mo2\dy23\hr12\min23}{\version2}{\edmins1}{\nofpages5}{\nofwords1761}{\nofchars10041}{\*\company Lydall, Inc.}{\nofcharsws12331}{\vern71}}\widowctrl\ftnbj\aenddoc\lytprtmet\hyphcaps0\formshade\viewkind1\viewscale100\pgbrdrhead\pgbrdrfoot \fet0\sectd \linex0\endnhere\sectdefaultcl {\*\pnseclvl1\pnucrm\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl2\pnucltr\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl3\pndec\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl4\pnlcltr\pnstart1\pnindent720\pnhang{\pntxta )}}{\*\pnseclvl5\pndec\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl6\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl7\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl8\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl9\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}\pard\plain \s2\sb240\sa60\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \b\i\f1\cgrid {A More Sophisticated Recompile Utility
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {Written by Solomon Yakobson, }{\f2\fs18\cgrid0 syakobson@erols.com}{
+\par 
+\par The code for this utility is also available in the syrecomp.sp file.
+\par 
+\par Browsing through Useful PL/SQL Code published in 1/26 - New Code Archive I noticed the Program Recompilation utility. Program description tells us that \ldblquote this procedure will sweep through the ALL_OBJECTS catalogue for any INVALID stored programs and use the DBMS_DDL.ALTER_COMPILE built-in to recompile that program. It makes sure that package specifications are compiled before their package bodies -- and it only recompiles specs when explicitly needed\rdblquote . 
+\par 
+\par There are several issues, in my opinion, related to the code.
+\par 
+\par {\pntext\pard\plain\fs20\cgrid \hich\af0\dbch\af0\loch\f0 1. \tab}}\pard \fi-360\li360\nowidctlpar\widctlpar{\*\pn \pnlvlbody\ilvl0\ls1\pnrnot0\pndec\pnb0\pni0\pnfs20\pnstart1\pnindent360\pnhang{\pntxta . }}\ls1\adjustright {Data dictionary view ALL_OBJECTS lists objects accessible to the user. This means Recompilation utility can only recompile objects accessible to stored program owner (assuming that owner has ALTER ANY PROCEDURE privilege). If you do not realize that and create Recompilation utility under user who does not see all stored procedures/functions/packages using % could be misleading. If you issue exec recompile to recompile all your invalid stored procedures/functions/packages, but Recompilation utility owner does not see some of them via HIS all_objects you will get PL/SQL procedure successfully completed while not all the objects are recompiled. I think ALL_OBJECTS should be replaced by DBA_OBJECTS.
+\par }\pard \nowidctlpar\widctlpar{\*\pn \pnlvlcont\ilvl0\ls0\pnrnot0\pndec }\adjustright {
+\par {\pntext\pard\plain\fs20\cgrid \hich\af0\dbch\af0\loch\f0 2. \tab}}\pard \fi-360\li360\nowidctlpar\widctlpar{\*\pn \pnlvlbody\ilvl0\ls1\pnrnot0\pndec\pnb0\pni0\pnfs20\pnstart1\pnindent360\pnhang{\pntxta . }}\ls1\adjustright {Although using DBMS_DDL is more convenient than DBMS_SQL, it does not allow recompiling triggers and views. Using DBMS_SQL would widen Recompilation utility usability.
+\par }\pard \nowidctlpar\widctlpar{\*\pn \pnlvlcont\ilvl0\ls0\pnrnot0\pndec }\adjustright {
+\par {\pntext\pard\plain\fs20\cgrid \hich\af0\dbch\af0\loch\f0 3. \tab}}\pard \fi-360\li360\nowidctlpar\widctlpar{\*\pn \pnlvlbody\ilvl0\ls1\pnrnot0\pndec\pnb0\pni0\pnfs20\pnstart1\pnindent360\pnhang{\pntxta . }}\ls1\adjustright {Now most important. Recompilation utility DOES NOT CONSIDER OBJECT DEPENDENCY (except package body to its own package specification). Assume package PKG1 depends on a function F1. Assume F1 and therefore PKG1 are invalid. Then exec recompile will recompile PKG1 first and F1 second. As a result PKG1 status will remain invalid. This means you possibly need to run Recompilation utility multiple times.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par Below is my recompile utility I am using quite often. Patching and upgrading Oracle Financials leaves behind invalid objects once in a while. This utility will recompile your request in right dependency order. It also will tell you what is object status after recompilation. If object type is not recompilable you will see a message and a corresponding bit in function return value is set to one. Same thing happens when you are requesting to recompile an object referencing an invalid object outside of your request (therefore recompiling your object will not make it valid). In both cases utility will proceed to next object: 
+\par 
+\par }{\f2\cgrid0 CREATE OR REPLACE
+\par   FUNCTION recompile(o_owner    IN VARCHAR2 := USER,
+\par                      o_name     IN VARCHAR2 := '%',
+\par                      o_type     IN VARCHAR2 := '%',
+\par                      o_status   IN VARCHAR2 := 'INVALID'
+\par                     ) RETURN NUMBER
+\par     IS
+\par 
+\par       -- Return Codes
+\par 
+\par       INVALID_TYPE      CONSTANT INTEGER := 1;
+\par       INVALID_PARENT    CONSTANT INTEGER := 2;
+\par 
+\par       cnt               NUMBER;
+\par       dyncur            INTEGER;
+\par       type_status       INTEGER := 0;
+\par       parent_status     INTEGER := 0;
+\par       object_status     VARCHAR2(30);
+\par       CURSOR            invalid_parent_cursor(oowner    VARCHAR2,
+\par                                               oname     VARCHAR2,
+\par                                               otype     VARCHAR2,
+\par                                               ostatus   VARCHAR2,
+\par                                               oid       NUMBER
+\par                                              )
+\par                 IS
+\par                    SELECT /*+ RULE */
+\par                           o.object_id
+\par                     FROM  public_dependency d,
+\par                           dba_objects o
+\par                     WHERE d.object_id = oid
+\par                       AND o.object_id = d.referenced_object_id
+\par                       AND o.status != 'VALID'
+\par                   MINUS
+\par                    SELECT /*+ RULE */
+\par                           object_id
+\par                     FROM  dba_objects
+\par                     WHERE owner LIKE UPPER(oowner)
+\par                       AND object_name LIKE UPPER(oname)
+\par                       AND object_type LIKE UPPER(otype)
+\par                       AND status LIKE UPPER(ostatus);
+\par       CURSOR recompile_cursor(oid NUMBER)
+\par         IS
+\par           SELECT  /*+ RULE */
+\par                   'ALTER ' || DECODE(object_type, 'PACKAGE BODY', 'PACKAGE',
+\par                         object_type) || ' ' || owner || '.' ||
+\par                         object_name || ' COMPILE ' ||
+\par                         DECODE(object_type, 'PACKAGE BODY', ' BODY', '') stmt,
+\par                   object_type,
+\par                   owner,
+\par                   object_name
+\par             FROM  dba_objects
+\par             WHERE object_id = oid;
+\par       recompile_record  recompile_cursor%ROWTYPE;
+\par       CURSOR obj_cursor(oowner  VARCHAR2,
+\par                         oname   VARCHAR2,
+\par                         otype   VARCHAR2,
+\par                         ostatus VARCHAR2
+\par                        )
+\par         IS
+\par           SELECT  /*+ RULE */
+\par                   MAX(LEVEL) dlevel,
+\par                   object_id
+\par             FROM  sys.public_dependency
+\par             START WITH object_id IN (SELECT  object_id
+\par                                        FROM  dba_objects
+\par                                        WHERE owner LIKE UPPER(oowner)
+\par                                          AND object_name LIKE UPPER(oname)
+\par                                          AND object_type LIKE UPPER(otype)
+\par                                          AND status LIKE UPPER(ostatus)
+\par                                     )
+\par             CONNECT BY object_id = prior referenced_object_id
+\par             GROUP BY object_id
+\par             HAVING MIN(LEVEL) = 1
+\par             ORDER BY dlevel DESC;
+\par       CURSOR status_cursor(oid NUMBER)
+\par         IS
+\par           SELECT  /*+ RULE */
+\par                   status
+\par             FROM  dba_objects
+\par             WHERE object_id = oid;
+\par     BEGIN
+\par 
+\par       -- Recompile requested objects based on their dependency levels.
+\par 
+\par       DBMS_OUTPUT.PUT_LINE(CHR(0));
+\par       DBMS_OUTPUT.PUT_LINE('                            RECOMPILING OBJECTS');
+\par       DBMS_OUTPUT.PUT_LINE(CHR(0));
+\par       DBMS_OUTPUT.PUT_LINE('                            Object Owner is  ' ||
+\par                                 o_owner);
+\par       DBMS_OUTPUT.PUT_LINE('                            Object Name is   ' ||
+\par                                 o_name);
+\par       DBMS_OUTPUT.PUT_LINE('                            Object Type is   ' ||
+\par                                 o_type);
+\par       DBMS_OUTPUT.PUT_LINE('                            Object Status is ' ||
+\par                                 o_status);
+\par       DBMS_OUTPUT.PUT_LINE(CHR(0));
+\par       dyncur := DBMS_SQL.OPEN_CURSOR;
+\par       FOR obj_record IN obj_cursor(o_owner,o_name,o_type,o_status)
+\par         LOOP
+\par           OPEN  recompile_cursor(obj_record.object_id);
+\par           FETCH recompile_cursor INTO recompile_record;
+\par           CLOSE recompile_cursor;
+\par 
+\par           -- We can recompile only Functions, Packages, Package Bodies,
+\par           -- Procedures, Triggers and Views.
+\par 
+\par           IF recompile_record.object_type IN ('FUNCTION',
+\par                                               'PACKAGE',
+\par                                               'PACKAGE BODY',
+\par                                               'PROCEDURE',
+\par                                               'TRIGGER',
+\par                                               'VIEW'
+\par                                              )
+\par             THEN
+\par 
+\par               -- There is no sense to recompile an object that depends on
+\par               -- invalid objects outside of the current recompile request.
+\par 
+\par               OPEN invalid_parent_cursor(o_owner,
+\par                                          o_name,
+\par                                          o_type,
+\par                                          o_status,
+\par                                          obj_record.object_id
+\par                                         );
+\par               FETCH invalid_parent_cursor INTO cnt;
+\par               IF invalid_parent_cursor%NOTFOUND
+\par                 THEN
+\par 
+\par                   -- Recompile object.
+\par 
+\par                   DBMS_SQL.PARSE(dyncur,
+\par                                  recompile_record.stmt,
+\par                                  DBMS_SQL.NATIVE
+\par                                 );
+\par                   cnt := DBMS_SQL.EXECUTE(dyncur);
+\par                   OPEN  status_cursor(obj_record.object_id);
+\par                   FETCH status_cursor INTO object_status;
+\par                   CLOSE status_cursor;
+\par                   DBMS_OUTPUT.PUT_LINE(recompile_record.object_type || ' ' ||
+\par                                         recompile_record.owner || '.' ||
+\par                                         recompile_record.object_name ||
+\par                                         ' is recompiled. Object status is ' ||
+\par                                         object_status ||'.'
+\par                                       );
+\par                 ELSE
+\par                   DBMS_OUTPUT.PUT_LINE(recompile_record.object_type || ' ' ||
+\par                                        recompile_record.owner || '.' ||
+\par                                        recompile_record.object_name ||
+\par                                        ' references invalid object(s)' ||
+\par                                        ' outside of this request.'
+\par                                       );
+\par                   parent_status := invalid_parent;
+\par               END IF;
+\par               CLOSE invalid_parent_cursor;
+\par             ELSE
+\par               DBMS_OUTPUT.PUT_LINE(recompile_record.owner || '.' ||
+\par                                    recompile_record.object_name ||
+\par                                    ' is a ' ||
+\par                                    recompile_record.object_type ||
+\par                                    ' and can not be recompiled.'
+\par                                   );
+\par               type_status := invalid_type;
+\par           END IF;
+\par       END LOOP;
+\par       DBMS_SQL.CLOSE_CURSOR(dyncur);
+\par       RETURN type_status + parent_status;
+\par     EXCEPTION
+\par       WHEN OTHERS THEN
+\par       IF obj_cursor%ISOPEN
+\par         THEN
+\par           CLOSE obj_cursor;
+\par       END IF;
+\par       IF recompile_cursor%ISOPEN
+\par         THEN
+\par           CLOSE recompile_cursor;
+\par       END IF;
+\par       IF invalid_parent_cursor%ISOPEN
+\par         THEN
+\par           CLOSE invalid_parent_cursor;
+\par       END IF;
+\par       IF status_cursor%ISOPEN
+\par         THEN
+\par           CLOSE status_cursor;
+\par       END IF;
+\par       IF DBMS_SQL.IS_OPEN(dyncur)
+\par         THEN
+\par           DBMS_SQL.CLOSE_CURSOR(dyncur);
+\par       END IF;
+\par       RAISE;
+\par END;
+\par /
+\par }{\f2 
+\par }{\cgrid0 Below are some examples.
+\par 
+\par Dropping table CARS invalidates view CARSV directly referencing table CARS, procedure P1 referencing CARSV, procedure P2 referencing P1 and procedure P3 referencing P2.
+\par }{\f2\cgrid0 
+\par SQL> drop table cars;
+\par 
+\par Table dropped.
+\par 
+\par Elapsed: 00:00:00.06
+\par SQL> select object_type,object_name from user_objects where status = 'INVALID';
+\par 
+\par OBJECT_TYPE   OBJECT_NAME
+\par ------------- ------------------------------
+\par VIEW          CARSV
+\par PROCEDURE     P1
+\par PROCEDURE     P2
+\par PROCEDURE     P3
+\par 
+\par 4 rows selected.
+\par }{\cgrid0 
+\par Now we recreate table cars:
+\par }{\f2\cgrid0 
+\par SQL> create table cars(customer number,make varchar2(30));
+\par 
+\par Table created.
+\par 
+\par }{\cgrid0 Trying to recompile just P1 results in:
+\par 
+\par }{\f2\cgrid0 SQL> exec dbms_output.put_line('Recompile Status = ' || recompile(user,'P1'))
+\par 
+\par                                 RECOMPILING OBJECTS
+\par 
+\par                                 Object Owner is  USER1
+\par                                 Object Name is   P1
+\par                                 Object Type is   %
+\par                                 Object Status is INVALID
+\par 
+\par PROCEDURE USER1.P1 references invalid object(s) outside of this request.
+\par Recompile Status = 2
+\par 
+\par }{\cgrid0 Recompiling all invalid user objects results in:
+\par }{\f2\cgrid0 
+\par SQL> exec dbms_output.put_line('Recompile Status = ' || recompile)
+\par 
+\par                                 RECOMPILING OBJECTS
+\par 
+\par                                 Object Owner is  USER1
+\par                                 Object Name is   %
+\par                                 Object Type is   %
+\par                                 Object Status is INVALID
+\par 
+\par VIEW USER1.CARSV is recompiled. Object status is VALID.
+\par PROCEDURE USER1.P1 is recompiled. Object status is VALID.
+\par PROCEDURE USER1.P2 is recompiled. Object status is VALID.
+\par PROCEDURE USER1.P3 is recompiled. Object status is VALID.
+\par Recompile Status = 0
+\par 
+\par }{\cgrid0 Solomon Yakobson.
+\par }}

@@ -1,0 +1,97 @@
+CREATE OR REPLACE PACKAGE trace
+IS
+   /*
+   || Exposes DBMS_SYSTEM.SET_SQL_TRACE_IN_SESSION
+   || with easier to call programs
+   ||
+   || Author:  John Beresniewicz, Savant Corp
+   || Created: 07/30/97
+   ||
+   || Compilation Requirements:
+   || SELECT on SYS.V_$SESSION
+   || EXECUTE on SYS.DBMS_SYSTEM (or create as SYS)
+   || 
+   || Execution Requirements:
+   ||
+   || 
+   */
+   
+   /* turn SQL trace on by session id */
+   PROCEDURE Xon(sid_IN IN NUMBER);
+
+   /* turn SQL trace off by session id */
+   PROCEDURE off(sid_IN IN NUMBER);
+
+   /* turn SQL trace on by username */
+   PROCEDURE Xon(user_IN IN VARCHAR2);
+
+   /* turn SQL trace off by username */
+   PROCEDURE off(user_IN IN VARCHAR2);
+
+END trace;
+/
+
+CREATE OR REPLACE PACKAGE BODY trace 
+IS
+
+   /*
+   || Use DBMS_SYSTEM.SET_SQL_TRACE_IN_SESSION to turn tracing on 
+   || or off by either session id or username.  Affects all sessions
+   || which match non-NULL values of the user and sid parameters.
+   */
+   PROCEDURE set_trace
+      (sqltrace_TF BOOLEAN
+      ,user IN VARCHAR2 DEFAULT NULL
+      ,sid IN NUMBER DEFAULT NULL)
+   IS
+   BEGIN
+      /*
+      || Loop through all sessions which match the sid and user
+      || parameters and set trace on in those sessions.  The NVL 
+      || function in the cursor WHERE clause allows the single
+      || SELECT statement to filter by either sid OR user.
+      */
+      FOR sid_rec IN 
+         (select sid,serial# 
+            from sys.v_$session   S
+           where S.type='USER'
+             and S.username = NVL(UPPER(user),S.username)
+             and S.sid      = NVL(sid,S.sid) )
+      LOOP
+         sys.dbms_system.set_sql_trace_in_session
+            (sid_rec.sid, sid_rec.serial#, sqltrace_TF);
+      END LOOP;
+   END set_trace;
+
+   
+   /*
+   || The programs exposed by the package all simply
+   || call set_trace with different parameter combinations.
+   */
+   PROCEDURE Xon(sid_IN IN NUMBER)
+   IS
+   BEGIN
+      set_trace(sqltrace_TF => TRUE, sid => sid_IN);
+   END Xon;
+
+   PROCEDURE off(sid_IN IN NUMBER)
+   IS
+   BEGIN
+      set_trace(sqltrace_TF => FALSE, sid => sid_IN);
+   END off;
+
+   PROCEDURE Xon(user_IN IN VARCHAR2)
+   IS
+   BEGIN
+      set_trace(sqltrace_TF => TRUE, user => user_IN);
+   END Xon;
+
+   PROCEDURE off(user_IN IN VARCHAR2)
+   IS
+   BEGIN
+      set_trace(sqltrace_TF => FALSE, user => user_IN);
+   END off;
+
+END trace;
+/
+

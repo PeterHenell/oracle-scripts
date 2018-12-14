@@ -1,0 +1,219 @@
+CREATE OR REPLACE PACKAGE PLVtmr
+/*----------------------------------------------------------------
+||                  PL/Vision Professional
+||----------------------------------------------------------------
+||    File: plvtmr.pkg
+||  Author: Steven Feuerstein
+||
+|| This is a part of the PL/Vision Professional Code library.
+|| Copyright (C) 1996-1999 RevealNet, Inc.
+|| All rights reserved.
+||
+|| For more information, call RevealNet at 1-800-REVEAL4
+|| or check out our Web page: www.revealnet.com
+||
+|| This file is an abbreviated version of PLVtmr designed
+|| to be used with the scripts on this disk.
+||
+******************************************************************/
+IS
+   /* Specification of Set/Get for "factor" */
+   PROCEDURE set_factor (factor_in IN NUMBER);
+
+   FUNCTION factor
+      RETURN NUMBER;
+
+   /* Capture current value in DBMS_UTILITY.GET_TIME */
+   PROCEDURE capture (context_in IN VARCHAR2 := NULL);
+
+   /* Return amount of time elapsed since call to capture */
+   FUNCTION elapsed
+      RETURN NUMBER;
+
+   /* Construct message showing time elapsed since call to capture */
+   FUNCTION elapsed_message (
+      prefix_in          IN   VARCHAR2 := NULL
+    , adjust_in          IN   NUMBER := 0
+    , reset_in           IN   BOOLEAN := TRUE
+    , reset_context_in   IN   VARCHAR2 := NULL
+   )
+      RETURN VARCHAR2;
+
+   /* Display message of elapsed time */
+   PROCEDURE show_elapsed (
+      prefix_in   IN   VARCHAR2 := NULL
+    , adjust_in   IN   NUMBER := 0
+    , reset_in    IN   BOOLEAN := TRUE
+   );
+END PLVtmr;
+/
+
+CREATE OR REPLACE PACKAGE BODY PLVtmr
+IS
+/*----------------------------------------------------------------
+||                  PL/Vision Professional
+||----------------------------------------------------------------
+||  Author: Steven Feuerstein
+||
+|| This is a part of the PL/Vision Professional Code library.
+|| Copyright (C) 1996-1999 RevealNet, Inc.
+|| All rights reserved.
+||
+|| For more information, call RevealNet at 1-800-REVEAL4
+|| or check out our Web page: www.revealnet.com
+||
+******************************************************************/
+
+   /* Package variable which stores the last timing made */
+   last_timing     NUMBER           := NULL;
+   /* Package variable which stores context of last timing */
+   last_context    VARCHAR2 (32767) := NULL;
+   /* Private Variable for "factor" */
+   v_factor        NUMBER           := NULL;
+   /* Private Variable for On/Off Toggle */
+   v_onoff         BOOLEAN          := TRUE;
+   /* Private Variable for "repeats" */
+   v_repeats       NUMBER           := 100;
+   /* Calibrated base timing. */
+   v_base_timing   NUMBER           := NULL;
+
+   /* Body of Set for "factor" */
+   PROCEDURE set_factor (factor_in IN NUMBER)
+   IS
+   BEGIN
+      v_factor := factor_in;
+   END set_factor;
+
+   /* Body of Get for "factor" */
+   FUNCTION factor
+      RETURN NUMBER
+   IS
+      retval   NUMBER := v_factor;
+   BEGIN
+      RETURN retval;
+   END factor;
+
+   PROCEDURE capture (context_in IN VARCHAR2 := NULL)
+   /* Save current time and context to package variables. */
+   IS
+   BEGIN
+      last_timing := DBMS_UTILITY.get_time;
+      last_context := context_in;
+   END;
+
+   FUNCTION elapsed
+      RETURN NUMBER
+   IS
+      /* Grab the current time before doing anything else. */
+      l_end_time   PLS_INTEGER := DBMS_UTILITY.get_time;
+   BEGIN
+      IF v_onoff
+      THEN
+         RETURN (MOD (l_end_time - last_timing + POWER (2, 32), POWER (2, 32))
+                );
+      END IF;
+   END;
+
+   FUNCTION elapsed_message (
+      prefix_in          IN   VARCHAR2 := NULL
+    , adjust_in          IN   NUMBER := 0
+    , reset_in           IN   BOOLEAN := TRUE
+    , reset_context_in   IN   VARCHAR2 := NULL
+   )
+      RETURN VARCHAR2
+   /*
+   || Construct message for display of elapsed time. Programmer can
+   || include a prefix to the message and also ask that the last
+   || timing variable be reset/updated. This saves a separate call
+   || to elapsed.
+   */
+   IS
+      current_timing   NUMBER;
+      retval           VARCHAR2 (32767) := NULL;
+
+      FUNCTION adj_time (
+         time_in        IN   BINARY_INTEGER
+       , factor_in      IN   INTEGER
+       , precision_in   IN   INTEGER
+      )
+         RETURN VARCHAR2
+      IS
+      BEGIN
+         RETURN (TO_CHAR (ROUND ((time_in - adjust_in) / (100 * factor_in)
+                               , precision_in
+                                )
+                         )
+                );
+      END;
+
+      FUNCTION formatted_time (
+         time_in      IN   BINARY_INTEGER
+       , context_in   IN   VARCHAR2 := NULL
+      )
+         RETURN VARCHAR2
+      IS
+         retval   VARCHAR2 (32767) := NULL;
+      BEGIN
+         IF context_in IS NOT NULL
+         THEN
+            retval := ' since ' || last_context;
+         END IF;
+
+         retval :=
+               prefix_in
+            || ' Elapsed'
+            || retval
+            || ': '
+            || adj_time (time_in, 1, 3)
+            || ' seconds.';
+
+         IF v_factor IS NOT NULL
+         THEN
+            retval :=
+                  retval
+               || ' Factored: '
+               || adj_time (time_in, v_factor, 5)
+               || ' seconds.';
+         END IF;
+
+         RETURN retval;
+      END;
+   BEGIN
+      IF v_onoff
+      THEN
+         IF last_timing IS NULL
+         THEN
+            /* If there is no last_timing, cannot show anything. */
+            retval := NULL;
+         ELSE
+            /* Construct message with context of last call to elapsed */
+            retval := formatted_time (elapsed, last_context);
+            last_context := NULL;
+         END IF;
+
+         IF reset_in
+         THEN
+            capture (reset_context_in);
+         END IF;
+      END IF;
+
+      RETURN retval;
+   END;
+
+   PROCEDURE show_elapsed (
+      prefix_in   IN   VARCHAR2 := NULL
+    , adjust_in   IN   NUMBER := 0
+    , reset_in    IN   BOOLEAN := TRUE
+   )
+   /* Little more than a call to the elapsed_message function! */
+   IS
+   BEGIN
+      IF v_onoff
+      THEN
+         DBMS_OUTPUT.put_line (elapsed_message (prefix_in, adjust_in
+                                              , reset_in)
+                              );
+      END IF;
+   END;
+END PLVtmr;
+/

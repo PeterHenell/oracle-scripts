@@ -1,0 +1,39 @@
+CREATE OR REPLACE PACKAGE allcurs
+IS
+   bydept       CONSTANT INTEGER := 1;
+   bysal CONSTANT INTEGER := 2;
+   fromdept CONSTANT INTEGER := 3;
+
+   TYPE cv_rt IS RECORD (nm VARCHAR2(100), key INTEGER);
+
+   TYPE cv_t IS REF CURSOR RETURN cv_rt;
+
+   FUNCTION open (type_in IN INTEGER) RETURN cv_t;
+END;
+/
+CREATE OR REPLACE PACKAGE BODY allcurs
+IS
+   FUNCTION open (type_in IN INTEGER) RETURN cv_t
+   IS
+      retval cv_t;
+   BEGIN
+      IF type_in = bydept
+      THEN
+         OPEN retval FOR
+            SELECT ename, deptno FROM emp ORDER BY deptno;
+
+      ELSIF type_in = bysal
+      THEN
+         OPEN retval FOR 
+            SELECT ename, sal FROM emp ORDER BY sal;
+
+      ELSIF type_in = fromdept
+      THEN
+         OPEN retval FOR 
+            SELECT dname, deptno FROM dept;
+      END IF;
+      RETURN retval;
+   END;
+END;
+/
+

@@ -1,0 +1,27 @@
+DROP FUNCTION all_my_numbers
+/
+
+CREATE OR REPLACE PACKAGE all_my_numbers
+IS
+   TYPE numbers_aat IS TABLE OF NUMBER
+      INDEX BY PLS_INTEGER;
+
+   FUNCTION list_of ( count_in IN PLS_INTEGER )
+      RETURN numbers_aat;
+END all_my_numbers;
+/
+
+CREATE OR REPLACE PACKAGE BODY all_my_numbers
+IS
+   FUNCTION list_of ( count_in IN PLS_INTEGER )
+      RETURN numbers_aat
+   IS
+      l_numbers numbers_aat;
+   BEGIN
+      FOR indx IN 1 .. count_in
+      LOOP
+         l_numbers ( indx ) := indx;
+      END LOOP;
+   END list_of;
+END all_my_numbers;
+/

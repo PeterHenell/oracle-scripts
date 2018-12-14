@@ -1,0 +1,130 @@
+CREATE OR REPLACE FUNCTION files_are_equal (
+   check_this_in IN VARCHAR2
+ , check_this_dir_in IN VARCHAR2
+ , against_this_in IN VARCHAR2
+ , against_this_dir_in IN VARCHAR2 := NULL
+)
+   RETURN BOOLEAN
+IS
+   checkid           UTL_FILE.file_type;
+   checkline         utl_file_constants.max_linesize_t;
+   check_eof         BOOLEAN;
+   --
+   againstid         UTL_FILE.file_type;
+   againstline       utl_file_constants.max_linesize_t;
+   against_eof       BOOLEAN;
+   --
+   l_keep_checking   BOOLEAN                           DEFAULT TRUE;
+   l_identical       BOOLEAN                           DEFAULT FALSE;
+
+   PROCEDURE assert (condition_in IN BOOLEAN, msg_in IN VARCHAR2)
+   IS
+   BEGIN
+      IF NOT condition_in OR condition_in IS NULL
+      THEN
+         raise_application_error (-20000, msg_in);
+      END IF;
+   END;
+
+   PROCEDURE initialize
+   IS
+   BEGIN
+      /*
+      Make sure inputs are valid.
+      */
+      assert (check_this_dir_in IS NOT NULL, 'Directory cannot be NULL.');
+      assert (against_this_dir_in IS NOT NULL, 'Directory cannot be NULL.');
+      assert (check_this_in IS NOT NULL, 'File name cannot be NULL.');
+      assert (against_this_in IS NOT NULL, 'File name cannot be NULL.');
+      /*
+      Open both files, read-only.
+      */
+      checkid :=
+         UTL_FILE.fopen (check_this_dir_in
+                       , check_this_in
+                       , utl_file_constants.read_only()
+                        );
+      againstid :=
+         UTL_FILE.fopen (NVL (against_this_dir_in, check_this_dir_in)
+                       , against_this_in
+                       , utl_file_constants.read_only()
+                        );
+   END initialize;
+
+   PROCEDURE get_next_line_from_file (
+      file_in IN UTL_FILE.file_type
+    , line_out OUT VARCHAR2
+    , eof_out OUT BOOLEAN
+   )
+   IS
+   BEGIN
+      UTL_FILE.get_line (file_in, line_out);
+      eof_out := FALSE;
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         line_out := NULL;
+         eof_out := TRUE;
+   END get_next_line_from_file;
+
+   PROCEDURE compare_latest_read (
+      check_eof_in IN BOOLEAN
+    , against_eof_in IN BOOLEAN
+    , check_line_in IN VARCHAR2
+    , against_line_in IN VARCHAR2
+    , identical_out OUT BOOLEAN
+    , read_next_out OUT BOOLEAN
+   )
+   IS
+   BEGIN
+      IF check_eof_in AND against_eof_in
+      THEN
+         -- Made it to the end of both files simultaneously.
+         identical_out := TRUE;
+         read_next_out := FALSE;
+      ELSIF check_eof_in OR against_eof_in
+      THEN
+         -- Reached end of one before the other. Not identical!
+         identical_out := FALSE;
+         read_next_out := FALSE;
+      ELSE
+         -- Only continue IF the two lines are identical.
+         identical_out := check_line_in = against_line_in;
+         read_next_out := identical_out;
+      END IF;
+   END compare_latest_read;
+
+   PROCEDURE cleanup
+   IS
+   BEGIN
+      UTL_FILE.fclose (checkid);
+      UTL_FILE.fclose (againstid);
+   END cleanup;
+BEGIN
+   initialize;
+
+   WHILE (l_keep_checking)
+   LOOP
+      get_next_line_from_file (checkid, checkline, check_eof);
+      get_next_line_from_file (againstid, againstline, against_eof);
+      /*
+      Hide logic for comparison.
+      */
+      compare_latest_read (check_eof
+                         , against_eof
+                         , checkline
+                         , againstline
+                         , l_identical
+                         , l_keep_checking
+                          );
+   END LOOP;
+
+   cleanup;
+   RETURN l_identical;
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      cleanup;
+      RETURN FALSE;
+END files_are_equal;
+/

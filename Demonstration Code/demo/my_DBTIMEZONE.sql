@@ -1,0 +1,12 @@
+/* Formatted on 2002/02/04 14:21 (Formatter Plus v4.6.0) */
+CREATE OR REPLACE FUNCTION my_DBTIMEZONE
+   RETURN VARCHAR2
+IS
+   t   VARCHAR2 (100);
+BEGIN
+   SELECT DBTIMEZONE
+     INTO t
+     FROM sys.DUAL;
+
+   RETURN t;
+END;

@@ -1,0 +1,157 @@
+CREATE OR REPLACE PACKAGE ut_element_found
+IS
+   PROCEDURE ut_setup;
+
+   PROCEDURE ut_teardown;
+
+   PROCEDURE ut_element_found;
+END ut_element_found;
+/
+
+CREATE OR REPLACE PACKAGE BODY ut_element_found
+IS
+   g_collection         DBMS_SQL.varchar2s;
+   g_empty_collection   DBMS_SQL.varchar2s;
+
+   PROCEDURE ut_setup
+   IS
+   BEGIN
+      g_collection (1) := 'ABC';
+      g_collection (10) := 'DEF';
+      g_collection (11) := NULL;
+      g_collection (100) := '123';
+   END;
+
+   PROCEDURE ut_teardown
+   IS
+   BEGIN
+      NULL;
+   END;
+
+   PROCEDURE ut_element_found
+   IS
+      -- Variable for function return value
+      l_element_found   BOOLEAN;
+
+      PROCEDURE run_test_case (
+         test_case_name_in   IN   VARCHAR2
+        ,collection_in            DBMS_SQL.varchar2s
+        ,value_in                 VARCHAR2
+        ,start_index_in           BINARY_INTEGER
+        ,end_index_in             BINARY_INTEGER
+        ,nulls_eq_in              BOOLEAN
+        ,expected_value_in   IN   BOOLEAN
+        ,test_type_in        IN   VARCHAR2
+      -- 'EQ' or 'ISNULL' or 'ISNOTNULL'
+      )
+      IS
+      BEGIN
+         l_element_found :=
+            element_found (collection_in       => collection_in
+                          ,value_in            => value_in
+                          ,start_index_in      => start_index_in
+                          ,end_index_in        => end_index_in
+                          ,nulls_eq_in         => nulls_eq_in
+                          );
+
+         -- Check value returned by function against the expected value.
+         -- If they don't match, report the failure, providing a test case name.
+         IF test_type_in = 'EQ'
+         THEN
+            utassert.eq (test_case_name_in
+                        ,l_element_found
+                        ,expected_value_in
+                        );
+         ELSIF test_type_in = 'ISNULL'
+         THEN
+            utassert.isnull (test_case_name_in, l_element_found);
+         ELSIF test_type_in = 'ISNOTNULL'
+         THEN
+            utassert.isnotnull (test_case_name_in, l_element_found);
+         END IF;
+      END run_test_case;
+   BEGIN
+      -- Make a copy for each test case, change the arguments to match.
+      run_test_case
+         (test_case_name_in      => 'Collection is empty (pass in g_empty_collection)'
+         ,collection_in          => g_empty_collection
+         ,value_in               => 'VALUE'
+         ,start_index_in         => NULL
+         ,end_index_in           => NULL
+         ,nulls_eq_in            => TRUE
+         ,expected_value_in      => FALSE
+         ,test_type_in           => 'EQ'
+         );
+      run_test_case
+         (test_case_name_in      => 'Search through entire collection for non-NULL value that is in collection'
+         ,collection_in          => g_collection
+         ,value_in               => 'DEF'
+         ,start_index_in         => NULL
+         ,end_index_in           => NULL
+         ,nulls_eq_in            => TRUE
+         ,expected_value_in      => TRUE
+         ,test_type_in           => 'EQ'
+         );
+      run_test_case
+         (test_case_name_in      => 'Search through entire collection for non-NULL value that is not in collection'
+         ,collection_in          => g_collection
+         ,value_in               => 'QRS'
+         ,start_index_in         => NULL
+         ,end_index_in           => NULL
+         ,nulls_eq_in            => TRUE
+         ,expected_value_in      => FALSE
+         ,test_type_in           => 'EQ'
+         );
+      run_test_case
+         (test_case_name_in      => 'Search through subset of collection for non-NULL value that is in collection'
+         ,collection_in          => g_collection
+         ,value_in               => '123'
+         ,start_index_in         => 10
+         ,end_index_in           => 100
+         ,nulls_eq_in            => TRUE
+         ,expected_value_in      => TRUE
+         ,test_type_in           => 'EQ'
+         );
+      run_test_case
+         (test_case_name_in      => 'Search through subset of collection for non-NULL value that is not in collection'
+         ,collection_in          => g_collection
+         ,value_in               => '1234'
+         ,start_index_in         => 10
+         ,end_index_in           => 100
+         ,nulls_eq_in            => TRUE
+         ,expected_value_in      => FALSE
+         ,test_type_in           => 'EQ'
+         );
+      run_test_case
+         (test_case_name_in      => 'Start and end values outside range of collection, value in collection'
+         ,collection_in          => g_collection
+         ,value_in               => '123'
+         ,start_index_in         => -1000
+         ,end_index_in           => 10000
+         ,nulls_eq_in            => TRUE
+         ,expected_value_in      => TRUE
+         ,test_type_in           => 'EQ'
+         );
+      run_test_case
+         (test_case_name_in      => 'Search for NULL value with nulls EQ not true'
+         ,collection_in          => g_collection
+         ,value_in               => NULL
+         ,start_index_in         => NULL
+         ,end_index_in           => NULL
+         ,nulls_eq_in            => FALSE
+         ,expected_value_in      => NULL
+         ,test_type_in           => 'ISNULL'
+         );
+      run_test_case
+         (test_case_name_in      => 'Search for NULL value with nulls EQ set to true'
+         ,collection_in          => g_collection
+         ,value_in               => NULL
+         ,start_index_in         => NULL
+         ,end_index_in           => NULL
+         ,nulls_eq_in            => TRUE
+         ,expected_value_in      => TRUE
+         ,test_type_in           => 'ISNOTNULL'
+         );
+   END ut_element_found;
+END ut_element_found;
+/

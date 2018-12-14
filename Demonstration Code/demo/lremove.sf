@@ -1,0 +1,28 @@
+CREATE OR REPLACE FUNCTION lremove (string_in         IN VARCHAR2
+                                  , remove_in         IN VARCHAR2
+                                  , case_sensitive_in IN BOOLEAN DEFAULT TRUE
+                                   )
+   RETURN VARCHAR2
+IS
+BEGIN
+   RETURN CASE CASE
+                  WHEN case_sensitive_in THEN INSTR (string_in, remove_in)
+                  ELSE INSTR (UPPER (string_in), UPPER (remove_in))
+               END
+             WHEN 1
+             THEN
+                SUBSTR (string_in, LENGTH (remove_in) + 1)
+             ELSE
+                string_in
+          END;
+END lremove;
+/
+
+BEGIN
+   DBMS_OUTPUT.put_line (lremove ('<br/>believe it or not', '<br/>'));
+   DBMS_OUTPUT.put_line (lremove ('Whether you believe it or not', '<br/>'));
+END;
+/
+
+believe it or not
+Whether you believe it or not

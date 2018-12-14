@@ -1,0 +1,15 @@
+CREATE OR REPLACE FUNCTION tab2str 
+   (tab IN VARCHAR2, setdelim IN VARCHAR2, segdelim IN VARCHAR2)
+   RETURN VARCHAR2
+IS
+   strid INTEGER := PLVrep.stringid;
+   tabid INTEGER := PLVrep.dbtabid (tab);
+   retval PLV.maxvc2;
+BEGIN
+   PLVrep.tabsegs (tabid, tab);
+   PLVrep.tabsegs (strid, tab);
+   PLVrep.copy (tabid, strid, setdelim => setdelim, segdelim => segdelim);
+   PLVrep.retrieve (strid, retval);
+   RETURN retval;
+END;
+/ 

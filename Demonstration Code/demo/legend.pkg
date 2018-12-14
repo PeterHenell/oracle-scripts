@@ -1,0 +1,502 @@
+/* Formatted by PL/Formatter v.1.1.13 on 1999/03/17 07:12  (07:12 AM) */
+CREATE OR REPLACE PACKAGE legend_work
+/*
+Dmitri Schaposchnikov
+Moscow, Russia
+dimitri@jet.msk.su
+*/
+AS
+   TYPE array IS TABLE OF VARCHAR2(2000)
+      INDEX BY BINARY_INTEGER;
+   empty_array                   array;
+   
+   PROCEDURE legend (v_list IN array DEFAULT empty_array);
+   PROCEDURE legend_view (v_list IN array DEFAULT empty_array);
+   PROCEDURE select_option (
+      is_selected IN VARCHAR2 DEFAULT NULL,
+      select_str IN VARCHAR2 DEFAULT NULL
+      );
+   PROCEDURE send_error (procname IN VARCHAR2 DEFAULT NULL);
+
+END legend_work;
+
+/
+
+SHOW errors 
+
+CREATE OR REPLACE PACKAGE BODY legend_work
+AS
+   
+   PROCEDURE legend (v_list IN array DEFAULT empty_array)
+   AS
+      v_list2                       array DEFAULT empty_array;
+      select_out                    array DEFAULT empty_array;
+      rec_tab                       DBMS_SQL.desc_tab;
+      rec                           DBMS_SQL.desc_rec;
+      rem                           VARCHAR2(1024);
+      rem_table                     VARCHAR2(1024);
+      constr                        VARCHAR2(1024);
+      sel_str                       VARCHAR2(256);
+      ct                            VARCHAR2(24);
+      user_name                     VARCHAR2(24);
+      c                             NUMBER;
+      d                             NUMBER;
+      col_num                       NUMBER;
+      col_cnt                       INTEGER;
+
+   BEGIN
+      IF NOT v_list.exists (1)
+      THEN
+         v_list2  (1) := ' ';
+      ELSE
+         v_list2  (1) := v_list (1);
+      END IF;
+      FOR x IN  (SELECT USER
+                 FROM dual)
+      LOOP
+         user_name := x.USER;
+      END LOOP;
+      
+      HTP.p ('<HTML><HEADER><TITLE>TABLES DESCRIBE FOR USER ' ||
+             user_name ||
+             '</TITLE></HEADER><BODY BGCOLOR="#CCFFCC">');
+      HTP.p ('<FORM ACTION="legend_work.legend" METHOD="POST">');
+      HTP.p ('<SELECT NAME="v_list">');
+      FOR x IN  (SELECT table_name
+                 FROM all_tables
+                WHERE owner = ( SELECT USER
+                                  FROM dual)
+                ORDER BY table_name)
+      LOOP
+         select_option (v_list2 (1), x.table_name);
+      END LOOP;
+      HTP.p ('</SELECT>');
+      HTP.p ('<INPUT TYPE="SUBMIT" VALUE="SELECT TABLE">');
+      HTP.formclose;
+      
+      IF NOT v_list2 (1) = ' '
+      THEN
+         BEGIN
+            HTP.p ('<FORM ACTION="legend_work.legend" METHOD="POST">');
+            HTP.p ('<INPUT TYPE="HIDDEN" NAME="v_list" VALUE="' ||
+                   v_list2 (1) ||
+                   '">');
+            c := DBMS_SQL.open_cursor;
+            /* DESCRIBE TABLE_COLUMNS  */
+            sel_str := 'select * from ' || user_name || '.' || v_list (1);
+            DBMS_SQL.parse (c, sel_str, DBMS_SQL.native);
+            d := DBMS_SQL.execute (c);
+            DBMS_SQL.describe_columns (c, col_cnt, rec_tab);
+            IF v_list.exists (2)
+            THEN
+               BEGIN
+                  /* INSERT COMMENT ON COLUMN  */
+                  FOR i IN 1 .. col_cnt
+                  LOOP
+                     BEGIN
+                        rec := rec_tab (i);
+                        sel_str :=
+                           'comment on column ' ||
+                           v_list2 (1) ||
+                           '.' ||
+                           rec.col_name ||
+                           ' is ''' ||
+                           v_list (i + 2) ||
+                           '''';
+                        DBMS_SQL.parse (c, sel_str, DBMS_SQL.native);
+                        d := DBMS_SQL.execute (c);
+                     END;
+                  END LOOP;
+                  /* INSERT COMMENT ON TABLE */
+                  sel_str :=
+                     'comment on table ' ||
+                     v_list2 (1) ||
+                     ' is ''' ||
+                     v_list (2) ||
+                     '''';
+                  DBMS_SQL.parse (c, sel_str, DBMS_SQL.native);
+                  d := DBMS_SQL.execute (c);
+               END;
+            END IF;
+            sel_str :=
+               'select Comments FROM USER_TAB_COMMENTS WHERE Table_Name=''' ||
+               v_list2 (1) ||
+               '''';
+            DBMS_SQL.parse (c, sel_str, DBMS_SQL.native);
+            DBMS_SQL.define_column (c, 1, rem_table, 1024);
+            d := DBMS_SQL.execute_and_fetch (c);
+            DBMS_SQL.column_value (c, 1, rem_table);
+            
+            IF rem_table IS NULL
+            THEN
+               rem_table := 'none comment';
+            END IF;
+            rem_table :=
+               '<INPUT SIZE="40" NAME="v_list" VALUE="' ||
+               rem_table ||
+               '"></TD>';
+            HTP.p ('Comments of table :' || rem_table || '<BR>');
+            HTP.p ('<TABLE BORDER="1" ALIGN="center">');
+            HTP.p ('<TR BGCOLOR="yellow">');
+            HTP.p ('<TD>N</TD>');
+            HTP.p ('<TD>Colon name</TD>');
+            HTP.p ('<TD>Type</TD>');
+            HTP.p ('<TD>NULL?</TD>');
+            HTP.p ('<TD>KEY</TD>');
+            HTP.p ('<TD>Comment</TD>');
+            HTP.p ('</TR>');
+            
+            FOR j IN 1 .. col_cnt
+            LOOP
+               BEGIN
+                  rec := rec_tab (j);
+                  ct := ' ';
+                  IF rec.col_type = 1
+                  THEN
+                     ct := 'VARCHAR2(' || rec.col_max_len || ')';
+                  END IF;
+                  IF rec.col_type = 2
+                  THEN
+                     ct := 'NUMBER(' || rec.col_precision || ')';
+                  END IF;
+                  IF rec.col_type = 3
+                  THEN
+                     ct := 'NATIVE INTEGER';
+                  END IF;
+                  IF rec.col_type = 8
+                  THEN
+                     ct := 'LONG';
+                  END IF;
+                  IF rec.col_type = 12
+                  THEN
+                     ct := 'DATE';
+                  END IF;
+                  IF rec.col_type = 96
+                  THEN
+                     ct := 'CHAR';
+                  END IF;
+                  sel_str :=
+                     'select Comments FROM USER_COL_COMMENTS WHERE Table_Name=''' ||
+                     v_list2 (1) ||
+                     ''' AND Column_name=''' ||
+                     rec.col_name ||
+                     '''';
+                  DBMS_SQL.parse (c, sel_str, DBMS_SQL.native);
+                  DBMS_SQL.define_column (c, 1, rem, 1024);
+                  d := DBMS_SQL.execute_and_fetch (c);
+                  DBMS_SQL.column_value (c, 1, rem);
+                  IF rem IS NULL
+                  THEN
+                     rem := '&' || 'nbsp;';
+                  END IF;
+                  constr := ' ';
+                  sel_str :=
+                     'select Constraint_Type FROM USER_CONSTRAINTS 
+                     WHERE Constraint_Name IN( 
+                             SELECT Constraint_name from USER_CONS_COLUMNS 
+                 WHERE Table_Name=''' ||
+                     v_list2 (1) ||
+                     ''' AND Column_Name=''' ||
+                     rec.col_name ||
+                     ''') ';
+                  
+                  DBMS_SQL.parse (c, sel_str, DBMS_SQL.native);
+                  DBMS_SQL.define_column (c, 1, constr, 1024);
+                  d := DBMS_SQL.execute_and_fetch (c);
+                  DBMS_SQL.column_value (c, 1, constr);
+                  IF constr IS NULL
+                  THEN
+                     constr := '&' || 'nbsp;';
+                  END IF;
+                  IF constr = 'C'
+                  THEN
+                     constr := 'CHECK';
+                  END IF;
+                  IF constr = 'P'
+                  THEN
+                     constr := 'PRIMARY KEY';
+                  END IF;
+                  IF constr = 'R'
+                  THEN
+                     constr := 'FOREIGN KEY';
+                  END IF;
+                  IF constr = 'U'
+                  THEN
+                     constr := 'UNIQUE';
+                  END IF;
+                  IF constr = 'V'
+                  THEN
+                     constr := 'WITH CHECK OPTION';
+                  END IF;
+                  
+                  HTP.p ('<TR BGCOLOR="white">');
+                  HTP.p ('<TD>' || j || '</TD>');
+                  HTP.p ('<TD>' || rec.col_name || '</TD>');
+                  HTP.p ('<TD>' || ct || '</TD>');
+                  IF NOT rec.col_null_ok
+                  THEN
+                     HTP.p ('<TD>NOT NULL</TD>');
+                  ELSE
+                     HTP.p ('<TD>YES</TD>');
+                  END IF;
+                  HTP.p ('<TD>' || constr || '</TD>');
+                  HTP.p ('<TD><INPUT NAME="v_list" SIZE ="40" VALUE="' ||
+                         rem ||
+                         '"></TD>');
+                  HTP.p ('</TR>');
+               END;
+            END LOOP;
+            HTP.p ('<TR BGCOLOR="white"><TD COLSPAN="6" ALIGN="CENTER">');
+            HTP.p ('<INPUT TYPE="SUBMIT" VALUE="Save for table ' ||
+                   v_list2 (1) ||
+                   '">');
+            HTP.formclose;
+            HTP.p ('</TD></TR>');
+            HTP.p ('<TR BGCOLOR="white"><TD COLSPAN="6" ALIGN="CENTER">');
+            HTP.p ('<FORM ACTION="legend_work.legend_view" METHOD="POST">');
+            HTP.p ('<INPUT TYPE="HIDDEN" NAME="v_list" VALUE="' ||
+                   v_list2 (1) ||
+                   '">');
+            HTP.p ('<INPUT TYPE="SUBMIT" VALUE="Report of table ' ||
+                   v_list2 (1) ||
+                   '">');
+            HTP.formclose;
+            HTP.p ('</TD></TR>');
+            HTP.p ('</TABLE>');
+            DBMS_SQL.close_cursor (c);
+         END;
+      END IF;
+      HTP.p ('</BODY></HTML>');
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         send_error ('legend_work.legend"');
+   END legend;
+   
+   /************************************************************************/
+
+   PROCEDURE legend_view (v_list IN array DEFAULT empty_array)
+   AS
+      v_list2                       array DEFAULT empty_array;
+      select_out                    array DEFAULT empty_array;
+      c                             NUMBER;
+      d                             NUMBER;
+      col_cnt                       INTEGER;
+      rec_tab                       DBMS_SQL.desc_tab;
+      rec                           DBMS_SQL.desc_rec;
+      col_num                       NUMBER;
+      sel_str                       VARCHAR2(256);
+      ct                            VARCHAR2(24);
+      rem                           VARCHAR2(1024);
+      rem_table                     VARCHAR2(1024);
+      constr                        VARCHAR2(1024);
+      user_name                     VARCHAR2(24);
+
+   BEGIN
+      IF NOT v_list.exists (1)
+      THEN
+         v_list2  (1) := ' ';
+      ELSE
+         v_list2  (1) := v_list (1);
+      END IF;
+      FOR x IN  (SELECT USER
+                 FROM dual)
+      LOOP
+         user_name := x.USER;
+      END LOOP;
+      
+      HTP.p ('<HTML><HEADER><TITLE>TABLE DESCRIBE</TITLE></HEADER><BODY BGCOLOR="#CCFFCC">');
+      
+      IF NOT v_list2 (1) = ' '
+      THEN
+         BEGIN
+            c := DBMS_SQL.open_cursor;
+            
+            sel_str := 'select * from ' || user_name || '.' || v_list (1);
+            DBMS_SQL.parse (c, sel_str, DBMS_SQL.native);
+            d := DBMS_SQL.execute (c);
+            DBMS_SQL.describe_columns (c, col_cnt, rec_tab);
+            
+            sel_str :=
+               'select Comments FROM USER_TAB_COMMENTS WHERE Table_Name=''' ||
+               v_list2 (1) ||
+               '''';
+            DBMS_SQL.parse (c, sel_str, DBMS_SQL.native);
+            DBMS_SQL.define_column (c, 1, rem_table, 1024);
+            d := DBMS_SQL.execute_and_fetch (c);
+            DBMS_SQL.column_value (c, 1, rem_table);
+            IF rem_table IS NULL
+            THEN
+               rem_table := 'none comment';
+            END IF;
+            
+            HTP.p ('<H1>Name of table: ' || v_list2 (1) || '</H1>');
+            
+            HTP.p ('Comments of table : <B>' || rem_table || '</B><BR><BR>');
+            
+            HTP.p ('<TABLE BORDER="1" ALIGN="center">');
+            HTP.p ('<TR BGCOLOR="yellow">');
+            HTP.p ('<TD>N</TD>');
+            HTP.p ('<TD>Colon name</TD>');
+            HTP.p ('<TD>Type</TD>');
+            HTP.p ('<TD>NULL?</TD>');
+            HTP.p ('<TD>KEY</TD>');
+            HTP.p ('<TD>Comment</TD>');
+            
+            HTP.p ('</TR>');
+            
+            FOR j IN 1 .. col_cnt
+            LOOP
+               BEGIN
+                  rec := rec_tab (j);
+                  ct := ' ';
+                  IF rec.col_type = 1
+                  THEN
+                     ct := 'VARCHAR2(' || rec.col_max_len || ')';
+                  END IF;
+                  IF rec.col_type = 2
+                  THEN
+                     ct := 'NUMBER(' || rec.col_precision || ')';
+                  END IF;
+                  IF rec.col_type = 3
+                  THEN
+                     ct := 'NATIVE INTEGER';
+                  END IF;
+                  IF rec.col_type = 8
+                  THEN
+                     ct := 'LONG';
+                  END IF;
+                  IF rec.col_type = 12
+                  THEN
+                     ct := 'DATE';
+                  END IF;
+                  IF rec.col_type = 96
+                  THEN
+                     ct := 'CHAR';
+                  END IF;
+                  
+                  sel_str :=
+                     'select Comments FROM USER_COL_COMMENTS WHERE Table_Name=''' ||
+                     v_list2 (1) ||
+                     ''' AND Column_name=''' ||
+                     rec.col_name ||
+                     '''';
+                  DBMS_SQL.parse (c, sel_str, DBMS_SQL.native);
+                  DBMS_SQL.define_column (c, 1, rem, 1024);
+                  d := DBMS_SQL.execute_and_fetch (c);
+                  DBMS_SQL.column_value (c, 1, rem);
+                  IF    rem IS NULL
+                     OR rem = ' '
+                  THEN
+                     rem := '&' || 'nbsp;';
+                  END IF;
+                  
+                  constr := ' ';
+                  sel_str :=
+                     'select Constraint_Type FROM USER_CONSTRAINTS 
+                     WHERE Constraint_Name IN( 
+                             SELECT Constraint_name from USER_CONS_COLUMNS 
+                 WHERE Table_Name=''' ||
+                     v_list2 (1) ||
+                     ''' AND Column_Name=''' ||
+                     rec.col_name ||
+                     ''') ';
+                  
+                  DBMS_SQL.parse (c, sel_str, DBMS_SQL.native);
+                  DBMS_SQL.define_column (c, 1, constr, 1024);
+                  d := DBMS_SQL.execute_and_fetch (c);
+                  DBMS_SQL.column_value (c, 1, constr);
+                  IF constr IS NULL
+                  THEN
+                     constr := '&' || 'nbsp;';
+                  END IF;
+                  IF constr = 'C'
+                  THEN
+                     constr := 'CHECK';
+                  END IF;
+                  IF constr = 'P'
+                  THEN
+                     constr := 'PRIMARY KEY';
+                  END IF;
+                  IF constr = 'R'
+                  THEN
+                     constr := 'FOREIGN KEY';
+                  END IF;
+                  IF constr = 'U'
+                  THEN
+                     constr := 'UNIQUE';
+                  END IF;
+                  IF constr = 'V'
+                  THEN
+                     constr := 'WITH CHECK OPTION';
+                  END IF;
+                  
+                  HTP.p ('<TR BGCOLOR="white">');
+                  HTP.p ('<TD>' || j || '</TD>');
+                  HTP.p ('<TD>' || rec.col_name || '</TD>');
+                  HTP.p ('<TD>' || ct || '</TD>');
+                  IF NOT rec.col_null_ok
+                  THEN
+                     HTP.p ('<TD>NOT NULL</TD>');
+                  ELSE
+                     HTP.p ('<TD>YES</TD>');
+                  END IF;
+                  HTP.p ('<TD>' || constr || '</TD>');
+                  HTP.p ('<TD>' || rem || '</TD>');
+                  HTP.p ('</TR>');
+               END;
+            END LOOP;
+            HTP.p ('</TABLE>');
+            HTP.p ('</BODY></HTML>');
+         END;
+      END IF;
+      HTP.p ('</BODY></HTML>');
+   
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         send_error ('legend_work.legend_view"');
+   END legend_view;
+   
+   /**********************************************/
+
+   PROCEDURE select_option (
+      is_selected IN VARCHAR2 DEFAULT NULL,
+      select_str IN VARCHAR2 DEFAULT NULL
+      )
+   AS
+      selected_str                  VARCHAR2(24);
+   BEGIN
+      IF is_selected = select_str
+      THEN
+         selected_str := 'SELECTED';
+      ELSE
+         selected_str := ' ';
+      END IF;
+      HTP.p ('<OPTION ' || selected_str || '>' || select_str || '</OPTION>');
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         send_error ('select_option');
+   END select_option;
+   
+   /**********************************************/
+
+   PROCEDURE send_error (procname IN VARCHAR2 DEFAULT NULL)
+   IS
+   BEGIN
+      HTP.htmlopen;
+      HTP.p ('<BODY BGCOLOR="yellow">');
+      HTP.p ('<H1>ERROR IN ' || procname || '</H1>');
+      HTP.p ('<TABLE BORDER=4 WIDTH="100%"><TR><TD ALIGN="CENTER">');
+      HTP.p (SQLERRM);
+      HTP.p ('</TD></TR></TABLE>');
+      HTP.bodyclose;
+      HTP.htmlclose;
+   END send_error;
+
+END legend_work;
+
+/
+
+SHOW errors 

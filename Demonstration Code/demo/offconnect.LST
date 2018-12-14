@@ -1,0 +1,8 @@
+SQL> connect scott/tiger
+Connected.
+SQL> set serveroutput on size 1000000
+SQL> exec plggen.dbg(1)
+
+PL/SQL procedure successfully completed.
+
+SQL> spool plggen.log

@@ -1,0 +1,552 @@
+CREATE OR REPLACE PACKAGE vda$strings
+IS
+/******************************************************************************\
+|| name        : vda$strings
+|| module      : VDA toolbox
+|| purpose     : String manipulations
+||
+|| Modificaties:
+|| Date         Version Who   Notes
+|| 20020611     1.00    PBA   initial version
+|| 20020611     1.01    PBA   added function scan
+|| 20020611     1.02    PBA   added function all_trim
+|| 20020707     1.03    PBA   added function instrw
+||                      MDR
+|| 20020725     1.04    PBA   replaced function instrw by function from James Padfield
+|| 20020905     1.05    PBA   added function scan2
+||
+|| author      : Patrick Barel
+|| created     : 08/08/2002 9:33:11 AM
+||(C) 1998-2002: VDA informatiebeheersing bv
+\******************************************************************************/
+  -- Author  : PATRICK
+  -- Created : 06/11/2002 6:00:57 AM
+  -- Purpose : String manipulations
+
+  -- Public type declarations
+--  type <TypeName> is <Datatype>;
+
+  -- Public constant declarations
+--  <ConstantName> constant <Datatype> := <Value>;
+
+  -- Public variable declarations
+--  <VariableName> <Datatype>;
+
+  -- Public function and procedure declarations
+--  function <FunctionName>(<Parameter> <Datatype>) return <Datatype>;
+/******************************************************************************\
+|| function    : scan
+|| parameters  : pi_text      the text to be parsed
+||               pi_num       look for this occurence
+||               pi_delimiter use this character as delimiter
+||
+|| return value: varchar2
+||
+|| purpose     : find the pi_num word in the pi_text string
+||               if pi_num < 0 then we search back to front
+||               default delimiter = ' '
+||
+|| author      : PATRICK
+|| created     : 06/11/2002 7:04:38 AM
+||(C) 1998-2002: VDA informatiebeheersing bv
+\******************************************************************************/
+  FUNCTION scan (pi_text IN VARCHAR2, pi_num IN NUMBER, pi_delimiter IN VARCHAR2 DEFAULT ' ')
+    RETURN VARCHAR2;
+
+/******************************************************************************\
+|| function    : scan2
+|| parameters  : pi_text      the text to be parsed
+||               pi_num       look for this occurence
+||               pi_delimiter use this character as delimiter
+||
+|| return value: varchar2
+||
+|| purpose     : find the pi_num word in the pi_text string
+||               if pi_num < 0 then we search back to front
+||               default delimiter = ' '
+||               this one also return null if the requested word should have been
+||               between two delimiters
+||               
+||
+|| author      : PATRICK
+|| created     : 06/11/2002 7:04:38 AM
+||(C) 1998-2002: VDA informatiebeheersing bv
+\******************************************************************************/
+  FUNCTION scan2 (pi_text IN VARCHAR2, pi_num IN NUMBER DEFAULT 1, pi_delimeter IN VARCHAR2 DEFAULT ' ')
+    RETURN VARCHAR2;
+
+/******************************************************************************\
+|| function    : all_trim
+|| parameters  : pi_text  the text to be trimmed
+||               pi_trim  the character(s) to be trimmed
+||
+|| return value: varchar2
+||
+|| purpose     : function to perform an ltrim and an rtrim
+||
+|| author      : Patrick Barel
+|| created     : 06/11/2002 7:51:05 AM
+||(C) 1998-2002: VDA informatiebeheersing bv
+\******************************************************************************/
+  FUNCTION all_trim (pi_text IN VARCHAR2, pi_trim IN VARCHAR2 DEFAULT ' ')
+    RETURN VARCHAR2;
+
+/******************************************************************************\
+|| function    : instrw
+|| parameters  : vp_wrd    the text to search in
+||               vp_exp    the string to search
+||               vp_pos    the start position
+||               vp_occ    look for the nth occurence of the search string
+||
+|| return value: pls_integer
+||
+|| purpose     : parse the pi_text for pi_search including wildcards
+||
+|| author      : Patrick Barel / Michel Draaijer / James Padfield
+|| created     : 08/08/2002 9:18:22 AM
+||(C) 1998-2002: VDA informatiebeheersing bv
+\******************************************************************************/
+  FUNCTION instrw (vp_wrd IN VARCHAR2, vp_exp IN VARCHAR2, vp_pos IN PLS_INTEGER := 1, vp_occ IN PLS_INTEGER := 1)
+    RETURN PLS_INTEGER;
+
+/******************************************************************************\
+|| function    : instrw
+|| parameters  : pi_text    the text to search in
+||               pi_search  the string to search
+||               pi_pos     the start position
+||               pi_nth     look for the nth occurence of the search string
+||               pi_case    perform a case sensitive or case insensitive search
+||
+|| return value: number
+||
+|| purpose     : parse the pi_text for pi_search including wildcards
+||
+|| author      : Patrick Barel / Michel Draaijer
+|| created     : 08/08/2002 9:18:22 AM
+||(C) 1998-2002: VDA informatiebeheersing bv
+\******************************************************************************/
+  FUNCTION instrw (pi_text IN VARCHAR2, pi_search IN VARCHAR2, pi_pos IN NUMBER DEFAULT 1, pi_nth IN NUMBER DEFAULT 1, pi_case IN BOOLEAN)
+    RETURN NUMBER;
+
+  FUNCTION REPLACE (
+    pi_srcstr            IN   VARCHAR2
+  , pi_oldsubstr         IN   VARCHAR2
+  , pi_newsubstr         IN   VARCHAR2 DEFAULT ''
+  , pi_start_occurence   IN   NUMBER DEFAULT 0
+  , pi_occurences        IN   NUMBER DEFAULT 0
+  )
+    RETURN VARCHAR2;
+END vda$strings;
+/
+CREATE OR REPLACE PACKAGE BODY vda$strings
+IS
+  -- Private type declarations
+--  type <TypeName> is <Datatype>;
+
+  -- Private constant declarations
+  con_percent                    CONSTANT VARCHAR2 (1) := '%';
+  con_underscore                 CONSTANT VARCHAR2 (1) := '_';
+
+  -- Private variable declarations
+--  <VariableName> <Datatype>;
+
+  -- Function and procedure implementations
+/******************************************************************************\
+|| function    : ppp_rscan
+|| parameters  : pi_text      the text to be parsed
+||               pi_num       look for this occurence
+||               pi_delimiter use this character as delimiter
+||
+|| return value: varchar2
+||
+|| purpose     : find the n-th word in a string. front to back
+||
+|| author      : PATRICK
+|| created     : 06/11/2002 7:07:36 AM
+||(C) 1998-2002: VDA informatiebeheersing bv
+\******************************************************************************/
+  FUNCTION ppp_scan (pi_text IN VARCHAR2, pi_num IN NUMBER, pi_delimiter IN VARCHAR2)
+    RETURN VARCHAR2
+  IS
+    lv_delimiter                            VARCHAR2 (1) := ' ';-- splitter must be only one character
+    lv_text                                 VARCHAR2 (4000);-- the text in (maximum string size in Oracle 8i
+    i                                       INTEGER := 1;
+    lv_current_occurence                    INTEGER := 1;
+    lv_current_pos                          INTEGER := 0;
+    lv_start_pos                            INTEGER := 0;
+    lv_end_pos                              INTEGER := 0;
+    lv_returnvalue                          VARCHAR2 (1000);
+  BEGIN
+    IF pi_num > 0 THEN
+      lv_delimiter      := SUBSTR (pi_delimiter, 1, 1);-- take the first character for the delimiter
+      lv_text           := LTRIM (RTRIM (pi_text));-- remove all spaces from beginning and end of string
+
+      WHILE SUBSTR (lv_text, i, 1) IS NOT NULL LOOP
+        IF SUBSTR (lv_text, i, 1) = lv_delimiter THEN-- check for the delimiter
+          IF i > lv_current_pos + 1 THEN-- check to see if we found something else since the last delimiter
+            lv_current_occurence    := lv_current_occurence + 1;
+          END IF;
+
+          lv_current_pos    := i;
+
+          IF pi_num = lv_current_occurence THEN-- is this the occurence we are looking for?
+            lv_start_pos    := i + 1;-- then save the position (start position of the word)
+          END IF;
+
+          IF pi_num + 1 = lv_current_occurence THEN-- is this the occurence next to the one we are looking for?
+            lv_end_pos    := i;-- then save the position (end position of the word)
+          END IF;
+        END IF;
+
+        i    := i + 1;
+      END LOOP;
+
+      IF     (lv_current_occurence = pi_num)
+         AND (lv_end_pos = 0) THEN-- is the last occurence the one we are looking for?
+        lv_end_pos    := i;-- i equals the last character of the string
+      END IF;
+
+      lv_returnvalue    := SUBSTR (lv_text, lv_start_pos, lv_end_pos - lv_start_pos);-- copy the word out of the string
+    ELSE
+      lv_returnvalue    := '';
+    END IF;
+
+    lv_returnvalue    := vda$strings.all_trim (lv_returnvalue, lv_delimiter);-- trim the delimiters
+    RETURN lv_returnvalue;
+  END ppp_scan;
+
+/******************************************************************************\
+|| function    : ppp_rscan
+|| parameters  : pi_text      the text to be parsed
+||               pi_num       look for this occurence
+||               pi_delimiter use this character as delimiter
+||
+|| return value: varchar2
+||
+|| purpose     : find the n-th word in a string. back to front
+||
+|| author      : PATRICK
+|| created     : 06/11/2002 7:07:25 AM
+||(C) 1998-2002: VDA informatiebeheersing bv
+\******************************************************************************/
+  FUNCTION ppp_rscan (pi_text IN VARCHAR2, pi_num IN NUMBER, pi_delimiter IN VARCHAR2)
+    RETURN VARCHAR2
+  IS
+    lv_delimiter                            VARCHAR2 (1) := ' ';-- splitter must be only one character
+    lv_text                                 VARCHAR2 (4000);-- the text in (maximum string size in Oracle 8i
+    i                                       INTEGER := 1;
+    lv_current_occurence                    INTEGER := 0;
+    lv_current_pos                          INTEGER := 0;
+    lv_start_pos                            INTEGER := 0;
+    lv_end_pos                              INTEGER := 0;
+    lv_returnvalue                          VARCHAR2 (1000);
+  BEGIN
+    IF pi_num < 0 THEN
+      lv_delimiter      := SUBSTR (pi_delimiter, 1, 1);-- take the first character for the delimiter
+      lv_text           := LTRIM (RTRIM (pi_text));-- remove all spaces from beginning and end of string
+      i                 := LENGTH (lv_text);
+
+      WHILE (SUBSTR (lv_text, i, 1) IS NOT NULL)
+        AND (i >= 0) LOOP
+        IF SUBSTR (lv_text, i, 1) = lv_delimiter THEN-- check for the delimiter
+          IF i < lv_current_pos - 1 THEN-- check to see if we found something else since the last delimiter
+            lv_current_occurence    := lv_current_occurence - 1;
+          END IF;
+
+          lv_current_pos    := i;
+
+          IF pi_num + 1 = lv_current_occurence THEN-- is this the occurence we are looking for?
+            lv_start_pos    := i + 1;-- then save the position (start position of the word)
+          END IF;
+
+          IF pi_num + 2 = lv_current_occurence THEN-- is this the occurence next to the one we are looking for?
+            lv_end_pos    := i;-- then save the position (end position of the word)
+          END IF;
+        END IF;
+
+        i    := i - 1;
+      END LOOP;
+
+      IF     (lv_end_pos = 0)
+         AND (lv_start_pos <> 0) THEN-- is the last occurence the one we are looking for?
+        lv_end_pos    := LENGTH (lv_text) + 1;-- get the position of the last character in the string
+      END IF;
+
+      lv_returnvalue    := SUBSTR (lv_text, lv_start_pos, lv_end_pos - lv_start_pos);-- copy the word out of the string
+    ELSE
+      lv_returnvalue    := '';
+    END IF;
+
+    lv_returnvalue    := vda$strings.all_trim (lv_returnvalue, lv_delimiter);-- trim the delimiters
+    RETURN lv_returnvalue;
+  END ppp_rscan;
+
+/******************************************************************************\
+|| function    : scan
+|| parameters  : pi_text      the text to be parsed
+||               pi_num       look for this occurence
+||               pi_delimiter use this character as delimiter
+||
+|| return value: varchar2
+||
+|| purpose     : find the pi_num word in the pi_text string
+||               if pi_num < 0 then we search back to front
+||               default delimiter = ' '
+||
+|| author      : PATRICK
+|| created     : 06/11/2002 7:04:38 AM
+||(C) 1998-2002: VDA informatiebeheersing bv
+\******************************************************************************/
+  FUNCTION scan (pi_text IN VARCHAR2, pi_num IN NUMBER, pi_delimiter IN VARCHAR2 DEFAULT ' ')
+    RETURN VARCHAR2
+  IS
+    lv_returnvalue                          VARCHAR2 (4000);
+  BEGIN
+    /* if pi_num < 0 then we have to parse from the end of the string, so we use
+     * the rscan function
+     */
+    IF pi_num >= 0 THEN
+      lv_returnvalue    := ppp_scan (pi_text => pi_text, pi_num => pi_num, pi_delimiter => pi_delimiter);
+    ELSE
+      lv_returnvalue    := ppp_rscan (pi_text => pi_text, pi_num => pi_num, pi_delimiter => pi_delimiter);
+    END IF;
+
+    RETURN lv_returnvalue;
+  END scan;
+
+/******************************************************************************\
+|| function    : scan2
+|| parameters  : pi_text      the text to be parsed
+||               pi_num       look for this occurence
+||               pi_delimiter use this character as delimiter
+||
+|| return value: varchar2
+||
+|| purpose     : find the pi_num word in the pi_text string
+||               if pi_num < 0 then we search back to front
+||               default delimiter = ' '
+||               this one also return null if the requested word should have been
+||               between two delimiters
+||               
+||
+|| author      : PATRICK
+|| created     : 06/11/2002 7:04:38 AM
+||(C) 1998-2002: VDA informatiebeheersing bv
+\******************************************************************************/
+  FUNCTION scan2 (pi_text IN VARCHAR2, pi_num IN NUMBER DEFAULT 1, pi_delimeter IN VARCHAR2 DEFAULT ' ')
+    RETURN VARCHAR2
+  IS
+    lv_startpos                             PLS_INTEGER := 0;
+    lv_endpos                               PLS_INTEGER := 0;
+    lv_num                                  PLS_INTEGER := pi_num;
+    lv_current_occurence                    INTEGER := 1;
+    lv_current_pos                          INTEGER := 0;
+    i                                       INTEGER := 1;
+    lv_returnvalue                          VARCHAR2 (4000) := '';
+  BEGIN
+    IF pi_num > 0 THEN
+      IF pi_num > 1 THEN
+        WHILE SUBSTR (pi_text, i, LENGTH (pi_delimeter)) IS NOT NULL LOOP
+          IF SUBSTR (pi_text, i, LENGTH (pi_delimeter)) = pi_delimeter THEN-- check for the delimiter
+            IF i >= lv_current_pos + LENGTH (pi_delimeter) THEN-- check to see if we found something else since the last delimiter
+              lv_current_occurence    := lv_current_occurence + 1;
+              lv_current_pos          := i;
+              i                       := i + LENGTH (pi_delimeter) - 1;
+
+              IF pi_num = lv_current_occurence THEN-- is this the occurence we are looking for?
+                lv_startpos    := i + 1;-- then save the position (start position of the word)
+              END IF;
+            END IF;
+          END IF;
+
+          i    := i + 1;
+        END LOOP;
+      ELSE
+        lv_startpos    := 1;
+      END IF;
+
+      lv_endpos    := INSTR (pi_text, pi_delimeter, lv_startpos, 1) - 1;
+
+    ELSIF pi_num < 0 THEN
+      lv_current_occurence    := 0;
+      i                       := LENGTH (pi_text);
+      lv_current_pos := i;
+
+      WHILE SUBSTR (pi_text, i, LENGTH (pi_delimeter)) IS NOT NULL LOOP
+        IF SUBSTR (pi_text, i, LENGTH (pi_delimeter)) = pi_delimeter THEN-- check for the delimiter
+          IF i <= lv_current_pos + LENGTH (pi_delimeter) THEN-- check to see if we found something else since the last delimiter
+            lv_current_occurence    := lv_current_occurence - 1;
+            lv_current_pos          := i;
+            i                       := i - LENGTH (pi_delimeter) + 1;
+
+            IF pi_num = lv_current_occurence THEN-- is this the occurence we are looking for?
+              lv_startpos    := i + 1 + length(pi_delimeter);-- then save the position (start position of the word)
+            END IF;
+          END IF;
+        END IF;
+
+        i    := i - 1;
+        if i = 0 then
+         exit ;
+        end if;
+      END LOOP;
+      if (lv_current_occurence - 1) = pi_num then
+       lv_startpos := 1;
+      end if;
+      lv_endpos               := INSTR (pi_text, pi_delimeter, lv_startpos, 1) - 1;
+    else
+     lv_startpos := 0;
+     lv_endpos := -1;
+    END IF;
+      IF     (lv_startpos > 1)
+         AND (lv_endpos = -1) THEN
+        lv_endpos    := LENGTH (pi_text);
+      END IF;
+
+    lv_returnvalue    := SUBSTR (pi_text, lv_startpos, lv_endpos - lv_startpos + 1);
+    RETURN lv_returnvalue;
+  END scan2;
+
+/******************************************************************************\
+|| function    : all_trim
+|| parameters  : pi_text  the text to be trimmed
+||               pi_trim  the character(s) to be trimmed
+||
+|| return value: varchar2
+||
+|| purpose     : function to perform an ltrim and an rtrim
+||
+|| author      : PATRICK
+|| created     : 06/11/2002 7:51:05 AM
+||(C) 1998-2002: VDA informatiebeheersing bv
+\******************************************************************************/
+  FUNCTION all_trim (pi_text IN VARCHAR2, pi_trim IN VARCHAR2 DEFAULT ' ')
+    RETURN VARCHAR2
+  IS
+    lv_returnvalue                          VARCHAR2 (4000);
+  BEGIN
+    lv_returnvalue    := LTRIM (RTRIM (pi_text, pi_trim), pi_trim);
+    RETURN lv_returnvalue;
+  END all_trim;
+
+/******************************************************************************\
+|| function    : instrw
+|| parameters  : vp_wrd    the text to search in
+||               vp_exp    the string to search
+||               vp_pos    the start position
+||               vp_occ    look for the nth occurence of the search string
+||
+|| return value: pls_integer
+||
+|| purpose     : parse the pi_text for pi_search including wildcards
+||
+|| author      : Patrick Barel / Michel Draaijer / James Padfield
+|| created     : 08/08/2002 9:18:22 AM
+||(C) 1998-2002: VDA informatiebeheersing bv
+\******************************************************************************/
+  FUNCTION instrw (vp_wrd IN VARCHAR2, vp_exp IN VARCHAR2, vp_pos IN PLS_INTEGER := 1, vp_occ IN PLS_INTEGER := 1)
+    RETURN PLS_INTEGER
+  IS
+    v_exp                                   VARCHAR2 (32767) := vp_exp || '%';
+    v_rtn                                   PLS_INTEGER := 0;
+    v_occ                                   PLS_INTEGER := 0;
+  BEGIN
+    IF vp_pos > 0 THEN
+      IF SUBSTR (vp_wrd, vp_pos) LIKE '%' || v_exp THEN
+        FOR i IN vp_pos .. LENGTH (vp_wrd) LOOP
+          IF SUBSTR (vp_wrd, i) LIKE v_exp THEN
+            v_occ    := v_occ + 1;
+
+            IF v_occ = vp_occ THEN
+              v_rtn    := i;
+              EXIT;
+            END IF;
+          END IF;
+        END LOOP;
+      END IF;
+    ELSIF vp_pos < 0 THEN
+      IF SUBSTR (vp_wrd, 1, LENGTH (vp_wrd) + vp_pos) LIKE '%' || v_exp THEN
+        FOR i IN REVERSE 1 .. LENGTH (vp_wrd) + vp_pos LOOP
+          IF SUBSTR (vp_wrd, i) LIKE v_exp THEN
+            v_occ    := v_occ + 1;
+
+            IF v_occ = vp_occ THEN
+              v_rtn    := i;
+              EXIT;
+            END IF;
+          END IF;
+        END LOOP;
+      END IF;
+    END IF;
+
+    RETURN v_rtn;
+  END instrw;
+
+/******************************************************************************\
+|| function    : instrw
+|| parameters  : pi_text    the text to search in
+||               pi_search  the string to search
+||               pi_pos     the start position
+||               pi_nth     look for the nth occurence of the search string
+||               pi_case    perform a case sensitive or case insensitive search
+||
+|| return value: number
+||
+|| purpose     : parse the pi_text for pi_search including wildcards
+||
+|| author      : Patrick Barel / Michel Draaijer
+|| created     : 08/08/2002 9:18:22 AM
+||(C) 1998-2002: VDA informatiebeheersing bv
+\******************************************************************************/
+  FUNCTION instrw (pi_text IN VARCHAR2, pi_search IN VARCHAR2, pi_pos IN NUMBER DEFAULT 1, pi_nth IN NUMBER DEFAULT 1, pi_case IN BOOLEAN)
+    RETURN NUMBER
+  IS
+    lv_returnvalue                          NUMBER;
+  BEGIN
+    IF pi_case THEN
+      -- case sensitive
+      lv_returnvalue    := instrw (vp_wrd => pi_text, vp_exp => pi_search, vp_pos => pi_pos, vp_occ => pi_nth);
+    ELSE
+      -- case insensitive
+      -- call the procedure with the string to search and the string to search in in upper case
+      lv_returnvalue    := instrw (vp_wrd => UPPER (pi_text), vp_exp => UPPER (pi_search), vp_pos => pi_pos, vp_occ => pi_nth);
+    END IF;-- pi_case
+
+    -- return the returnvalue;
+    RETURN lv_returnvalue;
+  END instrw;
+
+/******************************************************************************\
+|| function    : replace
+|| parameters  :
+||
+|| return value:
+||
+|| purpose     :
+||
+|| author      : PATRICK
+|| created     : 06/11/2002 12:03:17 PM
+||(C) 1998-2002: VDA informatiebeheersing bv
+\******************************************************************************/
+  FUNCTION REPLACE (
+    pi_srcstr            IN   VARCHAR2
+  , pi_oldsubstr         IN   VARCHAR2
+  , pi_newsubstr         IN   VARCHAR2 DEFAULT ''
+  , pi_start_occurence   IN   NUMBER DEFAULT 0
+  , pi_occurences        IN   NUMBER DEFAULT 0
+  )
+    RETURN VARCHAR2
+  IS
+    lv_returnvalue                          VARCHAR2 (4000);
+  BEGIN
+    lv_returnvalue    := pi_srcstr;
+    -- find the occurence to start the replace with, i.e. pi_start_occurence + 1
+
+    RETURN lv_returnvalue;
+  END replace;
+
+BEGIN
+  -- Initialization
+  NULL;
+END vda$strings;
+/

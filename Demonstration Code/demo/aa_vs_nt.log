@@ -1,0 +1,14 @@
+Connected as HR@ORCL
+Associative memory
+1225043
+ - Elapsed CPU : 3.02 seconds.
+   Change in UGA memory: 65512 (Current = 373096)
+   Change in PGA memory: 485490688 (Current = 487059568)
+PL/SQL procedure successfully completed.
+Connected as HR@ORCL
+Nested table
+1225043
+ - Elapsed CPU : 2.76 seconds.
+   Change in UGA memory: 65512 (Current = 373096)
+   Change in PGA memory: 485490688 (Current = 486142064)
+PL/SQL procedure successfully completed.

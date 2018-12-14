@@ -1,0 +1,26 @@
+CREATE OR REPLACE PACKAGE valerr
+IS
+   FUNCTION get RETURN VARCHAR2;
+END valerr;
+/
+CREATE OR REPLACE PACKAGE BODY valerr
+IS
+   v VARCHAR2(1);
+
+   FUNCTION get RETURN VARCHAR2 
+   IS
+   BEGIN
+      RETURN v;
+   END;
+BEGIN
+   v := 'ABC';
+
+EXCEPTION
+  WHEN OTHERS 
+  THEN
+    DBMS_OUTPUT.PUT_LINE ('Error initializing valerr:');
+    DBMS_OUTPUT.PUT_LINE (SQLERRM);
+	 
+END valerr;
+/
+

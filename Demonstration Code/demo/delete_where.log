@@ -1,0 +1,341 @@
+SQL> 
+SQL> CONNECT hr/hr
+Connected.
+
+PL/SQL procedure successfully completed.
+
+SQL> SET serveroutput on
+SQL> SET echo on
+SQL> 
+SQL> DROP TABLE employees2
+  2  /
+
+Table dropped.
+
+SQL> CREATE TABLE employees2 AS SELECT * FROM employees
+  2  /
+
+Table created.
+
+SQL> SELECT COUNT (*) "HR COUNT BEFORE"
+  2    FROM employees2
+  3  /
+
+HR COUNT BEFORE                                                                 
+---------------                                                                 
+            107                                                                 
+
+SQL> GRANT SELECT ON employees2 TO SCOTT
+  2  /
+
+Grant succeeded.
+
+SQL> 
+SQL> CREATE OR REPLACE PROCEDURE delete_table (
+  2  	table_in IN VARCHAR2
+  3   , where_in IN VARCHAR2 DEFAULT NULL
+  4  )
+  5  AUTHID DEFINER
+  6  IS
+  7  BEGIN
+  8  	DBMS_OUTPUT.put_line ('Deleting from ' || table_in || '...');
+  9  
+ 10  	EXECUTE IMMEDIATE    'DELETE FROM '
+ 11  			  || table_in
+ 12  			  || CASE
+ 13  				WHEN where_in IS NULL
+ 14  				   THEN NULL
+ 15  				ELSE ' WHERE ' || where_in
+ 16  			     END;
+ 17  END delete_table;
+ 18  /
+
+Procedure created.
+
+SQL> 
+SQL> GRANT EXECUTE ON delete_table TO scott
+  2  /
+
+Grant succeeded.
+
+SQL> /* Connect to SCOTT */
+SQL> 
+SQL> CONNECT scott/tiger
+Connected.
+
+PL/SQL procedure successfully completed.
+
+SQL> SET serveroutput on
+SQL> SET echo on
+SQL> 
+SQL> DROP TABLE employees2
+  2  /
+
+Table dropped.
+
+SQL> CREATE TABLE employees2 AS SELECT * FROM hr.employees2
+  2  /
+
+Table created.
+
+SQL> DROP TABLE employees3
+  2  /
+
+Table dropped.
+
+SQL> CREATE TABLE employees3 AS SELECT * FROM hr.employees2
+  2  /
+
+Table created.
+
+SQL> SELECT COUNT (*) "SCOTT.EMPLOYEES2 COUNT BEFORE"
+  2    FROM employees2
+  3  /
+
+SCOTT.EMPLOYEES2 COUNT BEFORE                                                   
+-----------------------------                                                   
+                          107                                                   
+
+SQL> SELECT COUNT (*) "SCOTT.EMPLOYEES3 COUNT BEFORE"
+  2    FROM employees3
+  3  /
+
+SCOTT.EMPLOYEES3 COUNT BEFORE                                                   
+-----------------------------                                                   
+                          107                                                   
+
+SQL> 
+SQL> BEGIN
+  2  	hr.delete_table ('employees2');
+  3  END;
+  4  /
+Deleting from employees2...                                                     
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> BEGIN
+  2  	hr.delete_table ('employees3');
+  3  END;
+  4  /
+Deleting from employees3...                                                     
+BEGIN
+*
+ERROR at line 1:
+ORA-00942: table or view does not exist 
+ORA-06512: at "HR.DELETE_TABLE", line 10 
+ORA-06512: at line 2 
+
+
+SQL> 
+SQL> BEGIN
+  2  	hr.delete_table ('SCOTT.employees3');
+  3  END;
+  4  /
+Deleting from SCOTT.employees3...                                               
+BEGIN
+*
+ERROR at line 1:
+ORA-00942: table or view does not exist 
+ORA-06512: at "HR.DELETE_TABLE", line 10 
+ORA-06512: at line 2 
+
+
+SQL> 
+SQL> SELECT COUNT (*) "SCOTT.EMPLOYEES2 COUNT AFTER"
+  2    FROM employees2
+  3  /
+
+SCOTT.EMPLOYEES2 COUNT AFTER                                                    
+----------------------------                                                    
+                         107                                                    
+
+SQL> SELECT COUNT (*) "SCOTT.EMPLOYEES3 COUNT AFTER"
+  2    FROM employees3
+  3  /
+
+SCOTT.EMPLOYEES3 COUNT AFTER                                                    
+----------------------------                                                    
+                         107                                                    
+
+SQL> 
+SQL> SELECT COUNT (*) "HR COUNT AFTER"
+  2    FROM HR.employees2
+  3  /
+
+HR COUNT AFTER                                                                  
+--------------                                                                  
+             0                                                                  
+
+SQL> /*
+SQL> *
+SQL> * Now change to invoker rights and do it again.
+SQL> *
+SQL> */
+SQL> 
+SQL> CONNECT hr/hr
+Connected.
+
+PL/SQL procedure successfully completed.
+
+SQL> SET serveroutput on
+SQL> SET echo on
+SQL> 
+SQL> DROP TABLE employees2
+  2  /
+
+Table dropped.
+
+SQL> CREATE TABLE employees2 AS SELECT * FROM employees
+  2  /
+
+Table created.
+
+SQL> SELECT COUNT (*) "HR COUNT BEFORE"
+  2    FROM employees2
+  3  /
+
+HR COUNT BEFORE                                                                 
+---------------                                                                 
+            107                                                                 
+
+SQL> GRANT SELECT ON employees2 TO scott
+  2  /
+
+Grant succeeded.
+
+SQL> 
+SQL> CREATE OR REPLACE PROCEDURE delete_table (
+  2  	table_in IN VARCHAR2
+  3   , where_in IN VARCHAR2 DEFAULT NULL
+  4  )
+  5  AUTHID CURRENT_USER	      /* The only line of code that has changed! */
+  6  IS
+  7  BEGIN
+  8  	DBMS_OUTPUT.put_line ('Deleting from ' || table_in || '...');
+  9  
+ 10  	EXECUTE IMMEDIATE    'DELETE FROM '
+ 11  			  || table_in
+ 12  			  || CASE
+ 13  				WHEN where_in IS NULL
+ 14  				   THEN NULL
+ 15  				ELSE ' WHERE ' || where_in
+ 16  			     END;
+ 17  END delete_table;
+ 18  /
+
+Procedure created.
+
+SQL> 
+SQL> GRANT EXECUTE ON delete_table TO scott
+  2  /
+
+Grant succeeded.
+
+SQL> /* Connect to SCOTT */
+SQL> 
+SQL> CONNECT scott/tiger
+Connected.
+
+PL/SQL procedure successfully completed.
+
+SQL> SET serveroutput on
+SQL> SET echo on
+SQL> 
+SQL> DROP TABLE employees2
+  2  /
+
+Table dropped.
+
+SQL> CREATE TABLE employees2 AS SELECT * FROM hr.employees2
+  2  /
+
+Table created.
+
+SQL> DROP TABLE employees3
+  2  /
+
+Table dropped.
+
+SQL> CREATE TABLE employees3 AS SELECT * FROM hr.employees2
+  2  /
+
+Table created.
+
+SQL> SELECT COUNT (*) "SCOTT.EMPLOYEES2 COUNT BEFORE"
+  2    FROM employees2
+  3  /
+
+SCOTT.EMPLOYEES2 COUNT BEFORE                                                   
+-----------------------------                                                   
+                          107                                                   
+
+SQL> SELECT COUNT (*) "SCOTT.EMPLOYEES3 COUNT BEFORE"
+  2    FROM employees3
+  3  /
+
+SCOTT.EMPLOYEES3 COUNT BEFORE                                                   
+-----------------------------                                                   
+                          107                                                   
+
+SQL> 
+SQL> BEGIN
+  2  	hr.delete_table ('employees2');
+  3  END;
+  4  /
+Deleting from employees2...                                                     
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> SELECT COUNT (*) "SCOTT.EMPLOYEES2 COUNT AFTER"
+  2    FROM employees2
+  3  /
+
+SCOTT.EMPLOYEES2 COUNT AFTER                                                    
+----------------------------                                                    
+                           0                                                    
+
+SQL> 
+SQL> BEGIN
+  2  	hr.delete_table ('employees3');
+  3  END;
+  4  /
+Deleting from employees3...                                                     
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> SELECT COUNT (*) "SCOTT.EMPLOYEES3 COUNT AFTER"
+  2    FROM employees3
+  3  /
+
+SCOTT.EMPLOYEES3 COUNT AFTER                                                    
+----------------------------                                                    
+                           0                                                    
+
+SQL> 
+SQL> BEGIN
+  2  	hr.delete_table ('HR.employees2');
+  3  END;
+  4  /
+Deleting from HR.employees2...                                                  
+BEGIN
+*
+ERROR at line 1:
+ORA-01031: insufficient privileges 
+ORA-06512: at "HR.DELETE_TABLE", line 10 
+ORA-06512: at line 2 
+
+
+SQL> 
+SQL> SELECT COUNT (*) "HR.EMPLOYEES2 COUNT AFTER"
+  2    FROM HR.employees2
+  3  /
+
+HR.EMPLOYEES2 COUNT AFTER                                                       
+-------------------------                                                       
+                      107                                                       
+
+SQL> 
+SQL> SPOOL OFF

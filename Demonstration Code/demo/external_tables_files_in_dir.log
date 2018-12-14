@@ -1,0 +1,18 @@
+Connected as SYS@ORACLE112 as sysdba
+PL/SQL procedure successfully completed.
+Connected as HR@ORACLE112
+Table dropped.
+Table created.
+
+FILE_NAME                                                                       
+--------------------------------------------------------------------------------
+temp.camrec                                                                     
+temp.sql                                                                        
+temp.txt                                                                        
+temp.xml                                                                        
+temp.zip                                                                        
+temp1.pkb                                                                       
+temp2.pkb                                                                       
+temp2.txt                                                                       
+
+8 rows selected.

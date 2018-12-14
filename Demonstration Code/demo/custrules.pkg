@@ -1,0 +1,50 @@
+CREATE OR REPLACE PACKAGE customer_rules
+IS
+    FUNCTION min_balance RETURN PLS_INTEGER;  /* Toronto */
+    
+    FUNCTION eligible_for_discount 
+       (customer_in IN customer%ROWTYPE) 
+       RETURN BOOLEAN;
+
+    FUNCTION eligible_for_discount 
+       (customer_id_in IN customer.customer_id%TYPE) 
+       RETURN BOOLEAN;
+
+END customer_rules;
+/
+CREATE OR REPLACE PACKAGE BODY customer_rules
+IS
+    c_min_balance CONSTANT PLS_INTEGER := 10000;
+       
+    FUNCTION min_balance RETURN PLS_INTEGER 
+       IS BEGIN RETURN c_min_balance; END;  /* TORONTO */
+    
+    FUNCTION eligible_for_discount 
+       (customer_in IN customer%ROWTYPE) 
+       RETURN BOOLEAN
+    IS
+	    retval BOOLEAN;
+    BEGIN
+	     /* Perform all validations here. */
+		  retval := 
+		     customer_in.balance > min_balance AND
+		     customer_in.pref_type = 'MOST FAVORED' AND 
+             customer_in.disc_eligibility;
+
+        RETURN retval;
+    END;
+
+    FUNCTION eligible_for_discount 
+       (customer_id_in IN customer.customer_id%TYPE) 
+       RETURN BOOLEAN
+    IS
+	    customer_rec customer%ROWTYPE;
+    BEGIN
+        /* Retrieve a record for this primary key. */
+		  customer_rec := te_customer.onerow (customer_id_in);
+
+        /* Use other function to calculate eligibility. */
+		  RETURN eligible_for_discount (customer_rec);
+    END;
+END customer_rules;
+/

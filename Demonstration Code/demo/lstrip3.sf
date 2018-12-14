@@ -1,0 +1,24 @@
+CREATE OR REPLACE FUNCTION lstrip3 (
+   string_in IN VARCHAR2,
+   substring_in IN VARCHAR2,
+   num_in IN INTEGER := 1)
+   RETURN VARCHAR2
+IS
+   v_length NUMBER;
+   v_clip VARCHAR2(32767);
+   v_clipcount INTEGER := 0;
+BEGIN
+   v_length := LENGTH (substring_in);
+   WHILE v_clipcount < num_in
+   LOOP
+      v_clip := 
+         SUBSTR (
+            string_in, v_clipcount * v_length + 1, v_length);
+      EXIT WHEN v_clip != substring_in;
+      v_clipcount := v_clipcount + 1;
+   END LOOP;
+   RETURN SUBSTR (string_in, v_clipcount * v_length + 1);
+END;
+/
+
+

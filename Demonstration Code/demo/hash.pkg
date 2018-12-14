@@ -1,0 +1,36 @@
+CREATE OR REPLACE PACKAGE hash
+IS
+   FUNCTION val (str IN VARCHAR2) RETURN NUMBER;
+   
+   /* Dallas 11/99 */
+   FUNCTION val (
+      str1 IN VARCHAR2, str2 IN VARCHAR2, delim IN VARCHAR2 := '|')
+      RETURN NUMBER;
+END hash;
+/
+CREATE OR REPLACE PACKAGE BODY hash
+IS
+   maxRange CONSTANT PLS_INTEGER := POWER (2, 31)-1;
+   strt CONSTANT PLS_INTEGER := 0;
+
+   FUNCTION val (str IN VARCHAR2) RETURN NUMBER
+   IS
+   BEGIN
+      RETURN
+         DBMS_UTILITY.GET_HASH_VALUE (
+           str, strt, maxRange
+           );
+   END val;
+
+   FUNCTION val (str1 IN VARCHAR2, str2 IN VARCHAR2, delim IN VARCHAR2 := '|')
+      RETURN NUMBER
+   IS
+   BEGIN
+      RETURN
+         DBMS_UTILITY.GET_HASH_VALUE (
+           str1 || delim || str2, strt, maxRange
+           );
+   END val;
+
+END hash;
+/

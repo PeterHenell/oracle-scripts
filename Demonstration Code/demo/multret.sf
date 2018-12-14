@@ -1,0 +1,36 @@
+create or replace FUNCTION status_desc (
+   cd_in IN VARCHAR2) 
+   RETURN VARCHAR2
+IS
+-- Version of lookup function that relies on multiple RETURNs.
+BEGIN
+   IF cd_in = 'C' 
+      THEN RETURN 'CLOSED';
+   ELSIF cd_in = 'O' 
+      THEN RETURN 'OPEN';
+   ELSIF cd_in = 'A' 
+      THEN RETURN 'ACTIVE';
+   ELSIF cd_in = 'I' 
+      THEN RETURN 'INACTIVE';
+   END IF;
+END;
+/ 
+CREATE OR REPLACE FUNCTION status_desc (
+   cd_in IN VARCHAR2) 
+   RETURN VARCHAR2
+IS
+-- Same function rewritten to use a single RETURN.
+   retval VARCHAR2(20);
+BEGIN
+   IF cd_in = 'C' 
+      THEN retval := 'CLOSED';
+   ELSIF cd_in = 'O' 
+      THEN retval := 'OPEN';
+   ELSIF cd_in = 'A' 
+      THEN retval := 'ACTIVE';
+   ELSIF cd_in = 'I' 
+      THEN retval := 'INACTIVE';
+   END IF;
+   RETURN retval;
+END;
+/

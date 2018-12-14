@@ -1,0 +1,85 @@
+CREATE OR REPLACE FUNCTION infile 
+	(loc_in IN VARCHAR2,
+    file_in IN VARCHAR2, 
+	 text_in IN VARCHAR2, 
+	 occurrence_in IN INTEGER := 1,
+	 start_line_in IN INTEGER := 1,
+	 end_line_in IN INTEGER := 0,
+	 ignore_case_in IN VARCHAR2 := 'IGNORE_CASE')
+RETURN INTEGER
+/*
+|| An "INSTR" for operating system files. Returns the line number of
+|| a file in which a text string was found.
+*/
+IS
+	/* Handle to the file. Only will open if arguments are valid. */
+	file_handle UTL_FILE.FILE_TYPE;
+
+	/* Use local variable to hold this information. */
+	ignore_case BOOLEAN := UPPER (ignore_case_in) = 'IGNORE_CASE';
+
+	/* Holds a line of text from the file. */
+	line_of_text VARCHAR2(1000);
+
+	text_loc INTEGER;
+	found_count INTEGER := 0;
+
+	/* Boolean to determine if there are more values to read */
+	no_more_lines BOOLEAN := FALSE;
+
+	/* Function return value */
+	return_value INTEGER := 0;
+BEGIN
+	/* Assert valid arguments. If any fail, return NULL. */
+	IF loc_in IS NULL OR
+      file_in IS NULL OR
+		text_in IS NULL OR
+		occurrence_in <= 0 OR
+		start_line_in < 1 OR
+		end_line_in < 0
+	THEN
+		return_value := NULL;
+	ELSE
+		/* All arguments are fine. Open and read through the file. */
+		file_handle := xFILE.FOPEN (loc_in, file_in, 'R');
+		LOOP
+			/* Get next line and exit if at end of file. */
+			xfile.get_line (file_handle, line_of_text, no_more_lines);
+			EXIT WHEN no_more_lines;
+
+			/* Have another line from file. */
+			return_value := return_value + 1;
+
+			/* If this line is between the search range... */
+			IF (return_value BETWEEN start_line_in AND end_line_in) OR
+			   (return_value >= start_line_in AND end_line_in = 0)
+			THEN
+				/* Use INSTR to see if text is present. */
+				IF ignore_case
+				THEN
+					text_loc := INSTR (line_of_text, text_in);
+				ELSE
+					text_loc := INSTR (UPPER (line_of_text), UPPER (text_in));
+				END IF;
+
+				/* If text location is positive, have a match. */
+				IF text_loc > 0
+				THEN
+					/* Increment found counter. Exit if matches request. */
+					found_count := found_count + 1;
+					EXIT WHEN found_count = occurrence_in;
+				END IF;
+			END IF;
+		END LOOP;
+		xFILE.FCLOSE (file_handle);
+	END IF;
+
+	IF no_more_lines
+	THEN
+		/* read through whole file without success. */
+		return_value := NULL;
+	END IF;
+
+	RETURN return_value;
+END;
+/

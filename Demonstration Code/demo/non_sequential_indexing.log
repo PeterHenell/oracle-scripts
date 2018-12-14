@@ -1,0 +1,19 @@
+
+Table dropped.
+
+
+Table created.
+
+
+Procedure created.
+
+sequential load of 50000 - Elapsed CPU : .05 seconds.                           
+non-sequential load - Elapsed CPU : .06 seconds.                                
+sequential lookup - Elapsed CPU : 187.03 seconds.                               
+non-sequential lookup - Elapsed CPU : .02 seconds.                              
+
+PL/SQL procedure successfully completed.
+
+
+Table dropped.
+

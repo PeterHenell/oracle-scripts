@@ -1,0 +1,72 @@
+create or replace package employee_cache is 
+subtype I_EMPLOYEE_NAME_t is varchar2(32767);
+function onerow ( EMPLOYEE_ID_in IN SCOTT.EMPLOYEE.EMPLOYEE_ID%TYPE) return SCOTT.EMPLOYEE%ROWTYPE;
+function onerow_by_I_EMPLOYEE_NAME ( 
+LAST_NAME_in IN SCOTT.EMPLOYEE.LAST_NAME%TYPE
+,
+FIRST_NAME_in IN SCOTT.EMPLOYEE.FIRST_NAME%TYPE
+,
+MIDDLE_INITIAL_in IN SCOTT.EMPLOYEE.MIDDLE_INITIAL%TYPE
+) return SCOTT.EMPLOYEE%ROWTYPE;
+procedure test;
+end employee_cache;
+/
+create or replace package body employee_cache is 
+TYPE EMPLOYEE_aat IS TABLE OF SCOTT.EMPLOYEE%ROWTYPE INDEX BY PLS_INTEGER;
+EMP_PK_aa EMPLOYEE_aat;
+TYPE I_EMPLOYEE_NAME_aat IS TABLE OF SCOTT.EMPLOYEE.EMPLOYEE_ID%TYPE INDEX BY I_EMPLOYEE_NAME_t;
+I_EMPLOYEE_NAME_aa I_EMPLOYEE_NAME_aat;
+function val_for_I_EMPLOYEE_NAME ( 
+LAST_NAME_in IN SCOTT.EMPLOYEE.LAST_NAME%TYPE
+,
+FIRST_NAME_in IN SCOTT.EMPLOYEE.FIRST_NAME%TYPE
+,
+MIDDLE_INITIAL_in IN SCOTT.EMPLOYEE.MIDDLE_INITIAL%TYPE
+) return I_EMPLOYEE_NAME_t
+is begin return (
+LAST_NAME_in
+ || 
+FIRST_NAME_in
+ || 
+MIDDLE_INITIAL_in
+); end val_for_I_EMPLOYEE_NAME;
+function onerow ( EMPLOYEE_ID_in IN SCOTT.EMPLOYEE.EMPLOYEE_ID%TYPE) return SCOTT.EMPLOYEE%ROWTYPE is begin return EMP_PK_aa (EMPLOYEE_ID_in); end;
+function onerow_by_I_EMPLOYEE_NAME ( 
+LAST_NAME_in IN SCOTT.EMPLOYEE.LAST_NAME%TYPE
+,
+FIRST_NAME_in IN SCOTT.EMPLOYEE.FIRST_NAME%TYPE
+,
+MIDDLE_INITIAL_in IN SCOTT.EMPLOYEE.MIDDLE_INITIAL%TYPE
+) return SCOTT.EMPLOYEE%ROWTYPE is begin return EMP_PK_aa (I_EMPLOYEE_NAME_aa (
+val_for_I_EMPLOYEE_NAME(LAST_NAME_in,FIRST_NAME_in,MIDDLE_INITIAL_in)
+)); end;
+procedure load_arrays is begin
+FOR rec IN (SELECT * FROM SCOTT.EMPLOYEE)
+LOOP
+EMP_PK_aa(rec.EMPLOYEE_ID) := rec;
+I_EMPLOYEE_NAME_aa(val_for_I_EMPLOYEE_NAME(rec.LAST_NAME,rec.FIRST_NAME,rec.MIDDLE_INITIAL)) := rec.EMPLOYEE_ID;
+end loop;
+END load_arrays;
+procedure test is
+pky_rec SCOTT.EMPLOYEE%ROWTYPE;
+I_EMPLOYEE_NAME_aa_rec SCOTT.EMPLOYEE%ROWTYPE;
+begin
+for rec in (select * from SCOTT.EMPLOYEE) loop
+pky_rec := onerow (rec.EMPLOYEE_ID);
+I_EMPLOYEE_NAME_aa_rec := onerow_by_I_EMPLOYEE_NAME ( 
+rec.LAST_NAME
+,
+rec.FIRST_NAME
+,
+rec.MIDDLE_INITIAL
+);
+if rec.EMPLOYEE_ID = I_EMPLOYEE_NAME_aa_rec.EMPLOYEE_ID then
+dbms_output.put_line ('I_EMPLOYEE_NAME  lookup OK');
+else
+dbms_output.put_line ('I_EMPLOYEE_NAME  lookup NOT OK');
+end if;
+end loop;
+end test;
+BEGIN load_arrays;
+end employee_cache;
+/

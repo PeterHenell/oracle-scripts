@@ -1,0 +1,43 @@
+CREATE OR REPLACE DIRECTORY plch_temp AS 'c:\temp'
+/
+
+CREATE OR REPLACE FUNCTION fexists (dir_in    IN VARCHAR2
+                                  ,  file_in   IN VARCHAR2)
+   RETURN BOOLEAN
+IS
+   TYPE fgetattr_t IS RECORD
+   (
+      fexists       BOOLEAN
+    ,  file_length   PLS_INTEGER
+    ,  block_size    PLS_INTEGER
+   );
+
+   fgetattr_rec   fgetattr_t;
+BEGIN
+   UTL_FILE.fgetattr (
+      location      => dir_in
+    ,  filename      => file_in
+    ,  fexists       => fgetattr_rec.fexists
+    ,  file_length   => fgetattr_rec.file_length
+    ,  block_size    => fgetattr_rec.block_size);
+
+   RETURN fgetattr_rec.fexists;
+END fexists;
+/
+
+DECLARE
+   PROCEDURE bpl (val IN BOOLEAN)
+   IS
+   BEGIN
+      DBMS_OUTPUT.put_line (
+         CASE val
+            WHEN TRUE THEN 'TRUE'
+            WHEN FALSE THEN 'FALSE'
+            ELSE 'NULL'
+         END);
+   END bpl;
+BEGIN
+   bpl (fexists ('PLCH_TEMP', 'test.txt'));
+   bpl (fexists ('PLCH_TEMP', 'nothere.txt'));
+END;
+/

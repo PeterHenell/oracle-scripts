@@ -1,0 +1,121 @@
+CREATE OR REPLACE FUNCTION to_words (
+   m_amount_in IN NUMBER,
+   m_first_para IN VARCHAR2 := 'Dollars',
+   m_second_para IN VARCHAR2 := 'Cents'
+   )
+   RETURN VARCHAR2
+/*	
+|| Usage of the function :
+||	Parameters	: * Amount to be returned into string
+|| 			     * Currency < Dollars etc. >
+|| 			     * Currency < Cents etc.   >
+||	Limit		: This function is designed to handle number upto
+||			     999999999999.99  only 
+||	Prepared by 	: Nitin Ghagare (nitin_ghagare@hotmail.com) 	
+||	Dated 		: 10/03/1999
+*/
+AS
+   m_amount     NUMBER := m_amount_in;
+   word_string  VARCHAR2(1000);
+   lower_number NUMBER;
+   lower_str    VARCHAR2(50);
+   loop_var     NUMBER := 1;
+   /* Function declarartion to convert into string */
+   FUNCTION to_string (m_val_in NUMBER)
+      RETURN CHAR
+   IS
+   BEGIN
+      IF m_val_in > 0
+      THEN
+         RETURN  (INITCAP (TO_CHAR (TO_DATE (m_val_in, 'SSSSS'), 'SSSSSSP')));
+      ELSE
+         RETURN  ('');
+      END IF;
+   END;
+   /*         End of Function	   */
+BEGIN
+
+/*--------------  place the parameters at required places --------------*/
+   lower_number :=  (m_amount MOD 1) * 100;
+       /* Check for lower denominations not exceeding two digits */
+   IF length(lower_number) < 3 
+   THEN
+   	IF m_amount >= 1 and lower_number > 0 
+	   THEN   lower_str :=
+        	 ' ' ||
+	         m_first_para ||
+        	 ' && ' ||
+	         LOWER (to_string (lower_number)) ||
+        	 ' ' ||
+	         m_second_para;
+	   ELSIF m_amount < 1 and lower_number > 0 
+	   THEN   lower_str :=
+        	 LOWER (to_string (lower_number)) ||
+	         ' ' ||
+        	 m_second_para;
+	   ELSIF m_amount >= 1 and lower_number = 0 
+	   THEN   lower_str := ' ' || m_first_para;
+	   END IF;
+   ELSE 
+           word_string := 'Invalid lower denomination !!' ;
+	   RETURN  (word_string);
+   END IF;
+/*---------------- End of placing paramters  -------------------------*/
+
+   WHILE loop_var = 1
+   LOOP
+      IF     m_amount > 0
+         AND m_amount <= 1000
+      THEN
+         word_string :=
+            word_string ||
+             (INITCAP (to_string (FLOOR (m_amount))) || lower_str);
+         loop_var := 0;
+      ELSIF     m_amount > 1000
+            AND m_amount < 1000000
+      THEN
+         word_string :=
+            word_string ||
+             (INITCAP (to_string (FLOOR (m_amount / 1000))) ||
+            ' Thousand ' ||
+            to_string (FLOOR (m_amount MOD 1000)) ||
+            lower_str
+               );
+         loop_var := 0;
+      ELSIF     m_amount >= 1000000
+            AND m_amount < 1000000000
+      THEN
+         word_string :=
+            word_string ||
+            INITCAP (to_string (FLOOR (m_amount / 1000000))) || ' Million ';
+         m_amount := FLOOR (m_amount MOD 1000000);
+         IF m_amount = 0
+         THEN
+            loop_var := 0;
+            word_string := word_string || lower_str;
+         END IF;
+      ELSIF     m_amount >= 1000000000
+            AND m_amount <= 999999999999.99
+      THEN
+         word_string :=
+            INITCAP (
+               to_string (FLOOR (m_amount / 1000000000))) || ' Billion ';
+         m_amount := FLOOR (m_amount MOD 1000000000);
+         IF m_amount = 0
+         THEN
+            loop_var := 0;
+            word_string := word_string || lower_str;
+         END IF;
+      ELSIF m_amount = 0
+      THEN
+         word_string :=  ('Zero' || lower_str);
+         loop_var := 0;
+      ELSE
+         word_string := 'This is beyond my scope !!';
+         loop_var := 0;
+      END IF;
+   END LOOP;
+   RETURN  (word_string);
+END to_words;
+/
+

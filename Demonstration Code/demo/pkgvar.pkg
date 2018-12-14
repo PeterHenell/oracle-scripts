@@ -1,0 +1,41 @@
+CREATE OR REPLACE PACKAGE pkgvar
+IS
+   TYPE reward_rt IS RECORD (
+      nm VARCHAR2(2000),
+      comm NUMBER);
+      
+   TYPE reward_tt IS TABLE OF reward_rt 
+      INDEX BY BINARY_INTEGER;
+
+   globtab reward_tt;
+   PROCEDURE passtab (parmtab IN OUT reward_tt);
+   PROCEDURE passtab;
+END;
+/
+CREATE OR REPLACE PACKAGE BODY pkgvar
+IS
+   PROCEDURE passtab (parmtab IN OUT reward_tt)
+   IS
+      v_row PLS_INTEGER := parmtab.FIRST;
+   BEGIN
+      LOOP
+         EXIT WHEN v_row IS NULL;
+         parmtab(v_row).comm := parmtab(v_row).comm * parmtab(v_row).comm;
+         parmtab(v_row).nm := SUBSTR (parmtab(v_row).nm, 1, 5);
+         v_row := parmtab.NEXT (v_row);
+      END LOOP;
+   END;
+
+   PROCEDURE passtab
+   IS
+      v_row PLS_INTEGER := globtab.FIRST;
+   BEGIN
+      LOOP
+         EXIT WHEN v_row IS NULL;
+         globtab(v_row).comm := globtab(v_row).comm * globtab(v_row).comm;
+         globtab(v_row).nm := SUBSTR (globtab(v_row).nm, 1, 5);
+         v_row := globtab.NEXT (v_row);
+      END LOOP;
+   END;
+END;
+/

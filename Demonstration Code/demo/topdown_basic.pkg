@@ -1,0 +1,49 @@
+CREATE OR REPLACE PACKAGE topdown
+/*
+| File name: topdown.pkg
+|
+| Overview: Help developers use top-down design to build highly
+|    modular and very readable code.
+|
+| Author(s): Steven Feuerstein
+|
+| Modification History:
+|   Date        Who           What
+|   Sep 2007    SFeuerstein   Created in Bratislava after losing all
+|                             changes on flight INTO Bratislava.
+*/
+IS
+   PROCEDURE tbc (program_name_in IN VARCHAR2);
+END topdown;
+/
+CREATE OR REPLACE PACKAGE BODY topdown
+/*
+| File name: topdown.pkg
+|
+| Overview: Help developers use top-down design to build highly
+|    modular and very readable code.
+|
+| Author(s): Steven Feuerstein
+|
+| Modification History:
+|   Date        Who           What
+|   Sep 2007    SFeuerstein   Created in Bratislava after losing all
+|                             changes on flight INTO Bratislava.
+*/
+IS
+   PROCEDURE tbc (program_name_in IN VARCHAR2)
+   IS
+   BEGIN
+         DBMS_OUTPUT.put_line ('TO BE COMPLETED: "' || program_name_in || '"');
+         DBMS_OUTPUT.put_line ('This program was called as follows:');
+         DBMS_OUTPUT.put_line (DBMS_UTILITY.format_call_stack);
+         raise_application_error
+              (-20999
+             ,    'Program named "'
+               || program_name_in
+               || '" has not yet been implemented.'
+               || ' Enable SERVEROUTPUT to see callstack for this program call.'
+              );
+   END tbc;
+END topdown;
+/

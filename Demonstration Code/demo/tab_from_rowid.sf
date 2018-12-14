@@ -1,0 +1,27 @@
+/* Formatted by PL/Formatter v3.0.5.0 on 2000/05/17 06:23 */
+
+CREATE OR REPLACE FUNCTION tab_from_rowid (rowid_in IN ROWID)
+   RETURN VARCHAR2
+IS
+   retval VARCHAR2 (4000);
+BEGIN
+   SELECT object_name
+     INTO retval
+     FROM all_objects
+    WHERE object_id = DBMS_ROWID.rowid_object (rowid_in);
+   RETURN retval;
+EXCEPTION
+   WHEN NO_DATA_FOUND
+   THEN
+      RETURN NULL;
+END;
+/
+
+declare
+   myrowid rowid;
+BEGIN
+   SELECT rowid INTO myrowid FROM emp WHERE ROWNUM < 2;
+   DBMS_OUTPUT.PUT_LINE ('From emp to ' || tab_from_rowid (myrowid)); 
+END;
+/
+   

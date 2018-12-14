@@ -1,0 +1,298 @@
+CREATE SEQUENCE execution_trace_seq
+/
+
+CREATE TABLE execution_trace
+(
+   id           INTEGER
+ , context      VARCHAR2 (4000)
+ , text         VARCHAR2 (4000)
+ , call_stack   VARCHAR2 (4000)
+ , created_on   DATE
+ , created_by   VARCHAR2 (100)
+)
+/
+
+CREATE OR REPLACE PACKAGE watch
+
+/*
+Requires execute authority on DBMS_PIPE!
+*/
+
+IS
+   c_pipe_name    CONSTANT VARCHAR2 (128) := 'watch$pipe';
+   c_table_name   CONSTANT all_objects.object_name%TYPE := 'execution_trace';
+   c_file_name             VARCHAR2 (4000) := 'watch$file.txt';
+
+   PROCEDURE toscreen;
+
+   PROCEDURE totable;
+
+   PROCEDURE topipe (pipe_in IN VARCHAR2 DEFAULT NULL);
+
+   PROCEDURE tofile (dir_in         IN VARCHAR2
+                   , file_in        IN VARCHAR2 DEFAULT NULL
+                   , keep_open_in   IN BOOLEAN DEFAULT FALSE);
+
+   PROCEDURE close_file;
+
+   PROCEDURE usecs;
+
+   PROCEDURE nousecs;
+
+   FUNCTION using_cs
+      RETURN BOOLEAN;
+
+   PROCEDURE action (prog IN VARCHAR2, val IN BOOLEAN);
+
+   PROCEDURE action (prog   IN VARCHAR2
+                   , val    IN DATE
+                   , fmt    IN VARCHAR2 DEFAULT NULL);
+
+   PROCEDURE action (prog IN VARCHAR2, val IN NUMBER);
+
+   PROCEDURE action (prog IN VARCHAR2, val IN VARCHAR2);
+
+   PROCEDURE action (watching IN BOOLEAN, prog IN VARCHAR2, val IN VARCHAR2);
+
+   PROCEDURE show_pipe (pipe_in IN VARCHAR2 := NULL);
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY watch
+IS
+   g_pipe_name         VARCHAR2 (128) := c_pipe_name;
+   g_table_name        all_objects.object_name%TYPE := c_table_name;
+   g_dir               VARCHAR2 (4000);
+   g_file_name         VARCHAR2 (4000) := c_file_name;
+   g_file_id           UTL_FILE.file_type;
+   g_keep_open         BOOLEAN := FALSE;
+   c_screen   CONSTANT PLS_INTEGER := -99;
+   c_pipe     CONSTANT PLS_INTEGER := 1070;
+   c_file     CONSTANT PLS_INTEGER := 4050607;
+   c_table    CONSTANT PLS_INTEGER := -432;
+   g_target            PLS_INTEGER := c_screen;
+   g_cs                BOOLEAN := FALSE;
+
+   FUNCTION ifelse (bool_in   IN BOOLEAN
+                  , tval_in   IN VARCHAR2
+                  , fval_in   IN VARCHAR2)
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      IF bool_in
+      THEN
+         RETURN tval_in;
+      ELSE
+         RETURN fval_in;
+      END IF;
+   END ifelse;
+
+   FUNCTION boolstg (val    IN BOOLEAN
+                   , tval   IN VARCHAR2 := 'TRUE'
+                   , fval   IN VARCHAR2 := 'FALSE'
+                   , nval   IN VARCHAR2 := 'NULL')
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      IF val
+      THEN
+         RETURN tval;
+      ELSIF NOT val
+      THEN
+         RETURN fval;
+      ELSE
+         RETURN nval;
+      END IF;
+   END boolstg;
+
+   PROCEDURE toscreen
+   IS
+   BEGIN
+      g_target := c_screen;
+   END;
+
+   PROCEDURE topipe (pipe_in IN VARCHAR2 := NULL)
+   IS
+   BEGIN
+      g_target := c_pipe;
+      g_pipe_name := NVL (pipe_in, c_pipe_name);
+   END topipe;
+
+   PROCEDURE totable
+   IS
+   BEGIN
+      g_target := c_table;
+   END totable;
+
+   PROCEDURE tofile (dir_in         IN VARCHAR2
+                   , file_in        IN VARCHAR2 DEFAULT NULL
+                   , keep_open_in   IN BOOLEAN DEFAULT FALSE)
+   IS
+   BEGIN
+      g_target := c_file;
+      g_dir := dir_in;
+      g_file_name := NVL (file_in, c_file_name);
+      g_keep_open := keep_open_in;
+
+      IF g_keep_open
+      THEN
+         g_file_id :=
+            UTL_FILE.fopen (dir_in
+                          , g_file_name
+                          , 'A'
+                          , max_linesize   => 4000);
+      END IF;
+   END tofile;
+
+   PROCEDURE close_file
+   IS
+   BEGIN
+      UTL_FILE.fclose (g_file_id);
+   END close_file;
+
+   PROCEDURE usecs
+   IS
+   BEGIN
+      g_cs := TRUE;
+   END;
+
+   PROCEDURE nousecs
+   IS
+   BEGIN
+      g_cs := FALSE;
+   END;
+
+   FUNCTION using_cs
+      RETURN BOOLEAN
+   IS
+   BEGIN
+      RETURN g_cs;
+   END;
+
+   PROCEDURE action (prog IN VARCHAR2, val IN BOOLEAN)
+   IS
+   BEGIN
+      action (prog, boolstg (val));
+   END;
+
+   PROCEDURE action (prog   IN VARCHAR2
+                   , val    IN DATE
+                   , fmt    IN VARCHAR2 DEFAULT NULL)
+   IS
+   BEGIN
+      IF fmt IS NULL
+      THEN
+         action (prog, TO_CHAR (val, fmt));
+      ELSE
+         action (prog, TO_CHAR (val));
+      END IF;
+   END;
+
+   PROCEDURE action (prog IN VARCHAR2, val IN NUMBER)
+   IS
+   BEGIN
+      action (prog, TO_CHAR (val));
+   END;
+
+   PROCEDURE action (prog IN VARCHAR2, val IN VARCHAR2)
+   IS
+      PRAGMA AUTONOMOUS_TRANSACTION;
+      stat   INTEGER;
+      msg    VARCHAR2 (32767);
+   BEGIN
+      IF g_target = c_table
+      THEN
+         INSERT INTO execution_trace (id
+                                    , context
+                                    , text
+                                    , call_stack
+                                    , created_on
+                                    , created_by)
+              VALUES (execution_trace_seq.NEXTVAL
+                    , prog
+                    , val
+                    , DBMS_UTILITY.format_call_stack
+                    , SYSDATE
+                    , USER);
+
+         COMMIT;
+      ELSE
+         /* Put together string */
+         msg :=
+               '***WATCHing at: '
+            || TO_CHAR (SYSDATE, 'Month dd, YYYY HH24:MI:SS')
+            || CHR (10)
+            || '   Context: '
+            || prog
+            || CHR (10)
+            || ifelse (val IS NOT NULL
+                     , '   Message: ' || val || CHR (10)
+                     , NULL)
+            || ifelse (using_cs
+                     , ' Callstack: ' || DBMS_UTILITY.format_call_stack
+                     , NULL);
+
+         IF g_target = c_screen
+         THEN
+            DBMS_OUTPUT.put_line (msg);
+         ELSIF g_target = c_file
+         THEN
+            IF g_keep_open
+            THEN
+               UTL_FILE.put_line (g_file_id, msg);
+            ELSE
+               g_file_id :=
+                  UTL_FILE.fopen (g_dir
+                                , g_file_name
+                                , 'A'
+                                , max_linesize   => 4000);
+               UTL_FILE.put_line (g_file_id, msg);
+               close_file;
+            END IF;
+         ELSIF g_target = c_pipe
+         THEN
+            DBMS_PIPE.reset_buffer;
+            DBMS_PIPE.pack_message (SUBSTR (msg, 1, 4096));
+            stat := DBMS_PIPE.send_message (g_pipe_name, timeout => 0);
+
+            IF stat != 0
+            THEN
+               DBMS_OUTPUT.put_line (
+                  'WATCH: failure to send information to pipe...');
+            END IF;
+         END IF;
+      END IF;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         ROLLBACK;
+         RAISE;
+   END action;
+
+   PROCEDURE action (watching IN BOOLEAN, prog IN VARCHAR2, val IN VARCHAR2)
+   IS
+   BEGIN
+      IF watching
+      THEN
+         action (prog, val);
+      END IF;
+   END;
+
+   PROCEDURE show_pipe (pipe_in IN VARCHAR2 := NULL)
+   IS
+      stat   INTEGER;
+      msg    VARCHAR2 (32767);
+   BEGIN
+      DBMS_OUTPUT.put_line ('Contents of WATCH Trace:');
+
+      LOOP
+         stat :=
+            DBMS_PIPE.receive_message (NVL (pipe_in, g_pipe_name)
+                                     , timeout   => 0);
+         EXIT WHEN stat != 0;
+         DBMS_PIPE.unpack_message (msg);
+         DBMS_OUTPUT.put_line (msg);
+      END LOOP;
+   END show_pipe;
+END;
+/

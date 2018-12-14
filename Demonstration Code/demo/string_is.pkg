@@ -1,0 +1,102 @@
+CREATE OR REPLACE PACKAGE string_is
+/*
+| Overview: Offers several functions to determine whether or not
+|           a string is a valid number. NULL input return FALSE.
+|
+| Note: if you are running Oracle9i or earlier, you will need to
+|       remove the binary_* functions.
+|
+| Author: Steven Feuerstein
+|
+| Created for Toad World, www.toadworld.com
+*/
+IS
+   FUNCTION valid_integer (string_in IN VARCHAR2)
+      RETURN BOOLEAN;
+
+   FUNCTION valid_number (string_in IN VARCHAR2)
+      RETURN BOOLEAN;
+
+   FUNCTION valid_binary_float (string_in IN VARCHAR2)
+      RETURN BOOLEAN;
+
+   FUNCTION valid_binary_double (string_in IN VARCHAR2)
+      RETURN BOOLEAN;
+END string_is;
+/
+
+CREATE OR REPLACE PACKAGE BODY string_is
+IS
+   FUNCTION valid_number (string_in IN VARCHAR2)
+      RETURN BOOLEAN
+   IS
+      l_dummy       NUMBER;
+      l_is_number   BOOLEAN DEFAULT FALSE;
+   BEGIN
+      IF string_in IS NOT NULL
+      THEN
+         l_dummy := TO_NUMBER (string_in);
+         l_is_number := TRUE;
+      END IF;
+
+      RETURN l_is_number;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         RETURN FALSE;
+   END valid_number;
+
+   FUNCTION valid_integer (string_in IN VARCHAR2)
+      RETURN BOOLEAN
+   IS
+      l_number      NUMBER;
+      l_is_integer   BOOLEAN DEFAULT FALSE;
+   BEGIN
+      IF valid_number (string_in)
+      THEN
+         l_number := TO_NUMBER (string_in);
+         l_is_integer := l_number = ROUND (l_number);
+      END IF;
+
+      RETURN l_is_integer;
+   END valid_integer;
+
+   FUNCTION valid_binary_float (string_in IN VARCHAR2)
+      RETURN BOOLEAN
+   IS
+      l_dummy             BINARY_FLOAT;
+      l_is_binary_float   BOOLEAN      DEFAULT FALSE;
+   BEGIN
+      IF string_in IS NOT NULL
+      THEN
+         l_dummy := TO_BINARY_FLOAT (string_in);
+         l_is_binary_float := TRUE;
+      END IF;
+
+      RETURN l_is_binary_float;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         RETURN FALSE;
+   END valid_binary_float;
+
+   FUNCTION valid_binary_double (string_in IN VARCHAR2)
+      RETURN BOOLEAN
+   IS
+      l_dummy             BINARY_FLOAT;
+      l_is_binary_double   BOOLEAN      DEFAULT FALSE;
+   BEGIN
+      IF string_in IS NOT NULL
+      THEN
+         l_dummy := TO_BINARY_DOUBLE (string_in);
+         l_is_binary_double := TRUE;
+      END IF;
+
+      RETURN l_is_binary_double;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         RETURN FALSE;
+   END valid_binary_double;
+END string_is;
+/

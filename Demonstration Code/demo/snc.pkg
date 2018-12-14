@@ -1,0 +1,109 @@
+DROP PROCEDURE snc;
+
+CREATE OR REPLACE PACKAGE snc
+IS
+   TYPE resolve_rt IS RECORD (
+      schema VARCHAR2(100),
+      part1 VARCHAR2(100),
+      part2 VARCHAR2(100),
+      dblink VARCHAR2(100),
+      part1_type NUMBER,
+      part1_desc VARCHAR2(100),
+      object_number NUMBER
+      );
+      
+   FUNCTION resolve (name IN VARCHAR2)
+      RETURN resolve_rt;
+      
+   PROCEDURE show (name IN VARCHAR2);
+END;
+/
+CREATE OR REPLACE PACKAGE BODY snc
+IS
+   FUNCTION resolve (name IN VARCHAR2)
+      RETURN resolve_rt
+   IS
+      retval resolve_rt;
+      
+      /*--------------------- Local Module -----------------------*/
+      FUNCTION object_type (
+         type_in IN INTEGER
+         )
+         RETURN VARCHAR2
+      /* Return name for integer type */
+      
+      IS
+         synonym_type CONSTANT INTEGER := 5;
+         procedure_type CONSTANT INTEGER := 7;
+         function_type CONSTANT INTEGER := 8;
+         package_type CONSTANT INTEGER := 9;
+
+         retval VARCHAR2(20);
+      BEGIN
+         IF type_in = synonym_type
+         THEN retval := 'Synonym';
+         ELSIF type_in = procedure_type
+         THEN retval := 'Procedure';
+         ELSIF type_in = function_type
+         THEN retval := 'Function';
+         ELSIF type_in = package_type
+         THEN retval := 'Package';
+         ELSE retval := TO_CHAR (type_in);
+         END IF;
+         RETURN retval;
+      END;
+   BEGIN
+      /* Break down the name into its components */
+      DBMS_UTILITY.NAME_RESOLVE (
+         name,
+         1,
+         retval.schema,
+         retval.part1,
+         retval.part2,
+         retval.dblink,
+         retval.part1_type,
+         retval.object_number
+         );
+
+      retval.part1_desc := object_type (retval.part1_type);
+      RETURN retval;
+   END;  
+   
+   PROCEDURE show (name IN VARCHAR2)
+   IS
+      rec resolve_rt := resolve (name);
+   BEGIN
+      /* If the object number is NULL, name resolution failed. */
+      IF rec.object_number IS NULL
+      THEN
+         DBMS_OUTPUT.PUT_LINE (
+            'Name "' || name || '" does not identify a valid object.');
+      ELSE
+         /* Display the schema, which is always available. */
+         DBMS_OUTPUT.PUT_LINE ('Schema: ' || rec.schema);
+
+         /* If there is a first part to name, have a package module */
+         IF rec.part1 IS NOT NULL
+         THEN
+            /* Display the first part of the name */
+            DBMS_OUTPUT.PUT_LINE (rec.part1_desc || ': ' || rec.part1);
+
+            /* If there is a second part, display that. */
+            IF rec.part2 IS NOT NULL
+            THEN
+               DBMS_OUTPUT.PUT_LINE ('Name: ' || rec.part2);
+            END IF;
+         ELSE
+            /* No first part of name. Just display second part. */
+            DBMS_OUTPUT.PUT_LINE (rec.part1_desc || ': ' || rec.part2);
+         END IF;
+
+         /* Display the database link if it is present. */
+         IF rec.dblink IS NOT NULL
+         THEN
+            DBMS_OUTPUT.PUT_LINE ('Database Link:' || rec.dblink);
+         END IF;
+      END IF;
+   END;
+END;
+/

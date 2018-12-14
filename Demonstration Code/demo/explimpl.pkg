@@ -1,0 +1,93 @@
+CREATE OR REPLACE PACKAGE employee_rp
+AS
+   SUBTYPE fullname_t IS VARCHAR2 ( 200 );
+
+   FUNCTION fullname (
+      l                 employees.last_name%TYPE
+    , f                 employees.first_name%TYPE
+    , use_f_l_in   IN   BOOLEAN := FALSE               -- London 2/20/2002
+   )
+      RETURN fullname_t;
+
+   CURSOR allcols_cur ( employee_id_in IN employees.employee_id%TYPE )
+   IS
+      SELECT *
+        FROM employee
+       WHERE employee_id = employee_id_in;
+
+   FUNCTION e_empname ( employee_id_in IN employees.employee_id%TYPE )
+      RETURN fullname_t;
+
+   FUNCTION i_empname ( employee_id_in IN employees.employee_id%TYPE )
+      RETURN fullname_t;
+END employee_rp;
+/
+
+CREATE OR REPLACE PACKAGE BODY employee_rp
+AS
+   FUNCTION fullname (
+      l                 employees.last_name%TYPE
+    , f                 employees.first_name%TYPE
+    , use_f_l_in   IN   BOOLEAN := FALSE
+   )
+      RETURN fullname_t
+   IS
+   BEGIN
+      IF use_f_l_in
+      THEN
+         RETURN f || ' ' || l;
+      ELSE
+         RETURN l || ',' || f;
+      END IF;
+   END;
+
+   FUNCTION i_empname ( employee_id_in IN employees.employee_id%TYPE )
+      RETURN fullname_t
+   IS
+      retval fullname_t;
+   BEGIN
+      SELECT fullname ( last_name, first_name )
+        INTO retval
+        FROM employee
+       WHERE employee_id = employee_id_in;
+
+      RETURN retval;
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         RETURN NULL;
+      -- London 9/2001
+      -- RETURN excpkg.no_row_found_indicator ('employee');
+
+      /*
+      name := emppkg.empname(15);
+      IF name = excpkg.no_row_found ('employee')
+      then
+      */
+      WHEN TOO_MANY_ROWS
+      THEN
+         log81.saveline ( SQLCODE, SQLERRM );
+         RAISE;
+   END;
+
+   FUNCTION e_empname ( employee_id_in IN employees.employee_id%TYPE )
+      RETURN fullname_t
+   IS
+      rec allcols_cur%ROWTYPE;
+   BEGIN
+      OPEN allcols_cur ( employee_id_in );
+
+      FETCH allcols_cur
+       INTO rec;
+
+      CLOSE allcols_cur;
+
+      IF rec.employee_id IS NOT NULL
+      THEN
+         RETURN fullname ( rec.first_name, rec.last_name );
+      ELSE
+         RETURN NULL;
+      END IF;
+   END;
+END employee_rp;
+/

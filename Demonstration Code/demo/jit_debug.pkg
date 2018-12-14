@@ -1,0 +1,32 @@
+/* Formatted on 2001/11/27 07:47 (Formatter Plus v4.5.2) */
+CREATE OR REPLACE PACKAGE jit_debug
+IS
+   PROCEDURE init (name_in IN VARCHAR2);
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY jit_debug
+IS
+   g_initialized   BOOLEAN := FALSE;
+
+   PROCEDURE init (name_in IN VARCHAR2)
+   IS
+      id   VARCHAR2 (255);
+   BEGIN
+      
+-- Define debug session dynamically based on an individual instance of
+-- the client application.  i.e. set this value = the PC name on which 
+-- the VB application is being run.
+
+      IF NOT g_initialized
+      THEN
+         -- Only initialize once per session.
+         id := DBMS_DEBUG.initialize (name_in);
+         g_initialized := TRUE;
+      END IF;
+
+      DBMS_DEBUG.debug_on;
+   END;
+END;
+/
+

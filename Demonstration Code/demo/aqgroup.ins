@@ -1,0 +1,48 @@
+/* Define the semester object type. */
+CREATE TYPE semester_class_t IS OBJECT  
+   (student VARCHAR2(30),
+    class VARCHAR2(100),
+    semester INTEGER(1));
+/
+/* Define the skeleton of a database table to hold the student data. */
+CREATE TABLE semester_class
+   (student VARCHAR2(30),
+    classyear INTEGER,
+    semester INTEGER,
+    class VARCHAR2(100));
+
+/* Create a queue that supports multiple consumers and then
+   initialize the subscriber list and the database table. */
+BEGIN
+   aq.stop_and_drop ('semester_qtable');
+
+   /* Create the queue table and queue for multiple consumers. */ 
+   DBMS_AQADM.CREATE_QUEUE_TABLE
+      (queue_table => 'semester_qtable',
+       queue_payload_type => 'semester_class_t'); 
+
+   DBMS_AQADM.CREATE_QUEUE ('semester_queue', 'semester_qtable');
+
+   DBMS_AQADM.START_QUEUE ('semester_queue'); 
+
+   DELETE FROM semester_class;
+
+   INSERT INTO semester_class VALUES 
+      ('Steven Feuerstein', 1980, 2, 'Mathematics 101');
+   INSERT INTO semester_class VALUES 
+      ('Steven Feuerstein', 1980, 2, 'Creative Physics 205');
+   INSERT INTO semester_class VALUES 
+      ('Steven Feuerstein', 1980, 2, 'PL/SQL for Beginners 101');
+   INSERT INTO semester_class VALUES 
+      ('Steven Feuerstein', 1980, 2, 'Poetry 202');
+
+   INSERT INTO semester_class VALUES 
+      ('Eli Feuerstein', 2003, 1, 'Video Game Design 604');
+   INSERT INTO semester_class VALUES 
+      ('Eli Feuerstein', 2003, 1, 'French for Diplomats 501');
+   INSERT INTO semester_class VALUES 
+      ('Eli Feuerstein', 2003, 1, 'Intergallactic Manners 101');
+
+   COMMIT;
+END;
+/

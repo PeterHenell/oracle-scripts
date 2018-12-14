@@ -1,0 +1,15 @@
+create or replace FUNCTION valbyname (nm IN VARCHAR2) RETURN VARCHAR2
+IS
+   v_cur PLS_INTEGER := DBMS_SQL.OPEN_CURSOR;
+   fdbk PLS_INTEGER;
+   retval PLV.dbmaxvc2;
+BEGIN
+   DBMS_SQL.PARSE (v_cur, 'BEGIN :val := ' || nm || '; END;',
+      DBMS_SQL.NATIVE);
+   DBMS_SQL.BIND_VARIABLE (v_cur, 'val', 'a', 2000);
+   fdbk := DBMS_SQL.EXECUTE (v_cur);
+   DBMS_SQL.VARIABLE_VALUE (v_cur, 'val', retval);
+   DBMS_SQL.CLOSE_CURSOR (v_cur);
+   RETURN retval;
+END;
+/

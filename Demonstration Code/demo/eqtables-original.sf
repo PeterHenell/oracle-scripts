@@ -1,0 +1,61 @@
+/* The first and more complicated approach! */
+
+CREATE OR REPLACE FUNCTION eqtables (
+   check_this_in IN VARCHAR2,
+   against_this_in IN VARCHAR2,
+   check_where_in IN VARCHAR2 := NULL,
+   against_where_in IN VARCHAR2 := NULL
+)
+   RETURN BOOLEAN
+IS
+   ival PLS_INTEGER;
+   query1 VARCHAR2 (32767);
+   query2 VARCHAR2 (32767);
+   v_block VARCHAR2 (32767);
+BEGIN
+   query1 :=
+     'SELECT * FROM ' || check_this_in ||
+        '  WHERE ' ||
+        NVL (check_where_in, '1=1');
+   query2 :=
+     'SELECT * FROM ' || against_this_in ||
+        '  WHERE ' ||
+        NVL (against_where_in, '1=1');
+   v_block :=
+     'DECLARE
+            CURSOR cur1 IS ' ||
+        query1 ||
+        ' MINUS ' ||
+        query2 ||
+        ';
+            CURSOR cur2 IS ' ||
+        query2 ||
+        ' MINUS ' ||
+        query1 ||
+        ';
+          rec cur1%ROWTYPE;
+          TYPE cv_t IS REF CURSOR;
+          cv cv_t;
+       BEGIN     
+          OPEN cur1;
+          FETCH cur1 INTO rec;
+          IF cur1%FOUND THEN :retval := 1;
+          ELSE
+             OPEN cur2;
+             FETCH cur2 INTO rec;
+             IF cur2%FOUND THEN :retval := 1;
+             ELSE :retval := 0;
+             END IF;
+             CLOSE cur2;
+          END IF;
+          CLOSE cur1;
+       END;';
+   EXECUTE IMMEDIATE v_block
+      USING  OUT ival;
+   RETURN (ival = 0);
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      RETURN FALSE;
+END;
+/

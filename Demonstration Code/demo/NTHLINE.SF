@@ -1,0 +1,40 @@
+CREATE OR REPLACE FUNCTION nth_line (
+   loc_in IN VARCHAR2,
+   file_in IN VARCHAR2, 
+   line_num_in IN INTEGER)
+	RETURN VARCHAR2
+IS
+	/* Handle to the file. Only will open if arguments are valid. */
+	file_handle UTL_FILE.FILE_TYPE;
+
+	/* Count of lines read from the file. */
+	line_count INTEGER := 0;
+
+	/* Boolean to determine if there are more values to read */
+	no_more_lines BOOLEAN := FALSE;
+
+	/* Function return value */
+	return_value VARCHAR2(1000) := NULL;
+BEGIN
+	/* Need a file name and a positive line number. */
+	IF file_in IS NOT NULL AND line_num_in > 0
+	THEN
+		/* All arguments are fine. Open and read through the file. */
+		file_handle := UTL_FILE.FOPEN (loc_in, file_in, 'R');
+		LOOP
+			/* Get next line from file. */
+			get_nextline (file_handle, return_value, no_more_lines);
+
+			/* Done if no more lines or if at the requested line. */
+			EXIT WHEN no_more_lines OR line_count = line_num_in - 1;
+
+			/* Otherwise, increment counter and read another line. */
+			line_count := line_count + 1;
+		END LOOP;
+		UTL_FILE.FCLOSE (file_handle);
+	END IF;
+
+	/* Either NULL or contains last line read from file. */
+	RETURN return_value;
+END;
+/

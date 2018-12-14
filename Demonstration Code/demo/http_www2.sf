@@ -1,0 +1,40 @@
+CREATE OR REPLACE FUNCTION http_www (
+   NAME_IN       IN   VARCHAR2,
+   ext_in        IN   VARCHAR2 := 'com',
+   show_err_in   IN   BOOLEAN := FALSE
+)
+   RETURN VARCHAR2
+IS
+   url   VARCHAR2 (32767)
+      := 'http://www.' || NAME_IN || '.' || ext_in;
+BEGIN
+   RETURN (UTL_HTTP.request (url));
+EXCEPTION
+   WHEN UTL_HTTP.request_failed
+   THEN
+      IF show_err_in
+      THEN
+         DBMS_OUTPUT.put_line (
+            'Request for "' || url || '" failed! ' ||
+            'Possible reasons: failure of the HTTP daemon, or ' ||
+            'argument to REQUEST cannot be interpreted as a URL ' ||
+            'because it is NULL or has non-HTTP syntax.'
+         );
+      END IF;
+
+      RETURN 'ERROR: REQUEST_FAILURE';
+      
+   WHEN UTL_HTTP.init_failed
+   THEN
+      IF show_err_in
+      THEN
+         DBMS_OUTPUT.put_line (
+            'Initialization failed for "' || url || '"! ' ||
+            'HTTP-callout subsystem fails (for environmental ' ||
+             'reasons, such as lack of available memory).' 
+         );
+      END IF;
+
+      RETURN 'ERROR: INIT_FAILURE';
+END;
+/

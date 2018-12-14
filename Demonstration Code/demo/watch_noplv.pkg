@@ -1,0 +1,101 @@
+CREATE OR REPLACE PACKAGE watch
+IS
+   /* Direct output to the screen; the default.  */
+   PROCEDURE toscreen;  
+   
+   /* Direct output to a pipe so it can be viewed even
+      while the program is still running. */
+   PROCEDURE topipe;		
+
+   /* Watch a specific action; the replacement for the
+      DBMS_OUTPUT.PUT_LINE procedure. */
+   PROCEDURE action (prog IN VARCHAR2, val IN VARCHAR2);
+   
+   /* Show the contents of the database pipe. */
+   PROCEDURE show;
+
+   PROCEDURE turnOn;
+   PROCEDURE turnOff;
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY watch
+IS
+   c_pipe_name CONSTANT VARCHAR2(9) := 'watch$trc';
+
+   c_screen CONSTANT INTEGER := 0;
+   c_pipe   CONSTANT INTEGER := 1;
+
+   g_target INTEGER := c_screen;
+
+   g_watching BOOLEAN := FALSE;
+
+   PROCEDURE turnOn IS BEGIN g_watching := TRUE; END;
+   PROCEDURE turnOff IS BEGIN g_watching := FALSE; END;
+
+   PROCEDURE toscreen IS
+   BEGIN
+      g_target := c_screen;
+	  turnOn;
+      DBMS_OUTPUT.PUT_LINE (
+         'Watch output will be sent to screen.');
+   END;
+
+   PROCEDURE topipe IS
+   BEGIN
+      g_target := c_pipe;
+	  turnOn;
+      DBMS_OUTPUT.PUT_LINE (
+         'Watch output will be sent to pipe.');
+   END;
+
+   PROCEDURE action (prog IN VARCHAR2, val IN VARCHAR2)
+   IS
+      stat INTEGER;
+      msg VARCHAR2(32767);
+   BEGIN
+      IF g_watching
+	  THEN
+	      /* Put together string */
+	      msg := 
+	         '***WATCHing at: ' || 
+	         TO_CHAR (SYSDATE, 'MM/DD/YYYY HH24:MI:SS') || 
+	         CHR(10) || '   Context: ' || prog || 
+	         CHR(10) || '   Message: ' || val ||  
+	         CHR(10) || '   Execution Call Stack: ' ||
+	         CHR(10) || DBMS_UTILITY.FORMAT_CALL_STACK; 
+	      
+	      IF g_target = c_screen
+	      THEN
+	         DBMS_OUTPUT.PUT_LINE (msg);
+
+	      ELSIF g_target = c_pipe
+	      THEN
+	         DBMS_PIPE.RESET_BUFFER;
+	         DBMS_PIPE.PACK_MESSAGE (msg);
+	         stat := DBMS_PIPE.SEND_MESSAGE (c_pipe_name, timeout => 0);
+	         IF stat != 0
+	         THEN
+	            DBMS_OUTPUT.PUT_LINE (
+	               'WATCH: failure to send information to pipe...');
+	         END IF;
+	      END IF;
+	   END IF;
+   END;
+
+   PROCEDURE show
+   IS
+      stat INTEGER;
+      msg VARCHAR2(32767);
+   BEGIN
+      DBMS_OUTPUT.PUT_LINE ('Contents of WATCH Trace:');
+      LOOP
+         stat := DBMS_PIPE.RECEIVE_MESSAGE (c_pipe_name, timeout => 0);
+         EXIT WHEN stat != 0;
+         DBMS_PIPE.UNPACK_MESSAGE (msg);
+         DBMS_OUTPUT.PUT_LINE (msg);
+      END LOOP;
+   END;
+END;
+/
+

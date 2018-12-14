@@ -1,0 +1,103 @@
+CREATE OR REPLACE PACKAGE sf_timer
+IS
+   PROCEDURE start_timer;
+
+   PROCEDURE show_elapsed_time (message_in IN VARCHAR2 := NULL);
+END sf_timer;
+/
+
+CREATE OR REPLACE PACKAGE BODY sf_timer
+IS
+   /* Package variable which stores the last timing made */
+   last_timing   NUMBER := NULL;
+
+   PROCEDURE start_timer
+   IS
+   BEGIN
+      last_timing := DBMS_UTILITY.get_cpu_time;
+   END;
+
+   PROCEDURE show_elapsed_time (message_in IN VARCHAR2 := NULL)
+   IS
+   BEGIN
+      DBMS_OUTPUT.put_line (
+         '"' || message_in || '" completed in: '
+         || ROUND (
+               MOD (DBMS_UTILITY.get_cpu_time - last_timing + POWER (2, 32)
+                  , POWER (2, 32))
+               / 100
+             , 2));
+   END;
+END sf_timer;
+/
+
+CREATE OR REPLACE PROCEDURE plch_decl_not_null (p_in NATURALN)
+IS
+BEGIN
+   NULL;
+END;
+/
+
+CREATE OR REPLACE PROCEDURE plch_code_not_null (p_in NATURAL)
+IS
+BEGIN
+   NULL;
+END;
+/
+
+DECLARE
+   l_value   PLS_INTEGER := NULL;
+BEGIN
+   sf_timer.start_timer;
+
+   FOR indx IN 1 .. 1000000
+   LOOP
+      BEGIN
+         plch_decl_not_null (l_value);
+      EXCEPTION
+         WHEN OTHERS
+         THEN
+            NULL;
+      END;
+   END LOOP;
+
+   sf_timer.show_elapsed_time ('Declarative -> Exception');
+   --
+   sf_timer.start_timer;
+
+   FOR indx IN 1 .. 1000000
+   LOOP
+      BEGIN
+         IF l_value IS NOT NULL
+         THEN
+            plch_code_not_null (l_value);
+         ELSE
+            RAISE VALUE_ERROR;
+         END IF;
+      EXCEPTION
+         WHEN OTHERS
+         THEN
+            NULL;
+      END;
+   END LOOP;
+
+   sf_timer.show_elapsed_time ('Code + Exception');
+   --
+   sf_timer.start_timer;
+
+   FOR indx IN 1 .. 1000000
+   LOOP
+      IF l_value IS NOT NULL
+      THEN
+         plch_code_not_null (l_value);
+      END IF;
+   END LOOP;
+
+   sf_timer.show_elapsed_time ('Code + No Exception');
+/*
+"Declarative -> Exception" completed in: 1.75
+"Code + Exception" completed in: 1.81
+"Code + No Exception" completed in: .03
+*/   
+END;
+/

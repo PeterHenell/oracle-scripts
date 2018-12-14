@@ -1,0 +1,54 @@
+/* Formatted by PL/Formatter v3.0.5.0 on 2000/06/21 06:13 */
+
+CREATE OR REPLACE FUNCTION eqtables (
+   check_this_in IN VARCHAR2,
+   against_this_in IN VARCHAR2,
+   check_where_in IN VARCHAR2 := NULL,
+   against_where_in IN VARCHAR2 := NULL
+)
+   RETURN BOOLEAN
+IS
+   ival PLS_INTEGER;
+   query1 VARCHAR2 (32767);
+   query2 VARCHAR2 (32767);
+   v_block VARCHAR2 (32767);
+BEGIN
+   query1 :=
+     'SELECT * FROM ' || check_this_in ||
+        '  WHERE ' ||
+        NVL (check_where_in, '1=1');
+   query2 :=
+     'SELECT * FROM ' || against_this_in ||
+        '  WHERE ' ||
+        NVL (against_where_in, '1=1');
+   v_block :=
+     'DECLARE
+         CURSOR cur IS (' ||
+        query1 ||
+        ' MINUS ' ||
+        query2 ||
+        ')
+        UNION 
+        (' ||
+        query2 ||
+        ' MINUS ' ||
+        query1 ||
+        ');
+          rec cur%ROWTYPE;
+       BEGIN     
+          OPEN cur;
+          FETCH cur INTO rec;
+          IF cur%FOUND THEN :retval := 1;
+          ELSE :retval := 0;
+          END IF;
+          CLOSE cur;
+       END;';
+   EXECUTE IMMEDIATE v_block
+      USING  OUT ival;
+   RETURN (ival = 0);
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      RETURN FALSE;
+END;
+/

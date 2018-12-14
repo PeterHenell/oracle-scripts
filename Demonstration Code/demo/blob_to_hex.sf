@@ -1,0 +1,30 @@
+/*
+A BLOB can be converted to a CLOB holding the hexadecimal representation like this:
+
+by Finn Ellebaek Nielsen
+*/
+
+CREATE OR REPLACE FUNCTION blob_to_hex (b IN BLOB)
+   RETURN CLOB
+AS
+   c             CLOB;
+   b_len         PLS_INTEGER := NVL (DBMS_LOB.getlength (b), 0);
+   buffer        VARCHAR2 (32766);
+   j             PLS_INTEGER := 1;
+   buffer_size   PLS_INTEGER := 16383;
+BEGIN
+   IF b IS NOT NULL
+   THEN
+      DBMS_LOB.createtemporary (c, TRUE);
+
+      FOR i IN 1 .. CEIL (DBMS_LOB.getlength (b) / buffer_size)
+      LOOP
+         buffer := DBMS_LOB.SUBSTR (b, buffer_size, j);
+         DBMS_LOB.writeappend (c, LENGTH (buffer), buffer);
+         j := j + buffer_size;
+      END LOOP;
+   END IF;
+
+   RETURN c;
+END blob_to_hex;
+/

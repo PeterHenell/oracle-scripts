@@ -1,0 +1,75 @@
+CREATE OR REPLACE PACKAGE ifelse
+IS
+   FUNCTION inline (bool_in IN BOOLEAN, tval_in IN BOOLEAN, fval_in IN BOOLEAN)
+      RETURN BOOLEAN;
+
+   FUNCTION inline (bool_in IN BOOLEAN, tval_in IN DATE, fval_in IN DATE)
+      RETURN DATE;
+
+   FUNCTION inline (bool_in IN BOOLEAN, tval_in IN NUMBER, fval_in IN NUMBER)
+      RETURN NUMBER;
+
+   FUNCTION inline (
+      bool_in   IN   BOOLEAN
+     ,tval_in   IN   VARCHAR2
+     ,fval_in   IN   VARCHAR2
+   )
+      RETURN VARCHAR2;
+END ifelse;
+/
+
+CREATE OR REPLACE PACKAGE BODY ifelse
+IS
+   FUNCTION inline (bool_in IN BOOLEAN, tval_in IN BOOLEAN, fval_in IN BOOLEAN)
+      RETURN BOOLEAN
+   IS
+   BEGIN
+      IF bool_in
+      THEN
+         RETURN tval_in;
+      ELSE
+         RETURN fval_in;
+      END IF;
+   END;
+
+   FUNCTION inline (bool_in IN BOOLEAN, tval_in IN DATE, fval_in IN DATE)
+      RETURN DATE
+   IS
+   BEGIN
+      IF bool_in
+      THEN
+         RETURN tval_in;
+      ELSE
+         RETURN fval_in;
+      END IF;
+   END;
+
+   FUNCTION inline (bool_in IN BOOLEAN, tval_in IN NUMBER, fval_in IN NUMBER)
+      RETURN NUMBER
+   IS
+   BEGIN
+      IF bool_in
+      THEN
+         RETURN tval_in;
+      ELSE
+         RETURN fval_in;
+      END IF;
+   END;
+
+   FUNCTION inline (
+      bool_in   IN   BOOLEAN
+     ,tval_in   IN   VARCHAR2
+     ,fval_in   IN   VARCHAR2
+   )
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      IF bool_in
+      THEN
+         RETURN tval_in;
+      ELSE
+         RETURN fval_in;
+      END IF;
+   END;
+END ifelse;
+/

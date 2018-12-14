@@ -1,0 +1,53 @@
+PL/SQL IDEs
+
+Good central repository of links:
+
+http://dmoz.org/Computers/Software/Databases/Oracle/Tools/
+
+Not in any particular order...
+
+CAST SQL-Builder for Oracle:
+http://www.castsoftware.com/Products/SQLbuilderforOracle/SQLbuilderforOracle.html
+ 
+PCSCC FROG (Funky Resource for Oracle Developers) -
+    http://www.507pm.com/pcs/
+
+Rapid SQL and lots more
+    http://www.embarcadero.com
+    
+ProcEdit by OraSoft  (for Linux!)
+   http://www.mattshouse.com/procedit/    
+    
+Allround Automations PL/SQL Developer
+    http://www.allroundautomations.nl/plsqldev.html
+
+Benthic Software  Goldview, Goldload and PLedit
+    http://www.benthicsoftware.com/products.html
+
+Hora 4 and lots and lots more
+    http://www.keeptool.de/en/products.html
+    
+CompuWare SQL/Expediter
+    http://www.compuware.com/products/iad/XPEDITER/sql.htm
+
+Quest SQL Navigator
+    http://www.quest.com/html/sql_navigator.html
+
+SQL*Object Builder
+    http://www.idb-consulting.fr/sqlob.htm
+
+BMC SQL Programmer
+    http://www.sfi-software.com/sql-programmer.htm
+
+CA SQL Station
+    http://www.ca.com
+
+TOAD
+    http://www.quest.com/
+
+DB Tools for Oracle
+    http://www.softtreetech.com/monitor/index.htm
+    
+Hora
+    http://www.keeptool.com/en/products.html#Hora    
+     

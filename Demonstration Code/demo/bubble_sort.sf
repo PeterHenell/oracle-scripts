@@ -1,0 +1,85 @@
+CREATE OR REPLACE FUNCTION bubble_sort (string_in        IN VARCHAR2
+                                      , word_length_in   IN NUMBER)
+   RETURN VARCHAR2
+AS
+   -- ---------------------------------------------------
+   -- This function performs a bubble sort and will sort any string
+   -- of up to 255 characters in length
+   --
+   --  [About]
+   --     Bubble_Sort scans the array, comparing adjacent elements
+   --     and swapping pairs that are out of order.  It repeats scanning
+   --     until no pairs are swapped.
+   --
+   --  [Parameters]
+   --             string to be sorted
+   --             length of each word within the string
+   --
+   --  [Returns]
+   --
+   --  [Formulas]
+   --    Previous Word:  position * word_length + 1 - word_length
+   --    Current Word :  position * word_length + 1
+   --    Next Word    :  position * word_length + 1 + word_length
+   --
+
+
+   lv_limit       NUMBER;
+   lv_new_limit   NUMBER;
+   lv_position    NUMBER;
+   lv_sub_1       NUMBER;
+   lv_sub_2       NUMBER;
+   lv_string      VARCHAR2 (255) := string_in;
+BEGIN
+   lv_sub_1 := 0;
+   lv_new_limit := 255;
+   lv_limit := 255;
+
+   WHILE lv_sub_1 < 255 AND lv_limit != 0
+   LOOP
+      lv_sub_1 := lv_sub_1 + 1;
+      lv_new_limit := lv_limit;
+      lv_position := 0;
+      lv_limit := 0;
+
+      WHILE (lv_position * word_length_in) <= LENGTH (lv_string)
+            AND lv_position <= lv_new_limit
+      LOOP
+         lv_position := lv_position + 1;
+
+         -- if Previous Word is greater that Current Word, then bubble up the
+         -- Previous Word and set a flag to ...
+         IF SUBSTR (lv_string
+                  , ( (lv_position - 1) * word_length_in) + 1
+                  , word_length_in) >
+               SUBSTR (lv_string
+                     , ( (lv_position) * word_length_in) + 1
+                     , word_length_in)
+         THEN
+            lv_string :=
+               SUBSTR (lv_string
+                     , 1
+                     , ( (lv_position) * word_length_in) - word_length_in)
+               || SUBSTR (lv_string
+                        , ( (lv_position) * word_length_in) + 1
+                        , word_length_in)
+               || SUBSTR (lv_string
+                        , ( (lv_position - 1) * word_length_in) + 1
+                        , word_length_in)
+               || SUBSTR (
+                     lv_string
+                   , ( (lv_position) * word_length_in) + 1 + word_length_in
+                   ,   LENGTH (lv_string)
+                     - ( (lv_position) * word_length_in)
+                     + 1
+                     + word_length_in);
+            lv_limit := lv_position;
+         ELSE
+            NULL;
+         END IF;
+      END LOOP;
+   END LOOP;
+
+   RETURN lv_string;
+END bubble_sort;
+/

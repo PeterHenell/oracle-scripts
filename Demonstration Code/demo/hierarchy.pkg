@@ -1,0 +1,32 @@
+CREATE OR REPLACE
+ PACKAGE Hierarchy
+  IS
+        TYPE BranchTableType IS TABLE OF VARCHAR2(4000)
+          INDEX BY BINARY_INTEGER;
+        BranchTable BranchTableType;
+        FUNCTION Branch(vLevel          IN NUMBER,
+                        vValue          IN VARCHAR2,
+                        vDelimiter      IN VARCHAR2 DEFAULT CHR(0))
+                        RETURN VARCHAR2;
+        PRAGMA RESTRICT_REFERENCES(Branch,WNDS);
+END Hierarchy;
+/
+CREATE OR REPLACE
+ PACKAGE BODY Hierarchy
+  IS
+        ReturnValue VARCHAR2(4000);
+  FUNCTION Branch(vLevel        IN NUMBER,
+                  vValue        IN VARCHAR2,
+                  vDelimiter    IN VARCHAR2 DEFAULT CHR(0))
+                  RETURN VARCHAR2
+   IS
+   BEGIN
+        BranchTable(vLevel) := vValue;
+        ReturnValue := vValue;
+        FOR I IN REVERSE 1..vLevel - 1 LOOP
+          ReturnValue := BranchTable(I)|| vDelimiter || ReturnValue;
+        END LOOP;
+        RETURN ReturnValue;
+  END Branch;
+END Hierarchy;
+/

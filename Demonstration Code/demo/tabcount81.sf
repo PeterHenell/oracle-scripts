@@ -1,0 +1,33 @@
+CREATE OR REPLACE FUNCTION table_count (
+   owner_in        IN all_tables.owner%TYPE,
+   table_name_in   IN all_tables.table_name%TYPE)
+   RETURN PLS_INTEGER
+   AUTHID CURRENT_USER
+IS
+   l_owner        all_tables.owner%TYPE;
+   l_table_name   all_tables.table_name%TYPE;
+   l_return       PLS_INTEGER;
+BEGIN
+   l_owner := sys.DBMS_ASSERT.schema_name (owner_in);
+   l_table_name := sys.DBMS_ASSERT.sql_object_name (table_name_in);
+
+   EXECUTE IMMEDIATE
+      'SELECT COUNT(*) FROM ' || l_owner || '.' || l_table_name
+      INTO l_return;
+
+   RETURN l_return;
+END;
+/
+
+GRANT EXECUTE ON table_count TO scott;
+
+BEGIN
+   DBMS_OUTPUT.put_line (table_count (USER, 'EMPLOYEES'));
+END;
+/
+
+BEGIN
+   DBMS_OUTPUT.put_line (
+      table_count ('HR; DROP TABLE EMPLOYEES;', 'EMPLOYEES'));
+END;
+/

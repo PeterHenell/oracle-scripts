@@ -1,0 +1,737 @@
+<H1 ALIGN="CENTER"><A NAME="top"></A><FONT SIZE="6" FACE="Arial">Table Encapsulation Package for EMPLOYEE</FONT></H1>
+<H1><A HREF="tedoc.htm"><FONT SIZE="2" FACE="Arial">Overview</FONT></A></H1>
+<H1><A HREF="#tips"><FONT SIZE="2" FACE="Arial">Tips and Usage Notes</FONT></A></H1>
+<H1><A HREF="#The Fine Print"><FONT SIZE="2" FACE="Arial">The Fine Print</FONT></A></H1>
+<H1><A HREF="#Data Structure Types"><FONT SIZE="2" FACE="Arial">Data Structure Types</FONT></A></H1>
+<H1><A HREF="#Cursors"><FONT SIZE="2" FACE="Arial">Cursors</FONT></A></H1>
+<H1><A HREF="#Validation Programs"><FONT SIZE="2" FACE="Arial">Validation Programs</FONT></A></H1>
+<H1><A HREF="#Retrieval Programs"><FONT SIZE="2" FACE="Arial">Retrieval Programs</FONT></A></H1>
+<H1><A HREF="#Row Count Functions"><FONT SIZE="2" FACE="Arial">Row Count Functions</FONT></A></H1>
+<H1><A HREF="#Insert Programs"><FONT SIZE="2" FACE="Arial">Insert Programs</FONT></A></H1>
+<H1><A HREF="#Update Programs"><FONT SIZE="2" FACE="Arial">Update Programs</FONT></A></H1>
+<H1><A HREF="#Delete Programs"><FONT SIZE="2" FACE="Arial">Delete Programs</FONT></A></H1>
+<H1><A NAME="Overview"></A><FONT SIZE="5" FACE="Arial">Overview</FONT></H1>
+<P>This document provides information on how to use the table encapsulator package named te_employee. This
+package allows you to perform all SQL-related actions against the table, EMPLOYEE, through a PL/SQL interface
+or API (application programmatic interface).</P>
+<P>Instead of writing an UPDATE SQL statement in your program, for example, you would call the te_employee.upd
+procedure. Instead of writing a SELECT statement to retrieve a row from EMPLOYEE for a specific primary key, you
+would call the te_employee.onerow function. Why bother with these programs? Why not simply
+access the table directly? By using the table encapsulator package, you will achieve a higher level of performance
+in your application, it will be easier to maintain your code, and you will be able to write your code faster.</P>
+<P>The documentation for the API is broken out into the following categories:</P>
+
+<UL>
+	<LI>Data Structure Types - TYPE statements declaring data structures (mostly record TYPES) which you will use to
+	declare records in your programs.
+	<LI>Cursors - pre-defined cursors which retrieve rows of information from EMPLOYEE. As a rule, you should never
+	write your own cursors against EMPLOYEE. Check instead the set of cursors already created for you in te_employee.
+	If the query you need is not present, contact your program administrator to enhance the package.
+	<LI>Cursor Management - procedures to open and close the cursors. You should use these programs rather than issuing
+	your own OPEN and CLOSE statements, because they have additional features built into them.
+</UL>
+
+
+<UL>
+	<LI>Validation Programs - this package offers a set of procedures to validate database-level check constraints
+	(such as NOT NULL columns) in your PL/SQL programs.
+</UL>
+
+
+<UL>
+	<LI>Retrieval Programs - a set of functions that you can use to retrieve data from the table for specific primary
+	key and foreign key values.
+</UL>
+
+
+<UL>
+	<LI>Row Count Programs - a set of functions that return the number of rows in the table, the entire table, for
+	a specific primary key, and for foreign key values.
+</UL>
+
+
+<UL>
+	<LI>Insert Programs - one or more procedures to execute an INSERT statement to add rows to EMPLOYEE.
+	<LI>Update Programs - one or more procedures to execute an UDPATE statement to modify rows in EMPLOYEE.
+	<LI>Delete Programs - one or more procedures to execute an DELETE statement to remove rows from EMPLOYEE.
+</UL>
+
+
+<UL>
+	<LI>Memory Management - you can use the pinme procedure to pin the package into shared memory, making sure the
+	code is always available when needed.
+</UL>
+
+<P><A HREF="#top">Return to top</A></P>
+<H1><A NAME="tips"></A><FONT SIZE="5" FACE="Arial">Tips and Usage Notes</FONT></H1>
+<P>1. Referencing Elements of Package: Unless otherwise noted, whenever you use a code element defined in te_employee,
+you must preface that element with &quot;te_employee.&quot;, as in:</P>
+<PRE>te_employee.ins (...);</PRE>
+<P>2. Avoiding System-Assigned Database Object Names: You may encounter package elements with names like &quot;SYS_C00642&quot;.
+This will occur when table constraints (including primary keys, foreign keys and check constraints) are not given
+names at the time they are created. Instead, Oracle assigns a name using a sequential number. Obviously, this is
+not very readable code. There are two ways to get around these undesirable names: ask the DBA to provide informative
+names along with the constraint creation statements or use the PL/Generator aliasing feature (Coding Standards
+screen) to provide names for these constraints which will impact only the generated code.</P>
+<P>The first approach, changing the name of the constraint in the database, is the recommended approach.</P>
+<P>3. Choosing Between Overloaded Programs: Many of the programs in this package are overloaded. That means that
+there are more than one program with the same name. In most cases, the difference between these overloadings is
+that one program relies on passing individual, scalar values as arguments, while others allow you to pass record
+structures.</P>
+<P>Whenever possible, you should rely on parameter lists that pass records, instead of individual values. It is
+quite likely that your table structure will change over time, and with the table encapsulator package. If you always
+work with records, you will keep to an absolute minimum the number of programs already relying on the package's
+API which have to be fixed.</P>
+<P><A HREF="#top">Return to top</A></P>
+<H1><A NAME="The Fine Print"></A><FONT SIZE="5" FACE="Arial">The Fine Print</FONT></H1>
+<P>This document was generated using Quest Software's PL/Generator (www.Quest Software.com) version PRO-2000.2.8.</P>
+<P>Generation date/time: January   06, 2003 17:02:53</P>
+<P><A HREF="#top">Return to top</A></P>
+<H2><A NAME="Data Structure Types"></A><FONT FACE="Arial">Data Structure Types</FONT></H2>
+<P>This section documents the PL/SQL TYPE statements declaring data structures (mostly record TYPES) which you
+will use to declare records in your programs.</P>
+<P>The te_employee.pky_rt record TYPE defines a record structure for the primary key of EMPLOYEE.
+This record TYPE is used in various programs in the package, including isnullpky and del.</P>
+<PRE>   TYPE te_employee.pky_rt IS RECORD (
+      EMPLOYEE_ID EMPLOYEE.EMPLOYEE_ID%TYPE,
+      found BOOLEAN,
+      notfound BOOLEAN
+      );</PRE>
+<P>Here is an example of using the primary key record TYPE:</P>
+<PRE>DECLARE
+   pky_rec te_employee.pky_rt;
+BEGIN
+   pky_rec.EMPLOYEE_ID := v_EMPLOYEE_ID; /* set in outer block */
+
+   te_employee.del (
+      pky_rec,
+      v_numrows);
+END;
+/
+</PRE>
+<P>The te_employee.i_employee_name_rt record TYPE corresponds to the columns found in the i_employee_name index
+for EMPLOYEE. It is used by te_employee.i_employee_name$val function to return all the values of an index
+for a given primary key.</P>
+<PRE>   TYPE te_employee.i_employee_name_rt IS RECORD (
+      LAST_NAME EMPLOYEE.LAST_NAME%TYPE,
+      FIRST_NAME EMPLOYEE.FIRST_NAME%TYPE,
+      MIDDLE_INITIAL EMPLOYEE.MIDDLE_INITIAL%TYPE
+      );
+</PRE>
+<P><A HREF="#top">Return to top</A></P>
+<P><A NAME="Cursors"></A><FONT SIZE="5" FACE="Arial"><B>Cursors</B></FONT></P>
+<P>This section documents the pre-defined cursors that retrieve rows of information from EMPLOYEE. As a rule,
+you should never write your own cursors against EMPLOYEE. Check instead the set of cursors already created for
+you in te_employee. If the query you need is not present, contact your program administrator to enhance
+the package. If you take this approach, you will improve the performance of your application by increasing the
+usage of pre-parsed cursors in the SGA. You will also make it much easier to maintain the application code as the
+underlying table changes.</P>
+<P>The te_employee.allbypky_cur cursor returns the specified columns for all rows, ordered by the
+primary key. Here is the definition of that cursor:</P>
+<PRE>   CURSOR te_employee.allbypky_cur
+   IS
+      SELECT *
+        FROM EMPLOYEE
+       ORDER BY
+         EMPLOYEE_ID
+      ;
+</PRE>
+<P>The te_employee.allforpky_cur cursor returns the specified columns for a single row identified
+by the primary key. Here is the definition of that cursor:</P>
+<PRE>   CURSOR te_employee.allforpky_cur (
+      employee_id_in IN EMPLOYEE.EMPLOYEE_ID%TYPE
+      )
+   IS
+      SELECT *
+        FROM EMPLOYEE
+       WHERE
+         EMPLOYEE_ID = employee_id_in
+      ;
+</PRE>
+<P><FONT SIZE="5" FACE="Arial"><B>Cursor Management</B></FONT></P>
+<P>This package not only provides you with pre-built cursors, but also offers a set of open and close procedures
+to make it easier for you to work with the cursors. As you will see below, these programs offer some special features
+you are unlikely to code yourself, so you will be much better off relying on the te_employee open and close
+procedures instead of issuing explicit OPEN and CLOSE statements yourself.</P>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Open Cursors</B></I></FONT></P>
+<P>Each cursor defined in the package has a corresponding open procedure. Each of these procedures has a final
+close_if_open parameter. This parameter controls the behavior of the open request in cases when the cursor is already
+open (packaged cursors stay open until you close them explicitly. This is different behavior from locally declared
+cursors, which close automatically when the block in which they were declared terminates).</P>
+<P>If you pass TRUE for this parameter (the default), then the procedure will close the cursor if it is already
+open. If you pass FALSE, then the request to open the cursor is <I>ignored</I> if the cursor is already open. Why
+would you pass FALSE for close_if_open? Your application might be architected so that a particular cursor stays
+open across multiple program calls, allowing you to fetch additional rows from any one of those programs. In this
+case, you will want to make sure the cursor is open before you fetch, but you will not want any of the programs
+to close the cursor prematurely.</P>
+<P>The te_employee.open_allbypky_cur closes the te_employee.allbypky_cur cursor
+documented in the previous section.</P>
+<PRE>   PROCEDURE te_employee.open_allbypky_cur (
+      close_if_open IN BOOLEAN := TRUE
+      );
+</PRE>
+<P>The te_employee.open_allforpky_cur closes the te_employee.allforpky_cur cursor
+documented in the previous section.</P>
+<PRE>PROCEDURE te_employee.open_allforpky_cur (
+      employee_id_in IN EMPLOYEE.EMPLOYEE_ID%TYPE,
+      close_if_open IN BOOLEAN := TRUE
+      );
+</PRE>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Close Cursors</B></I></FONT></P>
+<P>Each cursor defined in the package has a corresponding close procedure. These procedures will only close their
+respective cursors if they are open at the time the procedures are called. In addition, there is a single procedure,
+te_employee.closeall, which closes any open cursors associated with this
+package.</P>
+<P>The following procedure closes the te_employee.allforpky_cur cursor.</P>
+<PRE>   PROCEDURE te_employee.close_allforpky_cur;
+</PRE>
+<P>The following procedure closes the te_employee.allbypky_cur cursor.</P>
+<PRE>   PROCEDURE te_employee.close_allbypky_cur;
+</PRE>
+<P>The following procedure closes any open cursors that are associated with this package.</P>
+<PRE>   PROCEDURE te_employee.closeall;
+</PRE>
+<P><A HREF="#top">Return to top</A></P>
+
+
+<P><A NAME="Validation Programs"></A><FONT SIZE="5" FACE="Arial"><B>Validation Programs</B></FONT></P>
+
+<P>The programs in this section can be used to validate data associated with EMPLOYEE. These validations may be
+used to confirm the presence of a primary key and check for record equality. If there arecheck constraints stored
+in the database for this table, you will also find functions that validate (mirror) those constraints for values
+you pass to it.</P>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Check Constraint Functions</B></I></FONT></P>
+<P>This package contains a function for each check constraint. When you call this function, pass in a value for
+each column referenced in the check constraint search condition as shown in the parameter list. The function will
+return the Boolean value to which the condition evaluates based on those values.</P>
+<P>For example, if the check constraint condition is &quot;COMPANY_NAME IS NOT NULL&quot;, then the function will
+return TRUE if the value (in this example, a company name) you pass is NOT NULL. Otherwise, FALSE will be returned.</P>
+<P>The following procedure validates its associated constraint search condition:</P>
+<P>Constraint:</P>
+<PRE>   "HIRE_DATE" IS NOT NULL
+</PRE>
+<P>Check Function:</P>
+<PRE>   FUNCTION te_employee.sys_c003090$chk (
+      hire_date_in IN EMPLOYEE.HIRE_DATE%TYPE
+      ) RETURN BOOLEAN;
+</PRE>
+<P>The following procedure validates its associated constraint search condition:</P>
+<P>Constraint:</P>
+<PRE>   "CREATED_BY" IS NOT NULL
+</PRE>
+<P>Check Function:</P>
+<PRE>   FUNCTION te_employee.sys_c003091$chk (
+      created_by_in IN EMPLOYEE.CREATED_BY%TYPE
+      ) RETURN BOOLEAN;
+</PRE>
+<P>The following procedure validates its associated constraint search condition:</P>
+<P>Constraint:</P>
+<PRE>   "CREATED_ON" IS NOT NULL
+</PRE>
+<P>Check Function:</P>
+<PRE>   FUNCTION te_employee.sys_c003092$chk (
+      created_on_in IN EMPLOYEE.CREATED_ON%TYPE
+      ) RETURN BOOLEAN;
+</PRE>
+<P>The following procedure validates its associated constraint search condition:</P>
+<P>Constraint:</P>
+<PRE>   "CHANGED_BY" IS NOT NULL
+</PRE>
+<P>Check Function:</P>
+<PRE>   FUNCTION te_employee.sys_c003093$chk (
+      changed_by_in IN EMPLOYEE.CHANGED_BY%TYPE
+      ) RETURN BOOLEAN;
+</PRE>
+<P>The following procedure validates its associated constraint search condition:</P>
+<P>Constraint:</P>
+<PRE>   "CHANGED_ON" IS NOT NULL
+</PRE>
+<P>Check Function:</P>
+<PRE>   FUNCTION te_employee.sys_c003094$chk (
+      changed_on_in IN EMPLOYEE.CHANGED_ON%TYPE
+      ) RETURN BOOLEAN;
+</PRE>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Collective Validation</B></I></FONT></P>
+<P>In addition to the separate validation functions, te_employee also provides a single program which performs
+all validations with a single call. This procedure is called when you try to insert a row into the table using
+the te_employee.ins procedure. You can also call it yourself.</P>
+<P>The validation procedure comes in two flavors: a version that requires you to enter each column value individually
+and a second version which allows you to pass a %ROWTYPE record, in which you have set the fields of the record
+accordingly.</P>
+<P>If any of the check constraint functions fails, an exception is raised and propagated out of either of the validate
+procedure. If you do not want the exception recorded, pass FALSE for the record_error argument.</P>
+<PRE>   PROCEDURE te_employee.validate (
+      hire_date_in IN EMPLOYEE.HIRE_DATE%TYPE,
+      created_by_in IN EMPLOYEE.CREATED_BY%TYPE,
+      created_on_in IN EMPLOYEE.CREATED_ON%TYPE,
+      changed_by_in IN EMPLOYEE.CHANGED_BY%TYPE,
+      changed_on_in IN EMPLOYEE.CHANGED_ON%TYPE,
+      record_error IN BOOLEAN := TRUE
+      );
+   PROCEDURE te_employee.validate (
+      rec_in IN EMPLOYEE%ROWTYPE,
+      record_error IN BOOLEAN := TRUE
+      );
+</PRE>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Check for Non-NULL Primary Key</B></I></FONT></P>
+<P>Use the isnullpky function to check easily that all columns in the primary key are not NULL. You
+can use this function to validate that the primary key or the row returned by a call to a function is valid.</P>
+<PRE>   FUNCTION te_employee.isnullpky (
+      rec_in IN EMPLOYEE%ROWTYPE
+      )
+   RETURN BOOLEAN;
+</PRE>
+<PRE>   FUNCTION te_employee.isnullpky (
+      rec_in IN pky_rt
+      )
+   RETURN BOOLEAN;
+</PRE>
+<P>The following code illustrates how you can put these functions to use.</P>
+<PRE>DECLARE
+   v_row EMPLOYEE%ROWTYPE;
+BEGIN
+   v_row := te_employee.onerow (
+      v_EMPLOYEE_ID
+      );</PRE>
+
+<PRE>   IF te_employee.isnullpky (v_row)
+   THEN
+      DBMS_OUTPUT.PUT_LINE ('Row not found for specified primary key.');
+   ELSE
+      process_data (v_row);
+   END IF;
+END;
+/</PRE>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Record Equality Checks</B></I></FONT></P>
+<P>PL/SQL does not allow you to perform a record-level comparison of two records for equality. This package, however,
+contains two functions - overloaded as te_employee.recseq - which emulate record-level equality checks.</P>
+<P>You can provide as an argument a records of the following type(s) to the te_employee.recseq function:</P>
+<P>A record defined with EMPLOYEE%ROWTYPE</P>
+
+<UL>
+	<LI>A record defined with te_employee.pky_rt
+</UL>
+
+<P>The header for the table-record version is:</P>
+<PRE>   FUNCTION recseq (rec1 IN EMPLOYEE%ROWTYPE, rec2 IN EMPLOYEE%ROWTYPE)
+      RETURN BOOLEAN;
+</PRE>
+<P>The header for the primary key-record version is:</P>
+<PRE>   FUNCTION recseq (rec1 IN pky_rt, rec2 IN pky_rt) RETURN BOOLEAN;
+</PRE>
+<P>Here is an example of using the recseq function to check equality between two records:</P>
+<PRE>DECLARE
+   rec1 EMPLOYEE%ROWTYPE;
+   rec2 EMPLOYEE%ROWTYPE;
+BEGIN
+   rec1 := te_employee.onerow (
+      v_EMPLOYEE_ID
+      );
+   IF te_employee.recseq (rec1, rec2) /* Will return FALSE */
+   THEN
+      ...
+   END IF;
+END;
+/</PRE>
+<P><A HREF="#top">Return to top</A></P>
+<P><A NAME="Retrieval Programs"></A><FONT SIZE="5" FACE="Arial"><B>Retrieval Programs</B></FONT></P>
+<P>The package offers a set of functions that allow you to retrieve values from individual rows stored in EMPLOYEE.</P>
+<P>The following function retrieves a row of data (all columns) for the specified primary key.</P>
+<PRE>   FUNCTION te_employee.onerow (
+      employee_id_in IN EMPLOYEE.EMPLOYEE_ID%TYPE
+      )
+      RETURN EMPLOYEE%ROWTYPE;
+</PRE>
+<P>The following function retrieves the primary key values in the form of a record for a single entry in the unique
+index identified by the function name.</P>
+<PRE>   FUNCTION te_employee.i_employee_name$pky (
+      last_name_in IN EMPLOYEE.LAST_NAME%TYPE,
+      first_name_in IN EMPLOYEE.FIRST_NAME%TYPE,
+      middle_initial_in IN EMPLOYEE.MIDDLE_INITIAL%TYPE
+      )
+      RETURN pky_rt
+      ;
+</PRE>
+<P>To confirm that the index values retrieved a primary key successfully, pass the primary key record to the isnullpky
+and see if it returns TRUE.</P>
+<P>The i_employee_name$val function returns the values for a single entry in the unique index for the specified
+primary key. It is, in other words, the inverse of the i_employee_name$pky function.</P>
+<PRE>   FUNCTION te_employee.i_employee_name$val (
+      employee_id_in IN EMPLOYEE.EMPLOYEE_ID%TYPE
+      )
+   RETURN i_employee_name_rt;
+</PRE>
+<P>The i_employee_name$row function retrieves all the columns for the row identified by the entry in the unique
+index specified by the parameter values.</P>
+<PRE>   FUNCTION te_employee.i_employee_name$row (
+      last_name_in IN EMPLOYEE.LAST_NAME%TYPE,
+      first_name_in IN EMPLOYEE.FIRST_NAME%TYPE,
+      middle_initial_in IN EMPLOYEE.MIDDLE_INITIAL%TYPE
+      )
+   RETURN EMPLOYEE%ROWTYPE;
+</PRE>
+<P><A HREF="#top">Return to top</A><BR>
+<H1><A NAME="Row Count Functions"></A><FONT SIZE="5" FACE="Arial"><B>Row Count Functions</B></FONT></H1>
+<P>This API contains functions that return the number of rows (based on various criteria) in the underlying table.</P>
+<H2>Count of All Rows</H2>
+<P>The te_employee.rowcount function returns the count of all rows in the table. The header
+is:</P>
+<PRE>   FUNCTION te_employee.rowcount RETURN INTEGER;</PRE>
+<P>Here is an example of using this function:</P>
+<PRE>BEGIN
+   IF te_employee.rowcount = 0
+   THEN
+      DBMS_OUTPUT.PUT_LINE ('Table is empty!');
+   END IF;
+END;</PRE>
+</PRE>
+<H2>Count of Rows for a Primary Key</H2>
+<P>The te_employee.pkyrowcount function returns the number of rows in the table for a given
+primary key (which may consist of one or more columns). The header for this function is:</P>
+<PRE>   FUNCTION pkyrowcount (
+      employee_id_in IN EMPLOYEE.EMPLOYEE_ID%TYPE
+      )
+      RETURN INTEGER;</PRE>
+<P>You can use this function to determine if a row exists in the table for a primary key. You can also determine
+if there is a data integrity issue -- this function should return 0 if the primary is not present and 1 if it is.
+If it returns a number greater than 1, you may have a problem. Here is an example of how you might use this function:</P>
+<PRE>BEGIN
+   IF te_employee.pkyrowcount (pkycolval1, ..., pkycolvalN) = 0
+   THEN
+      DBMS_OUTPUT.PUT_LINE ('No row defined for this primary key!');
+   END IF;
+END;</PRE>
+<P><A HREF="#top">Return to top</A><BR>
+<H2><A NAME="Insert Programs"></A><FONT FACE="Arial">Insert Programs</FONT></H2>
+<P>Instead of issuing INSERT statements directly in your code, you will call the te_employee.ins
+procedure. This procedure performs error handling and can even convert an INSERT into an UPDATE when it encounters
+a DUP_VAL_ON_INDEX error (if, in other words, the primary key is already present in the database).</P>
+<H3><FONT SIZE="5" FACE="Arial">Record Initialization</FONT></H3>
+<P>You can perform an insert by passing individual column values or by providing a table-based record. If you use
+a record, you may want to call a record initialization program to assign the default values for each column to
+the field in the record.</P>
+<P>You can initialize a record with a function or a procedure as shown in the headers below:</P>
+<PRE>   FUNCTION te_employee.initrec
+      (allnull IN BOOLEAN := FALSE) RETURN EMPLOYEE%ROWTYPE;
+
+   PROCEDURE te_employee. initrec  (
+      rec_inout IN OUT EMPLOYEE%ROWTYPE,
+      allnull IN BOOLEAN := FALSE);
+</PRE>
+<P>If you pass TRUE for the allnull argument, then all the fields in the record will be set to NULL. Otherwise,
+the fields will be set to the default values for each column as specified in the table definition (NULL, unless
+overridden with another default value).</P>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Insert Procedures</B></I></FONT></P>
+<P>This package provides more than one procedure with which to insert a row of data.</P>
+</PRE>
+<P><FONT SIZE="4" FACE="Arial"><B>Insert Providing Primary Key and Individual Fields</B></FONT></P>
+<P>This version of ins requires that you pass not only the non-primary key column values, but also
+a previously-generated or acquired primary key value (or values, in the case of multiple primary key columns).</P>
+<P>The upd_on_dup argument controls the behavior of ins when the attempt to INSERT raises
+a DUP_VAL_ON_INDEX error. This error occurs when a row already exists in the table with the same unique index column
+values as the row being inserted.</P>
+<P>If you pass FALSE for this argument (the default), then ins passes the DUP_VAL_ON_INDEX exception
+back to the calling program (or sets the errnum argument if you are using return code exception handling).</P>
+<P>If you pass TRUE for upd_on_dup, then if the INSERT fails with that error, the procedure will attempt
+to perform an update for the row identified by the primary key by calling upd.</P>
+<P>So if the DUP_VAL_ON_INDEX error is caused by a non-primary key unique index, this feature will not operate
+properly.</P>
+<PRE>   PROCEDURE te_employee.ins (
+      employee_id_in IN EMPLOYEE.EMPLOYEE_ID%TYPE,
+      last_name_in IN EMPLOYEE.LAST_NAME%TYPE DEFAULT NULL,
+      first_name_in IN EMPLOYEE.FIRST_NAME%TYPE DEFAULT NULL,
+      middle_initial_in IN EMPLOYEE.MIDDLE_INITIAL%TYPE DEFAULT NULL,
+      job_id_in IN EMPLOYEE.JOB_ID%TYPE DEFAULT NULL,
+      manager_id_in IN EMPLOYEE.MANAGER_ID%TYPE DEFAULT NULL,
+      hire_date_in IN EMPLOYEE.HIRE_DATE%TYPE DEFAULT SYSDATE,
+      salary_in IN EMPLOYEE.SALARY%TYPE DEFAULT NULL,
+      commission_in IN EMPLOYEE.COMMISSION%TYPE DEFAULT NULL,
+      department_id_in IN EMPLOYEE.DEPARTMENT_ID%TYPE DEFAULT NULL,
+      empno_in IN EMPLOYEE.EMPNO%TYPE DEFAULT NULL,
+      ename_in IN EMPLOYEE.ENAME%TYPE DEFAULT NULL,
+      created_by_in IN EMPLOYEE.CREATED_BY%TYPE DEFAULT USER,
+      created_on_in IN EMPLOYEE.CREATED_ON%TYPE DEFAULT SYSDATE,
+      changed_by_in IN EMPLOYEE.CHANGED_BY%TYPE DEFAULT USER,
+      changed_on_in IN EMPLOYEE.CHANGED_ON%TYPE DEFAULT SYSDATE,
+      upd_on_dup IN BOOLEAN := FALSE
+      );
+</PRE>
+<P><FONT SIZE="4" FACE="Arial"><B>Insert with Record, Providing Primary Key</B></FONT></P>
+<P>In this version of ins you provide a table-based record (defined using EMPLOYEE%ROWTYPE);
+all fields, including those corresponding to the primary key are used in the insert action. This ins
+procedure, in other words, does not generate a primary key. You must provide one all on your own.</P>
+<P>If you want the insert to take advantage of default column values as found in the table definition, you should
+call te_employee.initrec or te_employee.initrec.</P>
+<P>The upd_on_dup argument controls the behavior of ins when the attempt to INSERT raises
+a DUP_VAL_ON_INDEX error. This error occurs when a row already exists in the table with the same unique index column
+values as the row being inserted.</P>
+<P>If you pass FALSE for this argument (the default), then ins passes the DUP_VAL_ON_INDEX exception
+back to the calling program (or sets the errnum argument if you are using return code exception handling).</P>
+<P>If you pass TRUE for upd_on_dup, then if the INSERT fails with that error, the procedure will attempt
+to perform an update for the row identified by the primary key by calling upd.</P>
+<P>So if the DUP_VAL_ON_INDEX error is caused by a non-primary key unique index, this feature will not operate
+properly.</P>
+<PRE>   PROCEDURE te_employee.ins (rec_in IN EMPLOYEE%ROWTYPE,
+      upd_on_dup IN BOOLEAN := FALSE
+      );
+</PRE>
+<P><A HREF="#top">Return to top</A></P>
+<P><A NAME="Update Programs"></A><FONT SIZE="5" FACE="Arial"><B>Update Programs</B></FONT></P>
+<P>Updating through the package API can be a bit more complex than performing an insert or a delete. This package
+provides a single upd procedure through which you can update all, some or just one column in a table's
+row for a specific primary key.</P>
+<P>The way such a general update procedure works is as follows:</P>
+
+<UL>
+	<LI>You do not have to pass a value for each column. Instead, you provide a value only for those columns whose
+	values you want to change. You are likely to use named notation to single out those columns. This technique is
+	shown in the adjoining examples.
+	<P>
+	<LI>By default, if you pass a NULL value for a column, then upd assumes that you do not want to
+	update that column. In this case, the column value is set to its current value.
+	<P>
+	<LI>If you really do want to set a nullable column to a NULL value, then you will call the &quot;force function&quot;
+	for that column, <I>forcing</I> the assignment of the NULL value. These force functions are explained below in
+	more detail.
+</UL>
+
+<P><FONT SIZE="5" FACE="Arial"><I><B>Impact on Triggers</B></I></FONT></P>
+<P>Since the general update procedure will update all non-primary key columns in the table, regardless of whether
+or not the value has changed, you should make sure that all of your UPDATE triggers employ the WHEN clause. This
+clause will allow you to specify that processing of the trigger only takes place when the value is changed.</P>
+<P>If you do not want to have to insert this code into your triggers, then you should use single-column update
+procedures (which can be generated as a part of this package). Contact your PL/Generator Designer to take this
+action).</P>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Forcing NULL Values in Update</B></I></FONT></P>
+<P>This package contains a PL/SQL record structure that keeps track of the update-if-NULL status of each column
+of the table. It is, in essence, a set of flags. By default, this record says to the update procedure: ignore this
+value if it is NULL. You can change individual flags in this record to say &quot;set the column to NULL&quot; or,
+in other words, &quot;I really mean it. I want to make this column value NULL&quot; by calling a force function.</P>
+<P>Here are the headers of the force functions for each column:</P>
+<PRE>   FUNCTION te_employee.last_name$frc
+      (last_name_in IN EMPLOYEE.LAST_NAME%TYPE DEFAULT NULL)
+      RETURN EMPLOYEE.LAST_NAME%TYPE;
+</PRE>
+<PRE>   FUNCTION te_employee.first_name$frc
+      (first_name_in IN EMPLOYEE.FIRST_NAME%TYPE DEFAULT NULL)
+      RETURN EMPLOYEE.FIRST_NAME%TYPE;
+</PRE>
+<PRE>   FUNCTION te_employee.middle_initial$frc
+      (middle_initial_in IN EMPLOYEE.MIDDLE_INITIAL%TYPE DEFAULT NULL)
+      RETURN EMPLOYEE.MIDDLE_INITIAL%TYPE;
+</PRE>
+<PRE>   FUNCTION te_employee.job_id$frc
+      (job_id_in IN EMPLOYEE.JOB_ID%TYPE DEFAULT NULL)
+      RETURN EMPLOYEE.JOB_ID%TYPE;
+</PRE>
+<PRE>   FUNCTION te_employee.manager_id$frc
+      (manager_id_in IN EMPLOYEE.MANAGER_ID%TYPE DEFAULT NULL)
+      RETURN EMPLOYEE.MANAGER_ID%TYPE;
+</PRE>
+<PRE>   FUNCTION te_employee.hire_date$frc
+      (hire_date_in IN EMPLOYEE.HIRE_DATE%TYPE DEFAULT NULL)
+      RETURN EMPLOYEE.HIRE_DATE%TYPE;
+</PRE>
+<PRE>   FUNCTION te_employee.salary$frc
+      (salary_in IN EMPLOYEE.SALARY%TYPE DEFAULT NULL)
+      RETURN EMPLOYEE.SALARY%TYPE;
+</PRE>
+<PRE>   FUNCTION te_employee.commission$frc
+      (commission_in IN EMPLOYEE.COMMISSION%TYPE DEFAULT NULL)
+      RETURN EMPLOYEE.COMMISSION%TYPE;
+</PRE>
+<PRE>   FUNCTION te_employee.department_id$frc
+      (department_id_in IN EMPLOYEE.DEPARTMENT_ID%TYPE DEFAULT NULL)
+      RETURN EMPLOYEE.DEPARTMENT_ID%TYPE;
+</PRE>
+<PRE>   FUNCTION te_employee.empno$frc
+      (empno_in IN EMPLOYEE.EMPNO%TYPE DEFAULT NULL)
+      RETURN EMPLOYEE.EMPNO%TYPE;
+</PRE>
+<PRE>   FUNCTION te_employee.ename$frc
+      (ename_in IN EMPLOYEE.ENAME%TYPE DEFAULT NULL)
+      RETURN EMPLOYEE.ENAME%TYPE;
+</PRE>
+<PRE>   FUNCTION te_employee.created_by$frc
+      (created_by_in IN EMPLOYEE.CREATED_BY%TYPE DEFAULT NULL)
+      RETURN EMPLOYEE.CREATED_BY%TYPE;
+</PRE>
+<PRE>   FUNCTION te_employee.created_on$frc
+      (created_on_in IN EMPLOYEE.CREATED_ON%TYPE DEFAULT NULL)
+      RETURN EMPLOYEE.CREATED_ON%TYPE;
+</PRE>
+<PRE>   FUNCTION te_employee.changed_by$frc
+      (changed_by_in IN EMPLOYEE.CHANGED_BY%TYPE DEFAULT NULL)
+      RETURN EMPLOYEE.CHANGED_BY%TYPE;
+</PRE>
+<PRE>   FUNCTION te_employee.changed_on$frc
+      (changed_on_in IN EMPLOYEE.CHANGED_ON%TYPE DEFAULT NULL)
+      RETURN EMPLOYEE.CHANGED_ON%TYPE;
+</PRE>
+<P>When you call this function it does two things:</P>
+
+<OL>
+	<LI>Returns the value you pass into it, the default being NULL.
+	<LI>Sets the force flag for that column to &quot;Yes, update if NULL&quot;.
+</OL>
+
+<P>The consequence is that when you then call te_employee.upd and pass a NULL value for that
+column, its value will be set to NULL (and not ignored).</P>
+<P>You can use these functions in one of two ways:</P>
+
+<OL>
+	<LI>Assignment statement: a &quot;stand-alone&quot; call to the function, returning the value to a PL/SQL variable
+	of the appropriate type.
+	<LI>In-line execution: call the function within a call to the upd procedure, forcing the update
+	of that column to NULL. This will be the way that you most commonly deploy the force functions.
+</OL>
+
+<P>The following example shows the use of the force function to set every non-primary key column to NULL in the
+update. This will, of course, cause a failure in the update if any of the columns are defined to be NOT NULL.</P>
+<PRE>DECLARE
+   numrows INTEGER;
+BEGIN
+   te_employee.upd(
+      v_EMPLOYEE_ID, /* set in an outer block */
+      last_name_in => te_employee.last_name$frc
+      first_name_in => te_employee.first_name$frc
+      middle_initial_in => te_employee.middle_initial$frc
+      job_id_in => te_employee.job_id$frc
+      manager_id_in => te_employee.manager_id$frc
+      hire_date_in => te_employee.hire_date$frc
+      salary_in => te_employee.salary$frc
+      commission_in => te_employee.commission$frc
+      department_id_in => te_employee.department_id$frc
+      empno_in => te_employee.empno$frc
+      ename_in => te_employee.ename$frc
+      created_by_in => te_employee.created_by$frc
+      created_on_in => te_employee.created_on$frc
+      changed_by_in => te_employee.changed_by$frc
+      changed_on_in => te_employee.changed_on$frc
+      numrows
+      );
+END;
+/
+</PRE>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Resetting the Force Flags</B></I></FONT></P>
+<P>You can reset all of the force flags to &quot;don't update if NULL&quot; by calling the following procedure:</P>
+<PRE>PROCEDURE te_employee.reset$frc;
+</PRE>
+<P>Note: this program is called by upd automatically if you pass TRUE (the default value) for the
+reset_in argument.</P>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Update Any/All Column Procedures</B></I></FONT></P>
+<P>You perform an update on one row at a time, identified by the primary key. You can pass the values of the columns
+you want to update either through individual parameters (one parameter per column) or through a record of type
+EMPLOYEE%ROWTYPE.</P>
+<P><FONT SIZE="4" FACE="Arial"><B>Update by Primary Key, using Individual Fields</B></FONT></P>
+<P>When you call upd, you must provide a value for each column in the primary key. You can then
+pass a value for each column you wish to update. The remaining arguments for upd are described after
+the header.</P>
+<PRE>   PROCEDURE te_employee.upd (
+      employee_id_in IN EMPLOYEE.EMPLOYEE_ID%TYPE,
+      last_name_in IN EMPLOYEE.LAST_NAME%TYPE DEFAULT NULL,
+      first_name_in IN EMPLOYEE.FIRST_NAME%TYPE DEFAULT NULL,
+      middle_initial_in IN EMPLOYEE.MIDDLE_INITIAL%TYPE DEFAULT NULL,
+      job_id_in IN EMPLOYEE.JOB_ID%TYPE DEFAULT NULL,
+      manager_id_in IN EMPLOYEE.MANAGER_ID%TYPE DEFAULT NULL,
+      hire_date_in IN EMPLOYEE.HIRE_DATE%TYPE DEFAULT NULL,
+      salary_in IN EMPLOYEE.SALARY%TYPE DEFAULT NULL,
+      commission_in IN EMPLOYEE.COMMISSION%TYPE DEFAULT NULL,
+      department_id_in IN EMPLOYEE.DEPARTMENT_ID%TYPE DEFAULT NULL,
+      empno_in IN EMPLOYEE.EMPNO%TYPE DEFAULT NULL,
+      ename_in IN EMPLOYEE.ENAME%TYPE DEFAULT NULL,
+      created_by_in IN EMPLOYEE.CREATED_BY%TYPE DEFAULT NULL,
+      created_on_in IN EMPLOYEE.CREATED_ON%TYPE DEFAULT NULL,
+      changed_by_in IN EMPLOYEE.CHANGED_BY%TYPE DEFAULT NULL,
+      changed_on_in IN EMPLOYEE.CHANGED_ON%TYPE DEFAULT NULL,
+      rowcount_out OUT INTEGER,
+      reset_in IN BOOLEAN DEFAULT TRUE
+      );
+</PRE>
+<P>The rowcount_out argument contains the number of rows updated by your request.</P>
+<P>The reset_in argument controls the resetting of the force record. If TRUE, the default, then the force
+record is reset to its initial values (meaning, a NULL value is ignored). If FALSE, then the force record is not
+reset. The same columns for which a NULL value was applied in the current UPDATE will be &quot;marked&quot; for
+update-if-NULL in the next call to te_employee.upd.</P>
+<P><FONT SIZE="4" FACE="Arial"><B>Update by Primary Key, using Record</B></FONT></P>
+<P>This version of upd allows you to pass your column values for update through a record of type
+EMPLOYEE%ROWTYPE. The fields corresponding to primary key columns must be filled. All other fields can be assigned
+values as is appropriate to the update you want to perform. The remaining arguments for upd are
+described after the header.</P>
+<PRE>   PROCEDURE te_employee.upd (rec_in IN EMPLOYEE%ROWTYPE,
+      rowcount_out OUT INTEGER,
+      reset_in IN BOOLEAN DEFAULT TRUE);
+</PRE>
+<P>The rowcount_out argument contains the number of rows updated by your request. This argument should return
+either 0 or 1.</P>
+<P>The reset_in argument controls the resetting of the force record. If TRUE, the default, then the force
+record is reset to its initial values (meaning, a NULL value is ignored). If FALSE, then the force record is not
+reset. The same columns for which a NULL value was applied in the current UPDATE will be &quot;marked&quot; for
+update-if-NULL in the next call to te_employee.upd.</P>
+</PRE>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Update Individual Columns</B></I></FONT></P>
+<P>This package contains one or more procedures you can use to update individual columns for a specific primary
+key without having to call the general update procedure. You may want to do this to avoid the overhead of updating
+each column (even if it is updated to the same value) and initiating unnecessary trigger activity.</P>
+<P>There are two versions of the single-column update for each specified column: one which accepts the primary
+key as individual columns and another which allows you to pass the primary key as a PL/SQL record.</P>
+<P><A HREF="#top">Return to top</A></P>
+<P><A NAME="Delete Programs"></A><FONT SIZE="5" FACE="Arial"><B>Delete Programs</B></FONT></P>
+<P>Rather than issuing an explicit DELETE in your programs, you will call te_employee.del.
+You can delete the single row associated with a primary key, or you can delete all rows associated with a foreign
+key value.</P>
+<P>This package does not perform any kind of special logic or processing for cascading deletes, foreign key dependencies,
+or other possible complications of delete operations.</P>
+<P><FONT SIZE="4" FACE="Arial"><B>Delete by Primary Key using Individual Fields</B></FONT></P>
+<P>With this delete procedure, you provide the values of the primary key in individual arguments.</P>
+<P>The rowcount_out returns the numbers of rows affected by the delete request (either 0 or 1, since it is a
+primary key-based operation).</P>
+<PRE>   PROCEDURE te_employee.del (
+      employee_id_in IN EMPLOYEE.EMPLOYEE_ID%TYPE,
+      rowcount_out OUT INTEGER);
+</PRE>
+<P><FONT SIZE="4" FACE="Arial"><B>Delete by Primary Key using Record</B></FONT></P>
+<P>With this delete procedure, you provide the values of the primary key in a record of type te_employee.pky_rt.</P>
+<P>The rowcount_out returns the numbers of rows affected by the delete request (either 0 or 1, since it is a
+primary key-based operation).</P>
+<PRE>   PROCEDURE te_employee.del (rec_in IN pky_rt,
+      rowcount_out OUT INTEGER);
+</PRE>
+<P>You can also request a delete of a row by passing a record of type EMPLOYEE%ROWTYPE, which contains more
+than just the primary key columns. Here is the header for this version of del:</P>
+<PRE>   PROCEDURE del (rec_in IN EMPLOYEE%ROWTYPE,
+      rowcount_out OUT INTEGER);
+</PRE>
+<P><A HREF="#top">Return to top</A></P>
+<P><A NAME="Performance Enhancers"></A><FONT SIZE="5" FACE="Arial"><B>Performance Enhancers</B></FONT></P>
+<P>This package contains one or more features that you may find useful in enhancing the performance of your database
+access.</P>
+<P><FONT SIZE="5" FACE="Arial"><I><B>Pinning te_employee in Shared Memory</B></I></FONT></P>
+<P>If you want to make sure that programs in this package are instantly available for execution, you can &quot;pin&quot;
+the package into shared memory. If you pin a package, it will not be a candidate for removal by the least-recently-used
+(LRU) algorithm employed by Oracle to manage its shared memory area.</P>
+<P>You will usually pin programs when the database is first initialized. That offers the best guarantee that sufficient
+contiguous memory is found for your code.</P>
+<P>There are two steps you will need to take to pin your package:</P>
+
+<OL>
+	<LI>Call DBMS_SHARED_POOL.KEEP to &quot;register&quot; your package as a pinnable package.
+	<LI>Reference an element in te_employee so that the package will be loaded into memory.
+</OL>
+
+<P>Here is the code you will need to run to enable pinning of te_employee:</P>
+<PRE>   DBMS_SHARED_POOL.KEEP ('schemaname.te_employee');
+</PRE>
+<P>where schemaname is the name of the schema which owns te_employee.</P>
+<P>Here is the code you will run after calling the KEEP built-in to load your package into memory:</P>
+<PRE>te_employee.pinme;
+</PRE>
+<P>Both of these lines of code should be placed in an initialization script that is run when the database is started.
+This is a job for your Database Administrator.</P>
+
+<P><A HREF="#top">Return to top</A>
+
+
+</BODY>
+
+</HTML>

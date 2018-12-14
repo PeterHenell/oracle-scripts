@@ -1,0 +1,33 @@
+CREATE OR REPLACE FUNCTION fromNth1 (
+   str IN VARCHAR2,
+   onechar IN VARCHAR2, 
+   nth IN INTEGER)
+RETURN VARCHAR2
+IS
+   ch CHAR(1);
+   v_len NATURAL := 0;
+   indx INTEGER := 1;
+   v_nth INTEGER := 0;
+   retval VARCHAR2(100);
+BEGIN
+   v_len := LENGTH (str);
+   
+   LOOP
+      ch := SUBSTR (str, indx, 1);
+      IF ch = onechar
+      THEN
+         v_nth := v_nth + 1;
+         IF nth = v_nth
+         THEN
+            retval := SUBSTR (str, indx);
+         ELSE
+            indx := indx + 1;
+         END IF;
+      ELSE
+         indx := indx + 1;
+      END IF;
+      EXIT WHEN indx = v_len OR nth = v_nth;
+   END LOOP;
+   RETURN retval;
+END;
+/       

@@ -1,0 +1,20 @@
+/* Now let's put access to the stolen_life table INSIDE
+   the DEFINER procedure. */
+   
+CONNECT hq/hq
+
+/* Create a central analysis program, run as DEFINER. */
+CREATE OR REPLACE PROCEDURE show_descriptions
+  AUTHID DEFINER -- The default
+AS
+BEGIN
+  FOR lifestolen IN (SELECT * FROM stolen_life)
+  LOOP
+     show_victim (lifestolen);
+  END LOOP;
+END;
+/
+SHOW ERRORS
+
+/* Grant execute to public. */
+GRANT EXECUTE ON show_descriptions TO PUBLIC;

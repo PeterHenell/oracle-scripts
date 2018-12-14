@@ -1,0 +1,4 @@
+CREATE TYPE filename_t AS OBJECT (filename VARCHAR2(200)); 
+/
+CREATE TYPE dirContents_t AS VARRAY(1000) OF filename_t; 
+/

@@ -1,0 +1,31 @@
+CREATE TYPE numbers_t IS TABLE OF NUMBER
+/
+
+CREATE TYPE ot AS OBJECT
+       (n NUMBER)
+/
+
+CREATE TYPE food_t AS OBJECT
+       (name VARCHAR2 (100),
+        food_group VARCHAR2 (100),
+        grown_in VARCHAR2 (100),
+        n numbers_t,
+        o ot)
+          NOT FINAL;
+/
+
+DECLARE
+   t   food_t
+          := food_t ('a',
+                     'b',
+                     'c',
+                     numbers_t (),
+                     ot (2));
+BEGIN
+   IF t IS NULL
+   THEN
+      t := NULL;
+      DBMS_OUTPUT.put_line (1);
+   END IF;
+END;
+/

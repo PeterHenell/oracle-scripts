@@ -1,0 +1,58 @@
+/* Formatted by PL/Formatter v.1.1.13 on 1999/01/23 08:58  (08:58 AM) */
+CREATE OR REPLACE PACKAGE print
+IS
+   PROCEDURE ln (val IN VARCHAR2);
+   PROCEDURE ln (val IN DATE);
+   PROCEDURE ln (val IN NUMBER);
+   PROCEDURE ln (val IN BOOLEAN);
+END print;
+/
+
+CREATE OR REPLACE PACKAGE BODY print
+IS
+   PROCEDURE ln (val IN VARCHAR2)
+   IS
+   BEGIN
+      /* Don't display lines longer than 80 characters;
+         they are hard to read. */
+      IF LENGTH (val) > 80
+      THEN
+         DBMS_OUTPUT.PUT_LINE (SUBSTR (val, 1, 80));
+         ln (SUBSTR (val, 81));
+      ELSE
+         DBMS_OUTPUT.PUT_LINE (val);
+      END IF;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         DBMS_OUTPUT.ENABLE (1000000);
+         ln (val);
+   END;
+   
+   PROCEDURE ln (val IN DATE)
+   IS
+   BEGIN
+      ln (TO_CHAR (val, 'MM/DD/YYYY HH24:MI:SS'));
+   END;
+   
+   PROCEDURE ln (val IN NUMBER)
+   IS
+   BEGIN
+      ln (TO_CHAR (val));
+   END;
+   
+   PROCEDURE ln (val IN BOOLEAN)
+   IS
+   BEGIN
+      IF val
+      THEN
+         ln ('TRUE');
+      ELSIF NOT val
+      THEN
+         ln ('FALSE');
+      ELSE
+         ln ('');
+      END IF;
+   END;
+END print;
+/   

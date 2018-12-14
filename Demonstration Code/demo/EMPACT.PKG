@@ -1,0 +1,48 @@
+CREATE OR REPLACE PROCEDURE empact
+/* General emp-action procedure */
+   (action_in IN VARCHAR2 := emppkg.c_updsal, 
+    emp_in IN emp.empno%TYPE,
+    sal_in IN NUMBER := NULL, 
+    comm_in IN NUMBER := NULL)
+IS
+   emp_rec emppkg.emp_cur%ROWTYPE;
+
+   PROCEDURE println (str IN VARCHAR2, val IN NUMBER)
+   IS
+   BEGIN
+      p.l (emp_rec.ename || ' ' || str, val);      
+   END; 
+   
+   PROCEDURE println (str IN VARCHAR2, val IN DATE)
+   IS
+   BEGIN
+      p.l (emp_rec.ename || ' ' || str, val);      
+   END; 
+   
+BEGIN
+   IF emppkg.updating_salary (action_in) 
+   THEN 
+      emppkg.updsal (emp_in, sal_in);
+           
+   ELSIF emppkg.setting_totalcomp (action_in)
+   THEN
+      emppkg.updsal (emp_in, sal_in, comm_in);
+
+   ELSIF emppkg.showing_employee (action_in)
+   THEN
+      /* Show the emp information. */
+      OPEN emppkg.emp_cur (emp_in);
+      FETCH emppkg.emp_cur INTO emp_rec;
+
+      IF emppkg.emp_cur%NOTFOUND 
+      THEN 
+         p.l ('No employee found for', emp_in);
+      ELSE
+         println ('salary', emp_rec.sal);
+         println ('total comp', emp_rec.totalcomp);
+         println ('hiredate', emp_rec.hiredate);
+      END IF;
+      CLOSE emppkg.emp_cur;
+   END IF;
+END;
+/

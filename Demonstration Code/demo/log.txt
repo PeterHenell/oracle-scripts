@@ -1,0 +1,12 @@
+SQL> exec plggen.fortab ('te', 'employee')
+PLGgen.fortab te-employee---FALSEFALSE                                                                                  
+SET DB objects info TABLE-te-employee-                                                                                  
+Init Driver te                                                                                                          
+Generation Error!                                                                                                       
+   CGML--1422                                                                                                           
+   Error: ORA-01422: exact fetch returns more than requested number of rows                                             
+   Context:                                                                                                             
+
+PL/SQL procedure successfully completed.
+
+SQL> spool off

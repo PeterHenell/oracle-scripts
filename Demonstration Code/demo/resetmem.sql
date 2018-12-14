@@ -1,0 +1,7 @@
+/*  Reset session memory before profiling and testing. */
+BEGIN   
+   DBMS_SESSION.RESET_PACKAGE;
+   DBMS_SESSION.FREE_UNUSED_USER_MEMORY;
+   DBMS_SESSION.SET_CLOSE_CACHED_OPEN_CURSORS (TRUE);
+END;
+/

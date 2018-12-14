@@ -1,0 +1,63 @@
+CREATE OR REPLACE PACKAGE anynums_pkg
+IS
+   TYPE numbers_t IS TABLE OF NUMBER;
+
+   FUNCTION getvals (num_satisfies_in IN VARCHAR2 := NULL)
+      RETURN numbers_t;
+END anynums_pkg;
+/
+
+CREATE OR REPLACE PACKAGE BODY anynums_pkg
+IS
+   FUNCTION getvals (num_satisfies_in IN VARCHAR2 := NULL)
+      RETURN numbers_t
+   IS
+      retval       numbers_t := numbers_t ();
+      l_type       ANYTYPE;
+      l_typecode   PLS_INTEGER;
+      l_value      NUMBER;
+      l_dummy      PLS_INTEGER;
+      l_filter     VARCHAR2 (32767);
+      l_include    BOOLEAN;
+   BEGIN
+      FOR rec IN (SELECT data FROM wild_side)
+      LOOP
+         l_typecode := rec.data.gettype (l_type /* OUT */
+                                               );
+
+         IF l_typecode = DBMS_TYPES.typecode_number
+         THEN
+            l_dummy := rec.data.getnumber (l_value /* OUT */
+                                                  );
+            l_include := num_satisfies_in IS NULL;
+
+            IF NOT l_include
+            THEN
+               l_filter :=
+                  'DECLARE l_bool BOOLEAN; BEGIN l_bool := :invalue '
+                  || num_satisfies_in
+                  || '; IF l_bool THEN :intval := 1; ELSE :intval := 0; END IF; END;';
+
+               EXECUTE IMMEDIATE l_filter USING IN l_value, OUT l_dummy;
+
+               l_include := l_dummy = 1;
+            END IF;
+
+            IF l_include
+            THEN
+               retval.EXTEND;
+               retval (retval.LAST) := l_value;
+            END IF;
+         END IF;
+      END LOOP;
+
+      RETURN retval;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         DBMS_OUTPUT.put_line (sys.DBMS_UTILITY.format_error_stack);
+         DBMS_OUTPUT.put_line (l_filter);
+         RETURN NULL;
+   END;
+END anynums_pkg;
+/

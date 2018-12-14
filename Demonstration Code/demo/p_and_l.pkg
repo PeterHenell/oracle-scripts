@@ -1,0 +1,81 @@
+CREATE OR REPLACE PACKAGE p_and_l
+IS
+   PROCEDURE set_stmt_date (date_in IN DATE);
+   FUNCTION stmt_date RETURN DATE;
+
+   --PROCEDURE settrc (onoff IN BOOLEAN);
+
+   PROCEDURE trc;
+   PROCEDURE notrc;
+   FUNCTION tracing RETURN BOOLEAN;
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY p_and_l
+IS
+   g_trc BOOLEAN := FALSE;
+
+   g_stmt_date DATE := NULL;
+   
+   PROCEDURE trc
+   IS
+   BEGIN
+      g_trc := TRUE;
+   END;
+
+   PROCEDURE notrc
+   IS
+   BEGIN
+      g_trc := FALSE;
+   END;
+
+   FUNCTION tracing RETURN BOOLEAN
+   IS
+   BEGIN
+      RETURN g_trc;
+   END;
+
+   PROCEDURE set_stmt_date (date_in IN DATE)
+   IS
+   BEGIN
+      IF tracing 
+      THEN
+         watch.action ('set_stmt_date', date_in);
+      END IF;
+
+      --watch.action (tracing, 'set_stmt_date', date_in);
+      
+      g_stmt_date := LEAST (date_in, SYSDATE);
+   END;
+
+   FUNCTION stmt_date RETURN DATE
+   IS
+   BEGIN
+      IF tracing 
+      THEN
+         watch.action ('stmt_date', g_stmt_date);
+      END IF;
+
+      RETURN g_stmt_date;
+   END;
+
+END;
+/
+CREATE OR REPLACE PROCEDURE mod_stmt_date (
+    pause_in IN INTEGER := 0)
+IS
+   c_prog CHAR(13) := 'mod_stmt_date';
+BEGIN
+   FOR loopind IN 1 .. 5
+   LOOP
+      p_and_l.set_stmt_date (SYSDATE + 100);
+
+      IF p_and_l.stmt_date > ADD_MONTHS (SYSDATE, -3)
+      THEN
+         p_and_l.set_stmt_date (ADD_MONTHS (SYSDATE, 3));
+      END IF;
+      dbms_lock.sleep (pause_in);
+   END LOOP;
+END;
+/
+

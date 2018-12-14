@@ -1,0 +1,221 @@
+CREATE OR REPLACE PACKAGE layer_validator
+/*
+   Overview: validate calls between layers of code.
+   Author: Steven Feuerstein
+   Started in: Vilnius in March 2007
+
+   User sets up a collection of collections, each of which holds the
+   patterns valid at that layer in the hierarchy.
+
+   The program then makes sure that no program matching a pattern in level N
+   calls a program matching a pattern in level N+M where M >= 1.
+*/
+IS
+   SUBTYPE pattern_t IS VARCHAR2 (100);
+
+   TYPE patterns_aat IS TABLE OF pattern_t
+      INDEX BY PLS_INTEGER;
+
+   TYPE layer_patterns_aat IS TABLE OF patterns_aat
+      INDEX BY PLS_INTEGER;
+
+   PROCEDURE validate_program (
+      schema_in IN VARCHAR2
+    , program_in IN VARCHAR2
+    , layer_patterns_in IN layer_patterns_aat
+   );
+
+   PROCEDURE validate_schema (
+      schema_in IN VARCHAR2
+    , layer_patterns_in IN layer_patterns_aat
+   );
+END layer_validator;
+/
+
+CREATE OR REPLACE PACKAGE BODY layer_validator
+IS
+   TYPE flat_pattern_rt IS RECORD (
+      layer     PLS_INTEGER
+    , pattern   VARCHAR2 (100)
+   );
+
+   TYPE flat_patterns_aat IS TABLE OF int_pattern_rt
+      INDEX BY PLS_INTEGER;
+
+   PROCEDURE copy_patterns_to_list (
+      layer_patterns_in IN layer_patterns_aat
+    , flat_patterns_out OUT dependencies_aat
+   )
+   IS
+      l_layer_index     PLS_INTEGER;
+      l_pattern_index   PLS_INTEGER;
+   BEGIN
+      l_layer_index := layer_patterns_in (l_layer_index).FIRST;
+
+      WHILE (l_layer_index IS NOT NULL)
+      LOOP
+         l_pattern_index := layer_patterns_in.FIRST;
+
+         WHILE (l_pattern_index IS NOT NULL)
+         LOOP
+            g_all_patterns (g_all_patterns.COUNT + 1).layer := l_layer_index;
+            g_all_patterns (g_all_patterns.COUNT + 1).pattern :=
+                          layer_patterns_in (l_layer_index) (l_pattern_index);
+            l_pattern_index :=
+                     layer_patterns_in (l_layer_index).NEXT (l_pattern_index);
+         END LOOP;
+
+         l_layer_index :=
+                        layer_patterns_in (l_layer_index).NEXT (l_layer_index);
+      END LOOP;
+   END copy_patterns_to_list;
+
+   FUNCTION matching_pattern (
+      flat_patterns_in flat_patterns_aat
+    , program_in IN VARCHAR2
+   )
+      RETURN flat_pattern_rt
+   IS
+      l_pattern_index   PLS_INTEGER;
+      l_match_found     BOOLEAN         DEFAULT FALSE;
+      l_return          flat_pattern_rt;
+   BEGIN
+      /*
+      Scan through the patterns until I can apply LIKE successful to it for the program.
+      */
+      l_pattern_index := flat_patterns_in.FIRST;
+
+      WHILE (l_pattern_index IS NOT NULL AND NOT l_match_found)
+      LOOP
+         l_match_found :=
+                   program_in LIKE flat_patterns_in (l_pattern_index).pattern;
+
+         IF l_match_found
+         THEN
+            l_return := flat_patterns_in (l_pattern_index);
+         END IF;
+
+         l_pattern_index :=
+                      layer_patterns_in (l_layer_index).NEXT (l_pattern_index);
+      END LOOP;
+
+      RETURN l_return;
+   END matching_pattern;
+
+   PROCEDURE validate_program (
+      schema_in IN VARCHAR2
+    , program_in IN VARCHAR2
+    , layer_patterns_in IN layer_patterns_aat
+   )
+   IS
+      g_all_patterns   flat_patterns_aat;
+
+      TYPE dependencies_aat IS TABLE OF all_dependencies%ROWTYPE
+         INDEX BY PLS_INTEGER;
+
+      g_dependencies   dependencies_aat;
+      l_pattern        flat_pattern_rt;
+
+      PROCEDURE extract_all_dependencies (
+         dependencies_out OUT dependencies_aat
+      )
+      IS
+      BEGIN
+         SELECT *
+         BULK COLLECT INTO dependencies_out
+           FROM all_dependencies ad
+          WHERE ad.NAME = program_in AND ad.owner = schema_in;
+      END extract_all_dependencies;
+
+      PROCEDURE validate_dependencies (
+         dependencies_in IN dependencies_aat
+       , program_layer_in IN PLS_INTEGER
+      )
+      IS
+         l_dep_pattern   flat_pattern_rt;
+      BEGIN
+         /* For each dependency, get its parent and see if its layer number
+            exceeds the program's layer.*/
+         FOR indx IN dependencies_in.FIRST .. dependencies_in.LAST
+         LOOP
+            l_dep_pattern :=
+               matching_pattern (g_all_patterns, dependencies_in (indx).NAME);
+
+            IF l_dep_pattern.layer > program_layer_in
+            THEN
+               DBMS_OUTPUT.put_line (   '> Program "'
+                                     || dependencies_in (indx).owner
+                                     || '.'
+                                     || dependencies_in (indx).NAME
+                                     || '" is in layer '
+                                     || l_dep_pattern.layer
+                                     || '.'
+                                    );
+            END IF;
+         END LOOP;
+      END validate_dependencies;
+   BEGIN
+      DBMS_OUTPUT.put_line (   'Validating layer usage for "'
+                            || schema_in
+                            || '.'
+                            || program_in
+                            || '"'
+                           );
+      copy_patterns_to_list (layer_patterns_in, g_all_patterns);
+      /*
+      For a single program, the questions are:
+
+      * Does this program name fit one of the layer patterns?
+      * If not, there is nothing to validate.
+      * If yes, then we want to make sure that all programs it uses
+        must reside in a lower layer.
+      */
+      l_pattern := matching_pattern (g_all_patterns, program_in);
+
+      IF l_pattern.pattern IS NULL
+      THEN
+         /* This program does not fit into any of the layers. */
+         DBMS_OUTPUT.put_line
+                  (   '> Program "'
+                   || program_in
+                   || '" does not match any of the layers '
+                   || 'you specified. Remember: the analysis is case sensitive!'
+                  );
+      ELSE
+         DBMS_OUTPUT.put_line (   '> Program "'
+                               || program_in
+                               || '" has been found in layer '
+                               || l_pattern.layer
+                               || ', which is associated with filter "'
+                               || l_pattern.pattern
+                               || '".'
+                              );
+         extract_all_dependencies (g_dependencies);
+         validate_dependencies (g_dependencies, l_pattern.layer);
+      END IF;
+   END validate_schema;
+
+   PROCEDURE validate_schema (
+      schema_in IN VARCHAR2
+    , layer_patterns_in IN layer_patterns_aat
+   )
+   IS
+   BEGIN
+       /*
+      Start with the lowest layer and work my way up:
+      Does this layer have any dependencies on a higher
+      layer? Note that we don't have to worry about
+      recursive or hidden references; the violatoin of the
+      rule will appear somewhere along the way.
+
+      Issue: should we cache the dependency information
+      with a single bulk collect to improve the performance?
+      To do this we will need to move all the different
+      patterns into a single collection for an IN operation.
+      */
+      copy_patterns_to_list;
+      extract_all_dependencies;
+      validate_each_layer;
+   END validate_schema;
+END layer_validator;
+/

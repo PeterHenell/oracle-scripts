@@ -1,0 +1,40 @@
+CREATE OR REPLACE PROCEDURE exec_long_string (sql_in IN wrap_pkg.wrap_aat)
+IS
+   l_short_lines DBMS_SQL.varchar2s;
+   cur PLS_INTEGER := DBMS_SQL.open_cursor;
+   dummy PLS_INTEGER;
+BEGIN
+   IF sql_in.COUNT > 0
+   THEN
+      wrap_pkg.wrap_to_varchar2s (sql_in, l_short_lines);
+      DBMS_SQL.parse (c                  => cur
+                     ,STATEMENT          => l_short_lines
+                     ,lb                 => l_short_lines.FIRST
+                     ,ub                 => l_short_lines.LAST
+                     ,lfflg              => TRUE
+                     ,language_flag      => DBMS_SQL.native
+                     );
+      dummy := DBMS_SQL.EXECUTE (cur);
+      DBMS_SQL.close_cursor (cur);
+   END IF;
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      DECLARE
+         l_row   PLS_INTEGER := sql_in.FIRST;
+      BEGIN
+         DBMS_OUTPUT.PUT_LINE ('Parse collection failure: ');
+         DBMS_OUTPUT.PUT_LINE (SQLERRM);
+         DBMS_OUTPUT.PUT_LINE ('Collection contents: ');
+         WHILE (l_row IS NOT NULL)
+         LOOP
+            DBMS_OUTPUT.PUT_LINE (sql_in (l_row));
+            l_row := sql_in.NEXT (l_row);
+         END LOOP;
+      END;
+      IF DBMS_SQL.is_open (cur)
+      THEN
+         DBMS_SQL.close_cursor (cur);
+      END IF;
+END exec_long_string;
+/

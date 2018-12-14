@@ -1,0 +1,479 @@
+DROP TYPE an_array_t FORCE
+*
+ERROR at line 1:
+ORA-04043: object AN_ARRAY_T does not exist 
+
+
+
+Table dropped.
+
+
+Table created.
+
+SQL> 
+SQL> CREATE OR REPLACE TYPE an_array_t AS VARRAY(8) OF NUMBER;
+  2  /
+
+Type created.
+
+SQL> 
+SQL> /* First we'll create a table of arrays, and a table of numbers...
+DOC>|| We'll do this as procedures so we can easily run them later with
+DOC>|| different storage parameters.
+DOC>*/
+SQL> 
+SQL> SET ECHO ON
+SQL> CREATE OR REPLACE PROCEDURE bp_build_array_table (the_pctfree IN PLS_INTEGER,
+  2  	the_extent_size IN VARCHAR2)
+  3  AUTHID CURRENT_USER
+  4  AS
+  5  BEGIN
+  6  	BEGIN
+  7  	   EXECUTE IMMEDIATE 'DROP TABLE a_table_of_arrays';
+  8  	EXCEPTION WHEN OTHERS THEN NULL;
+  9  	END;
+ 10  	EXECUTE IMMEDIATE 'CREATE TABLE a_table_of_arrays (
+ 11  	   the_key VARCHAR2(100), array1 an_array_t,
+ 12  	   array2 an_array_t, array3 an_array_t)
+ 13  	   STORAGE (INITIAL ' || the_extent_size || ' NEXT ' || the_extent_size
+ 14  	   || ' PCTINCREASE 0 MAXEXTENTS UNLIMITED) PCTFREE ' || the_pctfree;
+ 15  END;
+ 16  /
+
+Procedure created.
+
+SQL> 
+SQL> BEGIN
+  2  	bp_build_array_table(0, '&&extent_size');
+  3  END;
+  4  /
+Enter value for extent_size: 2M
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> CREATE OR REPLACE PROCEDURE bp_build_num_table (the_pctfree IN PLS_INTEGER,
+  2  	the_extent_size IN VARCHAR2)
+  3  AUTHID CURRENT_USER
+  4  AS
+  5  BEGIN
+  6  	BEGIN
+  7  	   EXECUTE IMMEDIATE 'DROP TABLE a_table_of_numbers';
+  8  	EXCEPTION WHEN OTHERS THEN NULL;
+  9  	END;
+ 10  	EXECUTE IMMEDIATE 'CREATE TABLE a_table_of_numbers (
+ 11  	the_key VARCHAR2(100),
+ 12  	num1 NUMBER, num2 NUMBER, num3 NUMBER, num4 NUMBER, num5 NUMBER, num6 NUMBER,
+ 13  	num7 NUMBER, num8 NUMBER, num9 NUMBER, num10 NUMBER, num11 NUMBER, num12 NUMBER,
+ 14  	num13 NUMBER, num14 NUMBER, num15 NUMBER, num16 NUMBER, num17 NUMBER, num18 NUMBER,
+ 15  	num19 NUMBER, num20 NUMBER, num21 NUMBER, num22 NUMBER, num23 NUMBER, num24 NUMBER)
+ 16  STORAGE (INITIAL ' || the_extent_size || ' NEXT ' || the_extent_size || ' PCTINCREASE 0 MAXEXTENTS UNLIMITED)
+ 17  PCTFREE ' || the_pctfree;
+ 18  END;
+ 19  /
+
+Procedure created.
+
+SQL> 
+SQL> BEGIN
+  2  	bp_build_num_table(0, '&&extent_size');
+  3  END;
+  4  /
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> /* Next we will attempt to populate the table of arrays with a bulk bind... */
+SQL> 
+SQL> DECLARE
+  2  	TYPE vctab_t IS TABLE OF VARCHAR2(100);
+  3  	TYPE numtab_t IS TABLE OF an_array_t;
+  4  	vctab vctab_t := vctab_t();
+  5  	numtab numtab_t := numtab_t();
+  6  BEGIN
+  7  	vctab.EXTEND(&&number_of_records_to_insert);
+  8  	numtab.EXTEND(&&number_of_records_to_insert);
+  9  	FOR i IN 1..&&number_of_records_to_insert
+ 10  	LOOP
+ 11  	   vctab(i) := TO_CHAR(i);
+ 12  	   numtab(i) := an_array_t(1.1, null, 3.3, 4.4, null, null, null, 8.8);
+ 13  	END LOOP;
+ 14  	FORALL i IN 1..&&number_of_records_to_insert
+ 15  	   INSERT INTO a_table_of_arrays VALUES (vctab(i), numtab(i), numtab(i), numtab(i));
+ 16  END;
+ 17  /
+Enter value for number_of_records_to_insert: 10000
+   TYPE numtab_t IS TABLE OF an_array_t;
+                    *
+ERROR at line 3:
+ORA-06550: line 3, column 21: 
+PLS-00534: A Table type may not contain a nested table type or VARRAY. 
+ORA-06550: line 3, column 4: 
+PL/SQL: Item ignored 
+
+
+SQL> 
+SQL> /* Notice the error above -- you can't bulk bind a varray! So we have to use conventional bind...
+DOC>|| again as a procedure so we can run it easily later
+DOC>*/
+SQL> 
+SQL> CREATE OR REPLACE PROCEDURE bp_populate_array_table (howmany IN PLS_INTEGER,
+  2  	array1_value IN an_array_t, array2_value IN an_array_t, array3_value IN an_array_t)
+  3  AS
+  4  BEGIN
+  5  	FOR i IN 1..howmany
+  6  	LOOP
+  7  	   INSERT INTO a_table_of_arrays VALUES (TO_CHAR(i), array1_value, array2_value, array3_value);
+  8  	END LOOP;
+  9  END;
+ 10  /
+
+Procedure created.
+
+SQL> 
+SQL> 
+SQL> CREATE OR REPLACE PROCEDURE bp_populate_num_table (howmany IN PLS_INTEGER,
+  2  	n1val IN NUMBER, n2val IN NUMBER, n3val IN NUMBER, n4val IN NUMBER, n5val IN NUMBER,
+  3  	n6val IN NUMBER, n7val IN NUMBER, n8val IN NUMBER)
+  4  AS
+  5  	TYPE numtab_t IS TABLE OF NUMBER;
+  6  	TYPE chartab_t IS TABLE OF VARCHAR2(100);
+  7  	numtab1 numtab_t := numtab_t();
+  8  	numtab2 numtab_t := numtab_t();
+  9  	numtab3 numtab_t := numtab_t();
+ 10  	numtab4 numtab_t := numtab_t();
+ 11  	numtab5 numtab_t := numtab_t();
+ 12  	numtab6 numtab_t := numtab_t();
+ 13  	numtab7 numtab_t := numtab_t();
+ 14  	numtab8 numtab_t := numtab_t();
+ 15  	chartab chartab_t := chartab_t();
+ 16  BEGIN
+ 17  	numtab1.EXTEND(howmany);
+ 18  	numtab2.EXTEND(howmany);
+ 19  	numtab3.EXTEND(howmany);
+ 20  	numtab4.EXTEND(howmany);
+ 21  	numtab5.EXTEND(howmany);
+ 22  	numtab6.EXTEND(howmany);
+ 23  	numtab7.EXTEND(howmany);
+ 24  	numtab8.EXTEND(howmany);
+ 25  	chartab.EXTEND(howmany);
+ 26  
+ 27  	FOR i IN 1..howmany
+ 28  	LOOP
+ 29  	   chartab(i) := TO_CHAR(i);
+ 30  	   numtab1(i) := n1val;
+ 31  	   numtab2(i) := n2val;
+ 32  	   numtab3(i) := n3val;
+ 33  	   numtab4(i) := n4val;
+ 34  	   numtab5(i) := n5val;
+ 35  	   numtab6(i) := n6val;
+ 36  	   numtab7(i) := n7val;
+ 37  	   numtab8(i) := n8val;
+ 38  	END LOOP;
+ 39  
+ 40  	FORALL i IN 1..howmany
+ 41  	   INSERT INTO a_table_of_numbers VALUES (chartab(i),
+ 42  	      numtab1(i),numtab2(i),numtab3(i),numtab4(i),numtab5(i),numtab6(i),numtab7(i),numtab8(i),
+ 43  	      numtab1(i),numtab2(i),numtab3(i),numtab4(i),numtab5(i),numtab6(i),numtab7(i),numtab8(i),
+ 44  	      numtab1(i),numtab2(i),numtab3(i),numtab4(i),numtab5(i),numtab6(i),numtab7(i),numtab8(i));
+ 45  END;
+ 46  /
+
+Procedure created.
+
+SQL> 
+SQL> SET TIMING ON
+SQL> 
+SQL> DECLARE
+  2  	an_array an_array_t := an_array_t(1.1, null, 3.3, 4.4, null, null, null, 8.8);
+  3  BEGIN
+  4  	bp_populate_array_table(&&number_of_records_to_insert, an_array, an_array, an_array);
+  5  END;
+  6  /
+
+PL/SQL procedure successfully completed.
+
+Elapsed: 00:00:53.80
+SQL> 
+SQL> /* Above just inserted records with varrays--notice how long it takes.  Populate the normal table using a bulk bind... */
+SQL> 
+SQL> BEGIN
+  2  	bp_populate_num_table(&&number_of_records_to_insert, 1.1, null, 3.3, 4.4, null, null, null, 8.8);
+  3  END;
+  4  /
+
+PL/SQL procedure successfully completed.
+
+Elapsed: 00:00:10.82
+SQL> 
+SQL> SET TIMING OFF
+SQL> 
+SQL> /* Which insert was faster, and by how much?  Now see how the storage compares... */
+SQL> 
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> 
+SQL> SET ECHO OFF
+Enter value for db_block_size: 2048
+Data in  A_TABLE_OF_ARRAYS occupies 1026048 bytes                                                                                   
+Data in  A_TABLE_OF_NUMBERS occupies 759808 bytes                                                                                   
+
+PL/SQL procedure successfully completed.
+
+
+Table analyzed.
+
+
+Table analyzed.
+
+SQL> /* Ensure there are no chained rows -- should get "no rows selected" */
+SQL> SELECT table_name, COUNT(*) FROM chained_rows GROUP BY table_name;
+
+no rows selected
+
+SQL> TRUNCATE TABLE chained_rows;
+
+Table truncated.
+
+SQL> 
+SQL> /* Here is the little function we need to extract the ith element from a varray for sums... */
+SQL> 
+SQL> CREATE OR REPLACE FUNCTION ith_elt(the_array IN an_array_t, i IN PLS_INTEGER)
+  2  RETURN NUMBER
+  3  PARALLEL_ENABLE
+  4  AS
+  5  	BEGIN
+  6  	   RETURN the_array(i);
+  7  	EXCEPTION WHEN COLLECTION_IS_NULL
+  8  	THEN
+  9  	   RETURN NULL;
+ 10  	END;
+ 11  /
+
+Function created.
+
+SQL> 
+SQL> /* See how the performance of sums compares... */
+SQL> 
+SQL> SET TIMING ON
+SQL> SELECT SUM(ith_elt(array1, 1)) FROM a_table_of_arrays;
+
+SUM(ITH_ELT(ARRAY1,1))                                                                                                              
+----------------------                                                                                                              
+                 11000                                                                                                              
+
+Elapsed: 00:00:07.39
+SQL> SELECT SUM(num1) FROM a_table_of_numbers;
+
+ SUM(NUM1)                                                                                                                          
+----------                                                                                                                          
+     11000                                                                                                                          
+
+Elapsed: 00:00:00.12
+SQL> SET TIMING OFF
+SQL> 
+SQL> /* create a function to set the ith element (so we can do an update): */
+SQL> CREATE OR REPLACE FUNCTION set_ith_elt(the_array IN an_array_t, i IN PLS_INTEGER, new_value IN NUMBER)
+  2  RETURN an_array_t
+  3  PARALLEL_ENABLE
+  4  AS
+  5  	   dummy_array an_array_t := the_array;
+  6  	BEGIN
+  7  	   DECLARE
+  8  	   BEGIN
+  9  	      dummy_array(i) := new_value;
+ 10  	      RETURN dummy_array;
+ 11  	   EXCEPTION WHEN COLLECTION_IS_NULL
+ 12  	      THEN
+ 13  		 dummy_array := an_array_t();
+ 14  		 dummy_array(i) := new_value;
+ 15  		 RETURN dummy_array;
+ 16  	   END;
+ 17  	EXCEPTION
+ 18  	   WHEN SUBSCRIPT_BEYOND_COUNT
+ 19  	   THEN
+ 20  	      dummy_array.EXTEND(i - dummy_array.COUNT);
+ 21  	      dummy_array(i) := new_value;
+ 22  	      RETURN dummy_array;
+ 23  	END;
+ 24  /
+
+Function created.
+
+SQL> 
+SQL> /* Re-create the tables with some sort of PCTFREE so that row chaining doesn't
+DOC>|| pollute our results
+DOC>*/
+SQL> 
+SQL> DROP TABLE a_table_of_arrays;
+
+Table dropped.
+
+SQL> DROP TABLE a_table_of_numbers;
+
+Table dropped.
+
+SQL> 
+SQL> BEGIN
+  2  	bp_build_array_table(20, '&&extent_size');
+  3  END;
+  4  /
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> BEGIN
+  2  	bp_build_num_table(20, '&&extent_size');
+  3  END;
+  4  /
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> DECLARE
+  2  	an_array an_array_t := an_array_t(1.1, null, 3.3, 4.4, null, null, null, 8.8);
+  3  BEGIN
+  4  	bp_populate_array_table(&&number_of_records_to_insert, an_array, an_array, an_array);
+  5  END;
+  6  /
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> BEGIN
+  2  	bp_populate_num_table(&&number_of_records_to_insert, 1.1, null, 3.3, 4.4, null, null, null, 8.8);
+  3  END;
+  4  /
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> /* and see how the performance of the updates compares.  notice that this is actually
+DOC>|| creating an element where none existed...
+DOC>*/
+SQL> 
+SQL> SET TIMING ON
+SQL> UPDATE a_table_of_arrays
+  2  	SET array1 = set_ith_elt(array1, 7, 7.7);
+
+10000 rows updated.
+
+Elapsed: 00:01:02.23
+SQL> 
+SQL> COMMIT;
+
+Commit complete.
+
+Elapsed: 00:00:00.02
+SQL> 
+SQL> UPDATE a_table_of_numbers
+  2  	SET num7 = 7.7;
+
+10000 rows updated.
+
+Elapsed: 00:00:18.60
+SQL> SET TIMING OFF ECHO OFF
+
+Table analyzed.
+
+
+Table analyzed.
+
+SQL> /* Ensure there are no chained rows -- should get "no rows selected" */
+SQL> SELECT table_name, COUNT(*) FROM chained_rows GROUP BY table_name;
+
+no rows selected
+
+SQL> TRUNCATE TABLE chained_rows;
+
+Table truncated.
+
+SQL> TRUNCATE TABLE a_table_of_arrays;
+
+Table truncated.
+
+SQL> TRUNCATE TABLE a_table_of_numbers;
+
+Table truncated.
+
+SQL> 
+SQL> /* Now populate with all null values except the last of each group of 8... */
+SQL> SET TIMING ON
+SQL> 
+SQL> DECLARE
+  2  	an_array an_array_t := an_array_t(null, null, null, null, null, null, null, 1);
+  3  BEGIN
+  4  	bp_populate_array_table(&&number_of_records_to_insert, an_array, an_array, an_array);
+  5  END;
+  6  /
+
+PL/SQL procedure successfully completed.
+
+Elapsed: 00:00:51.24
+SQL> 
+SQL> BEGIN
+  2  	bp_populate_num_table(&&number_of_records_to_insert, null, null, null, null, null, null, null, 1);
+  3  END;
+  4  /
+
+PL/SQL procedure successfully completed.
+
+Elapsed: 00:00:08.84
+SQL> 
+SQL> SET TIMING OFF
+SQL> 
+SQL> /* Bulk binds should have been lots faster.  Now see how the storage compares... */
+SQL> SET ECHO OFF
+Data in  A_TABLE_OF_ARRAYS occupies 862208 bytes                                                                                    
+Data in  A_TABLE_OF_NUMBERS occupies 534528 bytes                                                                                   
+
+PL/SQL procedure successfully completed.
+
+SQL> /* and look at the relative performance of the sum and update operations... */
+SQL> 
+SQL> SET TIMING ON
+SQL> SELECT SUM(ith_elt(array1, 1)) FROM a_table_of_arrays;
+
+SUM(ITH_ELT(ARRAY1,1))                                                                                                              
+----------------------                                                                                                              
+                                                                                                                                    
+
+Elapsed: 00:00:07.51
+SQL> SELECT SUM(num1) FROM a_table_of_numbers;
+
+ SUM(NUM1)                                                                                                                          
+----------                                                                                                                          
+                                                                                                                                    
+
+Elapsed: 00:00:00.10
+SQL> UPDATE a_table_of_arrays
+  2  	SET array1 = set_ith_elt(array1, 7, 7.7);
+
+10000 rows updated.
+
+Elapsed: 00:00:57.53
+SQL> 
+SQL> COMMIT;
+
+Commit complete.
+
+Elapsed: 00:00:00.03
+SQL> 
+SQL> UPDATE a_table_of_numbers
+  2  	SET num7 = 7.7;
+
+10000 rows updated.
+
+Elapsed: 00:00:16.49
+SQL> SET TIMING OFF ECHO OFF
+
+Table analyzed.
+
+
+Table analyzed.
+
+
+no rows selected
+

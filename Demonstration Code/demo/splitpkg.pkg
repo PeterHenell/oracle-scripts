@@ -1,0 +1,125 @@
+/* BEFORE 
+
+toobig.proc1;
+
+*/
+
+CREATE OR REPLACE PACKAGE toobig
+IS
+   PROCEDURE proc1;
+   PROCEDURE proc2;
+END;
+/
+CREATE OR REPLACE PACKAGE BODY toobig
+IS
+   PROCEDURE proc1 
+   IS
+   BEGIN
+      /* LOTS OF CODE */
+      NULL;
+   END;
+
+   PROCEDURE proc2 
+   IS
+   BEGIN
+      /* LOTS MORE CODE */
+      NULL;
+   END;
+END;
+/
+
+/* AFTER
+
+toobig.proc1;
+   not_toobig1.proc;
+
+*/
+
+CREATE OR REPLACE PACKAGE BODY toobig
+IS
+   PROCEDURE proc1 
+   IS
+   BEGIN
+      not_toobig1.proc;
+   END;
+
+   PROCEDURE proc2 
+   IS
+   BEGIN
+      not_toobig2.proc;
+   END;
+END;
+/
+CREATE OR REPLACE PACKAGE smaller1
+IS
+   PROCEDURE toobig_proc1;
+END smaller1;
+/
+CREATE OR REPLACE PACKAGE BODY smaller1
+IS
+   PROCEDURE toobig_proc1 
+   IS
+   BEGIN
+      /* LOTS OF CODE */
+      ...
+   END toobig_proc1;
+END smaller1;
+/
+CREATE OR REPLACE PACKAGE smaller1
+IS
+   PROCEDURE toobig_proc2;
+END smaller1;
+/
+CREATE OR REPLACE PACKAGE smaller2
+IS
+   PROCEDURE toobig_proc2;
+END smaller2;
+/
+CREATE OR REPLACE PACKAGE shared_info
+IS
+   FUNCTION piece_of_data RETURN VARCHAR2;
+END shared_info;
+/
+CREATE OR REPLACE PACKAGE BODY shared_info
+IS
+   g_data VARCHAR2(32767);
+   
+   FUNCTION piece_of_data RETURN VARCHAR2
+   IS
+   BEGIN
+      RETURN g_data;
+   END piece_of_data;
+END shared_info;
+/
+CREATE OR REPLACE PACKAGE BODY smaller1
+IS
+   PROCEDURE toobig_proc1
+   IS
+   BEGIN
+      /* LOTS OF CODE */
+      IF shared_info.piece_of_data IS NULL 
+	  THEN
+	     ...
+	  END IF;
+	  ...
+   END toobig_proc1;
+END smaller1;
+/
+CREATE OR REPLACE PACKAGE BODY smaller2
+IS
+   PROCEDURE toobig_proc2 
+   IS
+      l_data VARCHAR2(100);
+   BEGIN
+      /* LOTS MORE CODE */
+	  l_data := shared_info.piece_of_data;
+      ...
+   END toobig_proc2;
+END smaller2;
+/
+
+
+
+
+
+

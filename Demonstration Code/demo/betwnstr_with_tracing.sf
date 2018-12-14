@@ -1,0 +1,58 @@
+CREATE OR REPLACE FUNCTION betwnstr (
+   string_in IN VARCHAR2
+ , start_in IN INTEGER
+ , end_in IN INTEGER
+ , inclusive_in IN BOOLEAN DEFAULT TRUE
+)
+   RETURN VARCHAR2
+IS
+   l_return   VARCHAR2 (32767);
+
+   PROCEDURE trace_in_arguments
+   IS
+      FUNCTION bool_to_char (bool_in IN BOOLEAN)
+         RETURN VARCHAR2
+      IS
+      BEGIN
+         IF bool_in
+         THEN
+            RETURN 'TRUE';
+         ELSIF NOT bool_in
+         THEN
+            RETURN 'FALSE';
+         ELSE
+            RETURN 'NULL';
+         END IF;
+      END bool_to_char;
+   BEGIN
+      IF qd_runtime.trace_enabled
+      THEN
+         qd_runtime.TRACE ('BETWNSTR'
+                         ,    'STRING_IN='
+                           || string_in
+                           || ' - START_IN='
+                           || start_in
+                           || ' - END_IN='
+                           || end_in
+                           || ' - INCLUSIVE_IN='
+                           || bool_to_char (inclusive_in)
+                          );
+      END IF;
+   END trace_in_arguments;
+
+/* BEFORE LEAVING - OUT and IN OUT argument tracing */
+   PROCEDURE trace_out_arguments
+   IS
+   BEGIN
+      IF qd_runtime.trace_enabled
+      THEN
+         qd_runtime.TRACE ('BETWNSTR', 'RETURN_VALUE=' || l_return);
+      END IF;
+   END trace_out_arguments;
+BEGIN
+   trace_in_arguments;
+   l_return := (SUBSTR (string_in, start_in, end_in - start_in + 1));
+   trace_out_arguments;
+   RETURN l_return;
+END;
+/

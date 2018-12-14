@@ -1,0 +1,88 @@
+SQL> exec incache.showsize (sch=>'%')
+PLVPRO.P (PACKAGE) Loads: 1 Execs: 6 Kept: NO Code size: 2065 Kept size: 7268
+PLVPRO.P (PACKAGE BODY) Loads: 1 Execs: 5 Kept: NO Code size: 5204 Kept size: 5204
+PLVPRO.PLV (PACKAGE) Loads: 1 Execs: 5 Kept: NO Code size: 3757 Kept size: 13321
+PLVPRO.PLV (PACKAGE BODY) Loads: 1 Execs: 5 Kept: NO Code size: 12063 Kept size: 12063
+PLVPRO.PLVCHR (PACKAGE) Loads: 1 Execs: 1 Kept: NO Code size: 2021 Kept size: 6657
+PLVPRO.PLVCHR (PACKAGE BODY) Loads: 1 Execs: 1 Kept: NO Code size: 8942 Kept size: 8942
+PLVPRO.PLVCONFIG (PACKAGE) Loads: 1 Execs: 1 Kept: NO Code size: 2885 Kept size: 9749
+PLVPRO.PLVCONFIG (PACKAGE BODY) Loads: 1 Execs: 1 Kept: NO Code size: 21966 Kept size: 21966
+PLVPRO.PLVPRS (PACKAGE) Loads: 1 Execs: 1 Kept: NO Code size: 1484 Kept size: 6051
+PLVPRO.PLVPRS (PACKAGE BODY) Loads: 1 Execs: 1 Kept: NO Code size: 9951 Kept size: 9951
+SCOTT.INCACHE (PACKAGE) Loads: 18 Execs: 26 Kept: NO Code size: 2189 Kept size: 9261
+SCOTT.INCACHE (PACKAGE BODY) Loads: 18 Execs: 18 Kept: NO Code size: 3737 Kept size: 3737
+Total code size: 76264
+Total kept size (code + parsed): 114170
+
+PL/SQL procedure successfully completed.
+
+SQL> sho user
+USER is "SCOTT"
+SQL> exec plvddd.tbl (user, 'emp')
+/*============PL/Vision Reverse Engineering ==============
+| Auto-Generated DDL (August 12, 1999 18:30:55)
+| --------------------------------------------------------
+| Table Generated For scott.emp
+|========================================================*/
+CREATE TABLE scott.emp
+ (
+  empno NUMBER(4),
+  ename VARCHAR2(10),
+  job VARCHAR2(9),
+  mgr NUMBER(4),
+  hiredate DATE,
+  sal NUMBER(7,2),
+  comm NUMBER(7,2),
+  deptno NUMBER(2)
+ )
+;
+ALTER TABLE scott.emp
+   ADD (
+        CONSTRAINT FK_DEPTNO FOREIGN KEY (DEPTNO)
+         REFERENCES SCOTT.DEPT (DEPTNO)
+       , CONSTRAINT PK_EMP PRIMARY KEY (EMPNO)
+   );
+
+PL/SQL procedure successfully completed.
+
+SQL>  exec incache.showsize (sch=>'%')
+PLVPRO.P (PACKAGE) Loads: 1 Execs: 7 Kept: NO Code size: 2065 Kept size: 7268
+PLVPRO.P (PACKAGE BODY) Loads: 1 Execs: 6 Kept: NO Code size: 5204 Kept size: 5204
+PLVPRO.PLV (PACKAGE) Loads: 1 Execs: 6 Kept: NO Code size: 3757 Kept size: 13321
+PLVPRO.PLV (PACKAGE BODY) Loads: 1 Execs: 6 Kept: NO Code size: 12063 Kept size: 12063
+PLVPRO.PLVASRC (PACKAGE) Loads: 1 Execs: 1 Kept: NO Code size: 1023 Kept size: 3781
+PLVPRO.PLVASRC (PACKAGE BODY) Loads: 1 Execs: 1 Kept: NO Code size: 5204 Kept size: 5204
+PLVPRO.PLVBOOL (PACKAGE) Loads: 1 Execs: 1 Kept: NO Code size: 2238 Kept size: 7974
+PLVPRO.PLVBOOL (PACKAGE BODY) Loads: 1 Execs: 1 Kept: NO Code size: 10271 Kept size: 10271
+PLVPRO.PLVCHR (PACKAGE) Loads: 1 Execs: 2 Kept: NO Code size: 2021 Kept size: 6657
+PLVPRO.PLVCHR (PACKAGE BODY) Loads: 1 Execs: 2 Kept: NO Code size: 8942 Kept size: 8942
+PLVPRO.PLVCONFIG (PACKAGE) Loads: 1 Execs: 2 Kept: NO Code size: 2885 Kept size: 9749
+PLVPRO.PLVCONFIG (PACKAGE BODY) Loads: 1 Execs: 2 Kept: NO Code size: 21966 Kept size: 21966
+PLVPRO.PLVDATA (PACKAGE) Loads: 1 Execs: 1 Kept: NO Code size: 5704 Kept size: 20716
+PLVPRO.PLVDATA (PACKAGE BODY) Loads: 1 Execs: 1 Kept: NO Code size: 31592 Kept size: 31592
+PLVPRO.PLVDATE (PACKAGE) Loads: 1 Execs: 1 Kept: NO Code size: 3255 Kept size: 11465
+PLVPRO.PLVDATE (PACKAGE BODY) Loads: 1 Execs: 1 Kept: NO Code size: 16438 Kept size: 16438
+PLVPRO.PLVDDD (PACKAGE) Loads: 1 Execs: 1 Kept: NO Code size: 1993 Kept size: 6945
+PLVPRO.PLVDDD (PACKAGE BODY) Loads: 1 Execs: 1 Kept: NO Code size: 39958 Kept size: 39958
+PLVPRO.PLVLOG (PACKAGE) Loads: 1 Execs: 1 Kept: NO Code size: 4611 Kept size: 15519
+PLVPRO.PLVLOG (PACKAGE BODY) Loads: 1 Execs: 1 Kept: NO Code size: 11368 Kept size: 11368
+PLVPRO.PLVOBJ (PACKAGE) Loads: 1 Execs: 1 Kept: NO Code size: 5160 Kept size: 15796
+PLVPRO.PLVOBJ (PACKAGE BODY) Loads: 1 Execs: 1 Kept: NO Code size: 22680 Kept size: 22680
+PLVPRO.PLVOFST (PACKAGE) Loads: 1 Execs: 1 Kept: NO Code size: 1083 Kept size: 3478
+PLVPRO.PLVOFST (PACKAGE BODY) Loads: 1 Execs: 1 Kept: NO Code size: 3277 Kept size: 3277
+PLVPRO.PLVPIPE (PACKAGE) Loads: 1 Execs: 1 Kept: NO Code size: 120 Kept size: 644
+PLVPRO.PLVPIPE (PACKAGE BODY) Loads: 1 Execs: 1 Kept: NO Code size: 137 Kept size: 137
+PLVPRO.PLVPRS (PACKAGE) Loads: 1 Execs: 1 Kept: NO Code size: 1484 Kept size: 6051
+PLVPRO.PLVPRS (PACKAGE BODY) Loads: 1 Execs: 1 Kept: NO Code size: 9951 Kept size: 9951
+PLVPRO.PLVREP (PACKAGE) Loads: 1 Execs: 1 Kept: NO Code size: 9867 Kept size: 35403
+PLVPRO.PLVREP (PACKAGE BODY) Loads: 1 Execs: 1 Kept: NO Code size: 87420 Kept size: 87420
+PLVPRO.PLVSTR (PACKAGE) Loads: 1 Execs: 1 Kept: NO Code size: 758 Kept size: 4112
+PLVPRO.PLVSTR (PACKAGE BODY) Loads: 1 Execs: 1 Kept: NO Code size: 7033 Kept size: 7033
+PLVPRO.PLVTYPE (PACKAGE) Loads: 1 Execs: 1 Kept: NO Code size: 3680 Kept size: 10659
+PLVPRO.PLVTYPE (PACKAGE BODY) Loads: 1 Execs: 1 Kept: NO Code size: 10296 Kept size: 10296
+PLVPRO.PLV_LOG$IO (PACKAGE) Loads: 1 Execs: 1 Kept: NO Code size: 3541 Kept size: 13329
+PLVPRO.PLV_LOG$IO (PACKAGE BODY) Loads: 1 Execs: 1 Kept: NO Code size: 24128 Kept size: 24128
+SCOTT.INCACHE (PACKAGE) Loads: 18 Execs: 27 Kept: NO Code size: 2189 Kept size: 9261
+SCOTT.INCACHE (PACKAGE BODY) Loads: 18 Execs: 19 Kept: NO Code size: 3737 Kept size: 3737
+Total code size: 389099
+Total kept size (code + parsed): 533793

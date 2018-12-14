@@ -1,0 +1,64 @@
+/* Formatted by PL/Formatter v3.0.5.0 on 2000/07/07 08:13 */
+
+CREATE OR REPLACE FUNCTION is_leap_year (p_year IN NUMBER)
+   RETURN BOOLEAN
+/* John Bard johnbard@globalnet.co.uk  */
+IS
+   l_is_leap_year BOOLEAN;
+   l_date DATE;
+BEGIN
+   BEGIN
+      l_date :=
+        TO_DATE (
+           '02/29/' || TO_CHAR (p_year, 'FM0000'),
+           'MM/DD/YYYY'
+        );
+      l_is_leap_year := TRUE;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         l_is_leap_year := FALSE;
+   END;
+
+   RETURN (l_is_leap_year);
+END is_leap_year;
+/
+
+CREATE OR REPLACE FUNCTION is_leap_year (p_year IN NUMBER)
+   RETURN BOOLEAN
+/* Solomon Yakobson syakobson@erols.com */
+IS
+BEGIN
+   RETURN (
+             TO_CHAR (
+                TO_DATE (
+                   '12/31/' || TO_CHAR (p_year, 'FM0000'),
+                   'MM/DD/YYYY'
+                ),
+                'DDD'
+             ) = '366'
+          );
+END is_leap_year;
+/
+
+CREATE OR REPLACE FUNCTION is_leap_year (p_year IN NUMBER)
+   RETURN BOOLEAN
+/* Raj Jamadagni rajsun@email.com  */
+IS
+   l_is_leap_year BOOLEAN := FALSE;
+BEGIN
+   IF (MOD (p_year, 100) = 0)
+   THEN
+      IF (MOD (p_year / 100, 4) = 0)
+      THEN
+         l_is_leap_year := TRUE;
+      END IF;
+   ELSIF (MOD (p_year, 4) = 0)
+   THEN
+      l_is_leap_year := TRUE;
+   END IF;
+
+   RETURN (l_is_leap_year);
+END is_leap_year;
+/
+

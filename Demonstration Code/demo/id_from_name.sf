@@ -1,0 +1,25 @@
+CREATE OR REPLACE FUNCTION id_from_name ( 
+      NAME_IN IN employees.last_name%TYPE )
+   RETURN employees.employee_id%TYPE
+IS
+   l_id employees.employee_id%TYPE;
+BEGIN
+   SELECT employee_id
+     INTO l_id
+     FROM employees
+    WHERE last_name = NAME_IN;
+
+   RETURN l_id;
+EXCEPTION
+   WHEN NO_DATA_FOUND
+   THEN
+      RETURN NULL;
+   WHEN TOO_MANY_ROWS
+   THEN
+      log_error (    'Data integrity failure for employee name "'
+                  || NAME_IN
+                  || '".'
+                );
+      RAISE;
+END id_from_name;
+/

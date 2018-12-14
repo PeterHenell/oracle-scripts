@@ -1,0 +1,109 @@
+CREATE OR REPLACE FUNCTION element_found (
+   collection_in         IN   DBMS_SQL.varchar2s
+  ,value_in              IN   VARCHAR2
+  ,start_index_in        IN   BINARY_INTEGER DEFAULT NULL
+  ,end_index_in          IN   BINARY_INTEGER DEFAULT NULL
+  ,nulls_eq_in           IN   BOOLEAN DEFAULT TRUE
+  ,case_insensitive_in   IN   BOOLEAN DEFAULT FALSE
+)
+   RETURN BOOLEAN
+/*
+   Program name: matching_row
+
+   Original author: Steven Feuerstein, www.Qnxo.com
+
+   Qnxo Script ID: {5ADA17C8-60A3-47D3-993F-72A673393909}
+
+   Overview:
+
+   Returns TRUE if the value is found in the collection between
+   the specified index values.
+
+   Parameters:
+
+      collection_in
+         The collection to be searched for the specified value.
+
+      value_in
+         The value to be checked for in the collection.
+
+      start_index_in - starting index for search; default is first index in
+                       collection as returned by the FIRST method.
+
+      end_index_in - ending index for search; default is first index in
+                       collection as returned by the FIRST method.
+
+      nulls_eq_in - if TRUE, then if you pass NULL for value_in and
+                    an element in the collection is NULL, this function
+                    will return TRUE. That is, NULL = NULL in this case.
+
+   Dependencies/Restrictions:
+
+   It checks for equality of collection elements with an = operator.
+   The datatype of the collection must, therefore, support that
+   syntax. This will be true for scalars, for example, but not
+   for records, object types, etc.
+
+   Exceptions raised:
+
+   Modification History:
+
+   >> Generated on July      31, 2005 11:06:18 in schema QNXO_REPOSITORY
+*/
+IS
+   /* Set start and end indexes of search. Do not all these values to fall
+      outside the first and last indexes in the collection. */
+   l_start           BINARY_INTEGER
+      := GREATEST (NVL (start_index_in, collection_in.FIRST)
+                  ,collection_in.FIRST
+                  );
+   l_end             BINARY_INTEGER
+      := LEAST (NVL (end_index_in, collection_in.LAST), collection_in.LAST);
+   --
+   l_index           BINARY_INTEGER := l_start;
+   l_element_found   BOOLEAN        DEFAULT FALSE;
+BEGIN
+   -- If value is NULL, then return NULL unless NULL=NULL.
+   IF value_in IS NULL AND NOT (NVL (nulls_eq_in, FALSE))
+   THEN
+      l_element_found := NULL;
+   -- If nothing in collection, the element cannot be found.
+   ELSIF l_start IS NULL OR l_end IS NULL
+   THEN
+      l_element_found := FALSE;
+   ELSE
+      -- Scan through the contents of the collection until we are out
+      -- of elements or we found a match.
+      WHILE (    l_index IS NOT NULL
+             AND l_index BETWEEN l_start AND l_end
+             AND NOT l_element_found
+            )
+      LOOP
+         /* Do we have a match?
+            Note: we do not assign this expression directly to the
+            Boolean variable, because it might evaluate to NULL, and
+            we don't want that outcome passed on to l_element_found. */
+         IF    (   collection_in (l_index) = value_in
+                OR (    case_insensitive_in
+                    AND UPPER (collection_in (l_index)) = UPPER (value_in)
+                   )
+               )
+            OR (    nulls_eq_in
+                AND collection_in (l_index) IS NULL
+                AND value_in IS NULL
+               )
+         THEN
+            l_element_found := TRUE;
+         END IF;
+
+         IF NOT l_element_found
+         THEN
+            -- Go to the next element.
+            l_index := collection_in.NEXT (l_index);
+         END IF;
+      END LOOP;
+   END IF;
+
+   RETURN l_element_found;
+END element_found;
+/

@@ -1,0 +1,17 @@
+CREATE OR REPLACE FUNCTION rows_from_table (
+   table_in         IN   VARCHAR2
+ , column_list_in   IN   VARCHAR2 DEFAULT NULL
+ , after_from_in    IN   VARCHAR2 DEFAULT NULL
+)
+   RETURN sys_refcursor
+IS
+   CV sys_refcursor;
+BEGIN
+   OPEN CV FOR    
+      'SELECT ' || NVL ( column_list_in, '*' )
+    || ' FROM ' || table_in
+         || ' ' || after_from_in;
+
+   RETURN CV;
+END rows_from_table;
+/

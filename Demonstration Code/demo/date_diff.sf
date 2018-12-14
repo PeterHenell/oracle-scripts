@@ -1,0 +1,14 @@
+CREATE OR REPLACE FUNCTION date_diff (
+   start_date_in   IN   DATE
+ , end_date_in     IN   DATE
+)
+   RETURN INTERVAL DAY TO SECOND
+IS
+   return_value INTERVAL DAY TO SECOND;
+BEGIN
+   return_value :=
+        CAST ( end_date_in AS TIMESTAMP WITH TIME ZONE )
+      - CAST ( start_date_in AS TIMESTAMP WITH TIME ZONE );
+   RETURN return_value;
+END date_diff;
+/

@@ -1,0 +1,34 @@
+create or replace PACKAGE valerr
+IS
+   FUNCTION getfirst RETURN VARCHAR2;
+   FUNCTION get RETURN VARCHAR2;
+END valerr;
+/
+create or replace PACKAGE BODY valerr
+IS
+   vfirst VARCHAR2(3) := 'ABC';
+
+   v VARCHAR2(1) := 'ABC';
+
+   FUNCTION getfirst RETURN VARCHAR2 
+   IS
+   BEGIN
+      RETURN vfirst;
+   END;
+
+   FUNCTION get RETURN VARCHAR2 
+   IS
+   BEGIN
+      RETURN v;
+   END;
+BEGIN
+   p.l ('Before I show you v...');
+
+EXCEPTION
+  WHEN OTHERS 
+  THEN
+    DBMS_OUTPUT.PUT_LINE ('Trapped the error!');
+	 
+END valerr;
+/
+

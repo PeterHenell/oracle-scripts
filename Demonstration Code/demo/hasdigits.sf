@@ -1,0 +1,11 @@
+create or replace function hasdigits
+   (str IN VARCHAR2) RETURN BOOLEAN
+IS
+   v_digits VARCHAR2(10) := '0123456789';
+BEGIN
+   LOOP
+      retval := 
+         INSTR (v_digits, SUBSTR (str, indx, 1)) > 0;
+      EXIT WHEN retval;
+   END LOOP;
+         

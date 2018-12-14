@@ -1,0 +1,41 @@
+"I LOVE PL/SQL AND..." CAMPAIGN SUGGESTIONS
+
+iloveplsqland.net - born in Vilnius 2007
+
+1. IMPROVE COMPILE WARNINGS
+
+Dear Bryn,
+
+I love PL/SQL and the new compilation warnings. Could you please add warnings for the following:
+
+var VARCHAR2(1) := 'abc';
+
+variables declared and not used
+
+And could you improve PLW-05005 so that it show the line number(s) in which the RETURN does not occur?
+
+Thanks so much!
+
+2. IMPROVE SAVE EXCEPTIONS
+
+Dear Bryn,
+
+I love PL/SQL and FORALL is nothing less than fantastic. 
+
+Could you make it even better by adding an ERROR_MESSAGE field to SQL%BULK_EXCEPTIONS 
+that stores the error message? That way we won't lose critical information.
+
+Also, shouldn't the ERROR_CODE field contain a negative number?
+
+Thanks so much!
+
+3.LET ME USE COLLECTION OF RECORDS IN FORALL!
+
+Dear Bryn,
+
+I love PL/SQL and FORALL is nothing less than fantastic. 
+
+FORALL in particular is most amazing, but I find it really frustrating that I cannot
+use a collection of records inside a FORALL statement. Could you fix that please?
+
+Thanks so much!

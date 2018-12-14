@@ -1,0 +1,1061 @@
+REM QUEST CODE TESTER FOR ORACLE SNAPSHOT {93976446-2F7B-44D2-99AD-9A7AD978F1CC} %.DYN_COLUMN_VALUE.PACKAGE <1.5.2.1>
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+DECLARE l_temp_string VARCHAR2(32767); -- Now declare all clobs
+CL_declarations CLOB;
+CL_declare_programs CLOB;
+CL_setup_code CLOB;
+CL_teardown_code CLOB;
+CL_ext_setup_code CLOB;
+CL_ext_teardown_code CLOB;
+CL_ext_tc_exec_code CLOB;
+CL_private_declarations CLOB;
+CL_private_declare_programs CLOB;
+BEGIN qu_harness_xp.del (owner_in => USER,name_in => 'Q##DYN_COLUMN_VALUE',rows_out => l_rows);
+DBMS_LOB.createtemporary (CL_declarations, TRUE, dur => DBMS_LOB.CALL);
+DBMS_LOB.createtemporary (CL_declare_programs, TRUE, dur => DBMS_LOB.CALL);
+DBMS_LOB.createtemporary (CL_private_declarations, TRUE, dur => DBMS_LOB.CALL);
+DBMS_LOB.createtemporary (CL_private_declare_programs, TRUE, dur => DBMS_LOB.CALL);
+DBMS_LOB.createtemporary (CL_setup_code, TRUE, dur => DBMS_LOB.CALL);
+l_temp_string := REPLACE ('   begin
+ INSERT INTO employees
+               ( employee_id, first_name, last_name, email, phone_number
+               , hire_date
+               , job_id, salary, commission_pct, manager_id, department_id
+               )
+        VALUES ( 109, ''Daniel'', ''Faviet'', ''DFAVIET'', ''515.124.4169''
+               , TO_DATE ( ''08{37066390-59DE-4ABC-92F8-47D362A20DC1}16{37066390-59DE-4ABC-92F8-47D362A20DC1}1994 12:00:00 AM'', ''MM{37066390-59DE-4ABC-92F8-47D362A20DC1}DD{37066390-59DE-4ABC-92F8-47D362A20DC1}YYYY HH:MI:SS AM'' )
+               , ''FI_ACCOUNT'', 9000, NULL, 108, 100
+               );
+               exception when dup_val_on_index
+               then null; end;',c_for_slash, '/');
+DBMS_LOB.writeappend (lob_loc => CL_setup_code, amount => LENGTH (l_temp_string), buffer => l_temp_string);
+DBMS_LOB.createtemporary (CL_teardown_code, TRUE, dur => DBMS_LOB.CALL);
+DBMS_LOB.createtemporary (CL_ext_setup_code, TRUE, dur => DBMS_LOB.CALL);
+DBMS_LOB.createtemporary (CL_ext_teardown_code, TRUE, dur => DBMS_LOB.CALL);
+DBMS_LOB.createtemporary (CL_ext_tc_exec_code, TRUE, dur => DBMS_LOB.CALL);
+QU_HARNESS_CP.ins (universal_id_in => qu_harness_cp.next_key,
+harness_owner_in => USER,
+name_in => 'Q##DYN_COLUMN_VALUE',
+description_in => NULL,
+test_engine_type_in => 'QuestCodeTesterOracle',
+harness_type_in => 'PACKAGE',
+program_owner_in => USER,
+program_name_in => 'DYN_COLUMN_VALUE',
+program_type_in => 'PACKAGE',
+prefix_in => 'Q##',
+suffix_in => NULL,
+is_test_harness_in => 'N',
+is_example_in => 'N',
+IS_LOCKED_in => 'N',
+LAST_RUN_STATUS_in => NULL,
+PROGRAM_STATUS_in => NULL,
+TEST_CODE_STATUS_in => NULL,
+TEST_CODE_CURRENT_in => NULL,
+TEST_DEFINITION_CURRENT_in => NULL,
+declarations_in => CL_declarations,
+declare_programs_in => CL_declare_programs,
+private_declarations_in => CL_private_declarations,
+private_declare_programs_in => CL_private_declare_programs,
+setup_code_in => CL_setup_code,
+teardown_code_in => CL_teardown_code,
+ext_setup_code_in => CL_ext_setup_code,
+ext_teardown_code_in => CL_ext_teardown_code,
+ext_tc_exec_code_in => CL_ext_tc_exec_code,
+definition_status_in => 'Under Development',
+handle_error_in => FALSE);
+DBMS_LOB.freetemporary (CL_declarations);
+DBMS_LOB.freetemporary (CL_declare_programs);
+DBMS_LOB.freetemporary (CL_private_declarations);
+DBMS_LOB.freetemporary (CL_private_declare_programs);
+DBMS_LOB.freetemporary (CL_setup_code);
+DBMS_LOB.freetemporary (CL_teardown_code);
+DBMS_LOB.freetemporary (CL_ext_setup_code);
+DBMS_LOB.freetemporary (CL_ext_teardown_code);
+DBMS_LOB.freetemporary (CL_ext_tc_exec_code);
+END;
+QU_UNIT_TEST_CP.ins (universal_id_in => QU_UNIT_TEST_cp.next_key,harness_guid_in => qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),name_in => 'DATE_COLUMN_VALUE',
+description_in => 'Unit test for "DATE_COLUMN_VALUE"',
+program_name_in => 'DATE_COLUMN_VALUE',program_type_in => 'FUNCTION',overload_in => NULL,ut_program_name_in => 'Q##DATE_COLUMN_VALUE',testing_status_in => 'Y',exception_on_failure_in => NULL,
+declarations_in => NULL,
+declare_programs_in => NULL,
+setup_code_in => NULL,
+teardown_code_in => NULL,
+exceptions_in => NULL,
+handle_error_in => FALSE);
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_TEST_ELEMENT_CP.ins (universal_id_in => l_parent_key,unit_test_guid_in => qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),name_in => 'WHERE_IN',
+description_in => 'Test element for "WHERE_IN"',
+data_type_guid_in => '{A13E1D34-8283-4A8B-9463-1B427220581E}',data_type_name_in => 'VARCHAR2(32767)',
+definition_in => NULL,
+default_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',assign_in_setup_in => 'N',element_type_in => 'ARGUMENT',position_in => TO_CHAR(4),argument_mode_in => 'IN',argument_alias_in => 'L_WHERE_IN',control_alias_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'DEFAULT',
+internal_value_in => NULL,
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'WHERE_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_TEST_ELEMENT_CP.ins (universal_id_in => l_parent_key,unit_test_guid_in => qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),name_in => '[Function return value]',
+description_in => 'Test element for "[Function return value]"',
+data_type_guid_in => '{5E5A9B43-ED40-47F6-BC30-93EABA491A5E}',data_type_name_in => 'DATE',
+definition_in => NULL,
+default_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',assign_in_setup_in => 'N',element_type_in => 'RETURN',position_in => TO_CHAR(0),argument_mode_in => 'OUT',argument_alias_in => 'Q##FUNCTION_RETURN_VALUE',control_alias_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'DEFAULT',
+internal_value_in => NULL,
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'[Function return value]'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_TEST_ELEMENT_CP.ins (universal_id_in => l_parent_key,unit_test_guid_in => qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),name_in => 'OWNER_IN',
+description_in => 'Test element for "OWNER_IN"',
+data_type_guid_in => '{A13E1D34-8283-4A8B-9463-1B427220581E}',data_type_name_in => 'VARCHAR2(32767)',
+definition_in => NULL,
+default_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',assign_in_setup_in => 'N',element_type_in => 'ARGUMENT',position_in => TO_CHAR(1),argument_mode_in => 'IN',argument_alias_in => 'L_OWNER_IN',control_alias_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'DEFAULT',
+internal_value_in => NULL,
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'OWNER_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_TEST_ELEMENT_CP.ins (universal_id_in => l_parent_key,unit_test_guid_in => qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),name_in => 'TABLE_IN',
+description_in => 'Test element for "TABLE_IN"',
+data_type_guid_in => '{A13E1D34-8283-4A8B-9463-1B427220581E}',data_type_name_in => 'VARCHAR2(32767)',
+definition_in => NULL,
+default_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',assign_in_setup_in => 'N',element_type_in => 'ARGUMENT',position_in => TO_CHAR(2),argument_mode_in => 'IN',argument_alias_in => 'L_TABLE_IN',control_alias_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'DEFAULT',
+internal_value_in => NULL,
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'TABLE_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_TEST_ELEMENT_CP.ins (universal_id_in => l_parent_key,unit_test_guid_in => qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),name_in => 'COLUMN_IN',
+description_in => 'Test element for "COLUMN_IN"',
+data_type_guid_in => '{A13E1D34-8283-4A8B-9463-1B427220581E}',data_type_name_in => 'VARCHAR2(32767)',
+definition_in => NULL,
+default_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',assign_in_setup_in => 'N',element_type_in => 'ARGUMENT',position_in => TO_CHAR(3),argument_mode_in => 'IN',argument_alias_in => 'L_COLUMN_IN',control_alias_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'DEFAULT',
+internal_value_in => NULL,
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'COLUMN_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_TEST_ELEMENT_CP.ins (universal_id_in => l_parent_key,unit_test_guid_in => qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),name_in => 'NDF_VALUE_IN',
+description_in => NULL,
+data_type_guid_in => '{5E5A9B43-ED40-47F6-BC30-93EABA491A5E}',data_type_name_in => 'DATE',
+definition_in => REPLACE ('<?xml version="1.0" encoding="UTF-8"?>
+<Constraint xmlns:xsi="http:{37066390-59DE-4ABC-92F8-47D362A20DC1}{37066390-59DE-4ABC-92F8-47D362A20DC1}www.w3.org{37066390-59DE-4ABC-92F8-47D362A20DC1}2001{37066390-59DE-4ABC-92F8-47D362A20DC1}XMLSchema-instance" xsi:noNamespaceSchemaLocation="Constraint.xsd"><Date MaxValue="2007-06-11 12:19:16" MinValue="2007-06-11 12:19:16" DefaultValue="2007-06-11 12:19:16" FreeForm=""><{37066390-59DE-4ABC-92F8-47D362A20DC1}Date><{37066390-59DE-4ABC-92F8-47D362A20DC1}Constraint>
+',c_for_slash, '/'),
+default_value_in => '2007-06-11 12:19:16',
+external_value_in => 'TO_DATE(''2007-06-11 12:19:16'', ''YYYY-MM-DD HH24:MI:SS'')',
+is_expression_in => 'N',assign_in_setup_in => 'N',element_type_in => 'ARGUMENT',position_in => TO_CHAR(6),argument_mode_in => 'IN',argument_alias_in => 'l_NDF_VALUE_IN',control_alias_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'DEFAULT',
+internal_value_in => '1899-12-30 00:00:00',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'NDF_VALUE_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_TEST_ELEMENT_CP.ins (universal_id_in => l_parent_key,unit_test_guid_in => qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),name_in => 'RAISE_NDF_IN',
+description_in => NULL,
+data_type_guid_in => '{6FA050E9-F476-4528-A340-E27E474F9A47}',data_type_name_in => 'BOOLEAN',
+definition_in => REPLACE ('<?xml version="1.0" encoding="UTF-8"?>
+<Constraint xmlns:xsi="http:{37066390-59DE-4ABC-92F8-47D362A20DC1}{37066390-59DE-4ABC-92F8-47D362A20DC1}www.w3.org{37066390-59DE-4ABC-92F8-47D362A20DC1}2001{37066390-59DE-4ABC-92F8-47D362A20DC1}XMLSchema-instance" xsi:noNamespaceSchemaLocation="Constraint.xsd"><Boolean DefaultValue="TRUE" FreeForm=""><{37066390-59DE-4ABC-92F8-47D362A20DC1}Boolean><{37066390-59DE-4ABC-92F8-47D362A20DC1}Constraint>
+',c_for_slash, '/'),
+default_value_in => 'TRUE',
+external_value_in => 'TRUE',
+is_expression_in => 'N',assign_in_setup_in => 'N',element_type_in => 'ARGUMENT',position_in => TO_CHAR(5),argument_mode_in => 'IN',argument_alias_in => 'l_RAISE_NDF_IN',control_alias_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'DEFAULT',
+internal_value_in => NULL,
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'RAISE_NDF_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+QU_UNIT_TEST_CP.ins (universal_id_in => QU_UNIT_TEST_cp.next_key,harness_guid_in => qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),name_in => 'STRING_COLUMN_VALUE',
+description_in => 'Unit test for "STRING_COLUMN_VALUE"',
+program_name_in => 'STRING_COLUMN_VALUE',program_type_in => 'FUNCTION',overload_in => NULL,ut_program_name_in => 'Q##STRING_COLUMN_VALUE',testing_status_in => 'Y',exception_on_failure_in => NULL,
+declarations_in => NULL,
+declare_programs_in => NULL,
+setup_code_in => NULL,
+teardown_code_in => NULL,
+exceptions_in => NULL,
+handle_error_in => FALSE);
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_TEST_ELEMENT_CP.ins (universal_id_in => l_parent_key,unit_test_guid_in => qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),name_in => 'OWNER_IN',
+description_in => 'Test element for "OWNER_IN"',
+data_type_guid_in => '{A13E1D34-8283-4A8B-9463-1B427220581E}',data_type_name_in => 'VARCHAR2(32767)',
+definition_in => NULL,
+default_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',assign_in_setup_in => 'N',element_type_in => 'ARGUMENT',position_in => TO_CHAR(1),argument_mode_in => 'IN',argument_alias_in => 'L_OWNER_IN',control_alias_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'DEFAULT',
+internal_value_in => NULL,
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'OWNER_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_TEST_ELEMENT_CP.ins (universal_id_in => l_parent_key,unit_test_guid_in => qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),name_in => 'TABLE_IN',
+description_in => 'Test element for "TABLE_IN"',
+data_type_guid_in => '{A13E1D34-8283-4A8B-9463-1B427220581E}',data_type_name_in => 'VARCHAR2(32767)',
+definition_in => NULL,
+default_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',assign_in_setup_in => 'N',element_type_in => 'ARGUMENT',position_in => TO_CHAR(2),argument_mode_in => 'IN',argument_alias_in => 'L_TABLE_IN',control_alias_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'DEFAULT',
+internal_value_in => NULL,
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'TABLE_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_TEST_ELEMENT_CP.ins (universal_id_in => l_parent_key,unit_test_guid_in => qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),name_in => 'COLUMN_IN',
+description_in => 'Test element for "COLUMN_IN"',
+data_type_guid_in => '{A13E1D34-8283-4A8B-9463-1B427220581E}',data_type_name_in => 'VARCHAR2(32767)',
+definition_in => NULL,
+default_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',assign_in_setup_in => 'N',element_type_in => 'ARGUMENT',position_in => TO_CHAR(3),argument_mode_in => 'IN',argument_alias_in => 'L_COLUMN_IN',control_alias_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'DEFAULT',
+internal_value_in => NULL,
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'COLUMN_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_TEST_ELEMENT_CP.ins (universal_id_in => l_parent_key,unit_test_guid_in => qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),name_in => 'WHERE_IN',
+description_in => 'Test element for "WHERE_IN"',
+data_type_guid_in => '{A13E1D34-8283-4A8B-9463-1B427220581E}',data_type_name_in => 'VARCHAR2(32767)',
+definition_in => NULL,
+default_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',assign_in_setup_in => 'N',element_type_in => 'ARGUMENT',position_in => TO_CHAR(4),argument_mode_in => 'IN',argument_alias_in => 'L_WHERE_IN',control_alias_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'DEFAULT',
+internal_value_in => NULL,
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'WHERE_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_TEST_ELEMENT_CP.ins (universal_id_in => l_parent_key,unit_test_guid_in => qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),name_in => '[Function return value]',
+description_in => 'Test element for "[Function return value]"',
+data_type_guid_in => '{A13E1D34-8283-4A8B-9463-1B427220581E}',data_type_name_in => 'VARCHAR2(32767)',
+definition_in => NULL,
+default_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',assign_in_setup_in => 'N',element_type_in => 'RETURN',position_in => TO_CHAR(0),argument_mode_in => 'OUT',argument_alias_in => 'Q##FUNCTION_RETURN_VALUE',control_alias_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'DEFAULT',
+internal_value_in => NULL,
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'[Function return value]'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_TEST_ELEMENT_CP.ins (universal_id_in => l_parent_key,unit_test_guid_in => qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),name_in => 'NDF_VALUE_IN',
+description_in => NULL,
+data_type_guid_in => '{A13E1D34-8283-4A8B-9463-1B427220581E}',data_type_name_in => 'VARCHAR2(32767)',
+definition_in => REPLACE ('<?xml version="1.0" encoding="UTF-8"?>
+<Constraint xmlns:xsi="http:{37066390-59DE-4ABC-92F8-47D362A20DC1}{37066390-59DE-4ABC-92F8-47D362A20DC1}www.w3.org{37066390-59DE-4ABC-92F8-47D362A20DC1}2001{37066390-59DE-4ABC-92F8-47D362A20DC1}XMLSchema-instance" xsi:noNamespaceSchemaLocation="Constraint.xsd"><Varchar2 HardMaxLen="32767" MaxLength="32767" MinLength="0" DefaultValue="" FreeForm=""><{37066390-59DE-4ABC-92F8-47D362A20DC1}Varchar2><{37066390-59DE-4ABC-92F8-47D362A20DC1}Constraint>
+',c_for_slash, '/'),
+default_value_in => NULL,
+external_value_in => '''''',
+is_expression_in => 'N',assign_in_setup_in => 'N',element_type_in => 'ARGUMENT',position_in => TO_CHAR(6),argument_mode_in => 'IN',argument_alias_in => 'l_NDF_VALUE_IN',control_alias_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'DEFAULT',
+internal_value_in => NULL,
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'NDF_VALUE_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_TEST_ELEMENT_CP.ins (universal_id_in => l_parent_key,unit_test_guid_in => qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),name_in => 'RAISE_NDF_IN',
+description_in => NULL,
+data_type_guid_in => '{6FA050E9-F476-4528-A340-E27E474F9A47}',data_type_name_in => 'BOOLEAN',
+definition_in => REPLACE ('<?xml version="1.0" encoding="UTF-8"?>
+<Constraint xmlns:xsi="http:{37066390-59DE-4ABC-92F8-47D362A20DC1}{37066390-59DE-4ABC-92F8-47D362A20DC1}www.w3.org{37066390-59DE-4ABC-92F8-47D362A20DC1}2001{37066390-59DE-4ABC-92F8-47D362A20DC1}XMLSchema-instance" xsi:noNamespaceSchemaLocation="Constraint.xsd"><Boolean DefaultValue="TRUE" FreeForm=""><{37066390-59DE-4ABC-92F8-47D362A20DC1}Boolean><{37066390-59DE-4ABC-92F8-47D362A20DC1}Constraint>
+',c_for_slash, '/'),
+default_value_in => 'TRUE',
+external_value_in => 'TRUE',
+is_expression_in => 'N',assign_in_setup_in => 'N',element_type_in => 'ARGUMENT',position_in => TO_CHAR(5),argument_mode_in => 'IN',argument_alias_in => 'l_RAISE_NDF_IN',control_alias_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'DEFAULT',
+internal_value_in => NULL,
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'RAISE_NDF_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+QU_TEST_CASE_CP.ins (
+universal_id_in => qu_TEST_CASE_cp.next_key,unit_test_guid_in => qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),name_in => 'Row exists for date column, include where keyword',
+description_in => '<NEW TEST CASE DESCRIPTION>',
+requirement_in => NULL,
+testing_status_in => 'Y',program_name_in => 'Q##ROW_EXISTS',
+declarations_in => NULL,
+setup_code_in => NULL,
+pre_execution_code_in => NULL,
+post_execution_code_in => NULL,
+alt_execution_code_in => NULL,
+assertion_code_in => NULL,
+teardown_code_in => NULL,
+exceptions_in => NULL,
+exception_on_failure_in => NULL,
+parameter_hash_list_in => NULL,
+generated_on_in => NULL,
+is_simple_in => 'N',
+code_location_in => NULL,
+declare_programs_in => NULL,
+correlate_values_in => 'Y',
+is_dynamic_in => 'N',
+handle_error_in => FALSE);
+QU_TEST_CASE_CP.ins (
+universal_id_in => qu_TEST_CASE_cp.next_key,unit_test_guid_in => qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),name_in => 'Emp last name not found',
+description_in => '<NEW TEST CASE DESCRIPTION>',
+requirement_in => NULL,
+testing_status_in => 'Y',program_name_in => 'Q##EMP_LAST_NAME_NOT_FOUND',
+declarations_in => NULL,
+setup_code_in => NULL,
+pre_execution_code_in => NULL,
+post_execution_code_in => NULL,
+alt_execution_code_in => NULL,
+assertion_code_in => NULL,
+teardown_code_in => NULL,
+exceptions_in => NULL,
+exception_on_failure_in => NULL,
+parameter_hash_list_in => NULL,
+generated_on_in => NULL,
+is_simple_in => 'N',
+code_location_in => NULL,
+declare_programs_in => NULL,
+correlate_values_in => 'Y',
+is_dynamic_in => 'N',
+handle_error_in => FALSE);
+QU_TEST_CASE_CP.ins (
+universal_id_in => qu_TEST_CASE_cp.next_key,unit_test_guid_in => qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),name_in => 'emp last name found',
+description_in => '<NEW TEST CASE DESCRIPTION>',
+requirement_in => NULL,
+testing_status_in => 'Y',program_name_in => 'Q##EMP_LAST_NAME_FOUND',
+declarations_in => REPLACE ('{37066390-59DE-4ABC-92F8-47D362A20DC1}* DECLARATIONS OF LOCAL VARIABLES *{37066390-59DE-4ABC-92F8-47D362A20DC1}',c_for_slash, '/'),
+setup_code_in => NULL,
+pre_execution_code_in => NULL,
+post_execution_code_in => NULL,
+alt_execution_code_in => NULL,
+assertion_code_in => NULL,
+teardown_code_in => REPLACE ('{37066390-59DE-4ABC-92F8-47D362A20DC1}* CLEANUP CODE FOR TEST CASE *{37066390-59DE-4ABC-92F8-47D362A20DC1}',c_for_slash, '/'),
+exceptions_in => NULL,
+exception_on_failure_in => NULL,
+parameter_hash_list_in => NULL,
+generated_on_in => NULL,
+is_simple_in => 'N',
+code_location_in => NULL,
+declare_programs_in => REPLACE ('{37066390-59DE-4ABC-92F8-47D362A20DC1}* DECLARATIONS OF LOCAL PROCEDURES AND FUNCTIONS *{37066390-59DE-4ABC-92F8-47D362A20DC1}',c_for_slash, '/'),
+correlate_values_in => 'Y',
+is_dynamic_in => 'N',
+handle_error_in => FALSE);
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_INPUT_CP.ins (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'Row exists for date column, include where keyword'),test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'RAISE_NDF_IN'),
+internal_value_in => 'TRUE',
+external_value_in => 'TRUE',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'l_RAISE_NDF_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => NULL,
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'RAISE_NDF_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_INPUT_CP.ins (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'Row exists for date column, include where keyword'),test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'NDF_VALUE_IN'),
+internal_value_in => '2007-06-11 12:19:16',
+external_value_in => 'TO_DATE(''2007-06-11 12:19:16'', ''YYYY-MM-DD HH24:MI:SS'')',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'l_NDF_VALUE_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => '1899-12-30 00:00:00',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'NDF_VALUE_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_INPUT_CP.ins (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'Row exists for date column, include where keyword'),test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'OWNER_IN'),
+internal_value_in => 'NULL',
+external_value_in => 'NULL',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'i_OWNER_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'OWNER_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'V300264017',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_INPUT_CP.ins (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'Row exists for date column, include where keyword'),test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'TABLE_IN'),
+internal_value_in => 'employees',
+external_value_in => '''employees''',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'i_TABLE_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'TABLE_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'V333267607',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_INPUT_CP.ins (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'Row exists for date column, include where keyword'),test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'COLUMN_IN'),
+internal_value_in => 'hire_date',
+external_value_in => '''hire_date''',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'i_COLUMN_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'COLUMN_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'V1931324328',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_INPUT_CP.ins (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'Row exists for date column, include where keyword'),test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'WHERE_IN'),
+internal_value_in => 'where+employee_id+%3D+109',
+external_value_in => '''where employee_id = 109''',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'i_WHERE_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'WHERE_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'V1655785213',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+DECLARE l_parent_key VARCHAR2(1000) :=qu_OUTCOME_cp.next_key; BEGIN 
+QU_OUTCOME_CP.ins (
+universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'Row exists for date column, include where keyword'),assertion_type_guid_in => '{43E3B49A-0877-4F51-9526-DCBF345F1563}',null_ok_in => 'Y',raise_exception_in => 'N',name_in => 'Scalar is equal to the expected value?',testing_status_in => 'Y',template_guid_in => '{25499982-A764-42F8-9A6F-C3E416CD3655}',custom_assert_only_in => 'N',
+assertion_code_in => NULL,
+description_in => NULL,
+code_location_in => NULL,
+declare_programs_in => NULL,
+setup_code_in => NULL,
+teardown_code_in => NULL,
+column_set_guid_in => NULL,
+intval_hdr_guid_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'CONTROL',
+internal_value_in => REPLACE ('to_date (''08{37066390-59DE-4ABC-92F8-47D362A20DC1}16{37066390-59DE-4ABC-92F8-47D362A20DC1}1994'',''MM{37066390-59DE-4ABC-92F8-47D362A20DC1}DD{37066390-59DE-4ABC-92F8-47D362A20DC1}YYYY'')',c_for_slash, '/'),
+external_value_in => REPLACE ('to_date (''08{37066390-59DE-4ABC-92F8-47D362A20DC1}16{37066390-59DE-4ABC-92F8-47D362A20DC1}1994'',''MM{37066390-59DE-4ABC-92F8-47D362A20DC1}DD{37066390-59DE-4ABC-92F8-47D362A20DC1}YYYY'')',c_for_slash, '/'),
+is_expression_in => 'Y',
+value1_in => 'TRUE',value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'[Function return value]'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'e_Function_return_value1',datatype_declare_in => 'DATE',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'RESULT',
+internal_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',
+value1_in => 'TRUE',value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'DATE_COLUMN_VALUE'),'[Function return value]'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'Q##function_return_value',datatype_declare_in => 'DATE',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_INPUT_CP.ins (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'Emp last name not found'),test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'OWNER_IN'),
+internal_value_in => 'NULL',
+external_value_in => 'NULL',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'i_OWNER_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'OWNER_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'V1865053530',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_INPUT_CP.ins (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'Emp last name not found'),test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'TABLE_IN'),
+internal_value_in => 'employees',
+external_value_in => '''employees''',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'i_TABLE_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'TABLE_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'V1093313401',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_INPUT_CP.ins (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'Emp last name not found'),test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'COLUMN_IN'),
+internal_value_in => 'last_name',
+external_value_in => '''last_name''',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'i_COLUMN_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'COLUMN_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'V1895471309',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_INPUT_CP.ins (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'Emp last name not found'),test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'WHERE_IN'),
+internal_value_in => 'employee_id+%3D+1444444',
+external_value_in => '''employee_id = 1444444''',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'i_WHERE_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'WHERE_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'V1755789765',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_INPUT_CP.ins (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'Emp last name not found'),test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'NDF_VALUE_IN'),
+internal_value_in => 'NULL',
+external_value_in => '''''',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'l_NDF_VALUE_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => NULL,
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'NDF_VALUE_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_INPUT_CP.ins (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'Emp last name not found'),test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'RAISE_NDF_IN'),
+internal_value_in => 'FALSE',
+external_value_in => 'FALSE',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'l_RAISE_NDF_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'RAISE_NDF_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => 'BOOLEAN',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_INPUT_CP.ins (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'emp last name found'),test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'NDF_VALUE_IN'),
+internal_value_in => 'NULL',
+external_value_in => '''''',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'l_NDF_VALUE_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => NULL,
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'NDF_VALUE_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => NULL,
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_INPUT_CP.ins (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'emp last name found'),test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'RAISE_NDF_IN'),
+internal_value_in => 'TRUE',
+external_value_in => 'TRUE',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'l_RAISE_NDF_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'RAISE_NDF_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => NULL,datatype_declare_in => 'BOOLEAN',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_INPUT_CP.ins (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'emp last name found'),test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'OWNER_IN'),
+internal_value_in => 'NULL',
+external_value_in => 'NULL',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'i_OWNER_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'OWNER_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'V1865053530',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_INPUT_CP.ins (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'emp last name found'),test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'TABLE_IN'),
+internal_value_in => 'employees',
+external_value_in => '''employees''',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'i_TABLE_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'TABLE_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'V1093313401',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_INPUT_CP.ins (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'emp last name found'),test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'COLUMN_IN'),
+internal_value_in => 'last_name',
+external_value_in => '''last_name''',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'i_COLUMN_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'COLUMN_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'V1895471309',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+DECLARE l_parent_key VARCHAR2(1000) :=qu_input_cp.next_key; BEGIN 
+QU_INPUT_CP.ins (universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'emp last name found'),test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'WHERE_IN'),
+internal_value_in => 'employee_id+%3D+109',
+external_value_in => '''employee_id = 109''',
+setup_code_in => NULL,
+teardown_code_in => NULL,
+intval_hdr_guid_in => NULL,
+is_expression_in => 'N',assign_in_setup_in => 'N',argument_alias_in => 'i_WHERE_IN',handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'INPUT',
+internal_value_in => 'NULL',
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'WHERE_IN'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'V1755789765',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+DECLARE l_parent_key VARCHAR2(1000) :=qu_OUTCOME_cp.next_key; BEGIN 
+QU_OUTCOME_CP.ins (
+universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'Emp last name not found'),assertion_type_guid_in => '{EBB3500B-3545-4CFB-9EBF-AE3EF3A3C1F7}',null_ok_in => 'Y',raise_exception_in => 'N',name_in => 'Value modified by the program is NULL?',testing_status_in => 'Y',template_guid_in => '{70D4CCC1-EBD4-433C-A42F-49876EF7A2BE}',custom_assert_only_in => 'N',
+assertion_code_in => NULL,
+description_in => NULL,
+code_location_in => NULL,
+declare_programs_in => NULL,
+setup_code_in => NULL,
+teardown_code_in => NULL,
+column_set_guid_in => NULL,
+intval_hdr_guid_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'CONTROL',
+internal_value_in => NULL,
+external_value_in => NULL,
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => '',assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'V926853649',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'RESULT',
+internal_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'[Function return value]'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'Q##function_return_value',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+CREATE OR REPLACE PROCEDURE qcto#import_test_definition IS PRAGMA AUTONOMOUS_TRANSACTION; l_rows PLS_INTEGER; C_for_slash constant qu_harness_tp.universal_id_t := '{37066390-59DE-4ABC-92F8-47D362A20DC1}'; BEGIN
+DECLARE l_parent_key VARCHAR2(1000) :=qu_OUTCOME_cp.next_key; BEGIN 
+QU_OUTCOME_CP.ins (
+universal_id_in => l_parent_key,test_case_guid_in => qu_test_case_qp.pky_un_qu_case_name (qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'emp last name found'),assertion_type_guid_in => '{43E3B49A-0877-4F51-9526-DCBF345F1563}',null_ok_in => 'Y',raise_exception_in => 'N',name_in => 'Scalar is equal to the expected value?',testing_status_in => 'Y',template_guid_in => '{25499982-A764-42F8-9A6F-C3E416CD3655}',custom_assert_only_in => 'N',
+assertion_code_in => NULL,
+description_in => NULL,
+code_location_in => NULL,
+declare_programs_in => NULL,
+setup_code_in => NULL,
+teardown_code_in => NULL,
+column_set_guid_in => NULL,
+intval_hdr_guid_in => NULL,
+handle_error_in => FALSE);
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'CONTROL',
+internal_value_in => 'Faviet',
+external_value_in => '''Faviet''',
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'[Function return value]'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'e_Function_return_value1',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+BEGIN QU_ATTRIBUTES_CP.ins (
+parent_guid_in => l_parent_key,usage_type_in => 'RESULT',
+internal_value_in => 'NULL',
+external_value_in => 'NULL',
+is_expression_in => 'N',
+value1_in => NULL,value1_is_expr_in => 'N',
+value2_in => NULL,value2_is_expr_in => 'N',
+value3_in => NULL,value3_is_expr_in => 'N',
+value4_in => NULL,value4_is_expr_in => 'N',
+value5_in => NULL,value5_is_expr_in => 'N',
+value6_in => NULL,value6_is_expr_in => 'N',
+test_element_guid_in => qu_test_element_qp.pky_un_testel_name(qu_unit_test_qp.pky_un_qu_test_name (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'),'STRING_COLUMN_VALUE'),'[Function return value]'),assign_in_setup_in => 'N',no_local_declaration_in => 'N',argument_alias_in => 'Q##function_return_value',datatype_declare_in => 'VARCHAR2(32767)',
+handle_error_in => FALSE); EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+COMMIT; /* EXCEPTION WHEN OTHERS THEN ROLLBACK; RAISE; */ END;
+/
+REM EXECUTE
+BEGIN qcto#import_test_definition;  END;
+/
+REM EXECUTE
+REM EXECUTE
+BEGIN qu_harness_xp.upgrade_import (qu_harness_qp.pky_un_qu_hrn_name (USER,'Q##DYN_COLUMN_VALUE'), '1.5.2.1'); END;
+/
+REM EXECUTE

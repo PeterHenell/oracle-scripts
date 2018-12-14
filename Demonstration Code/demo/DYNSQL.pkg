@@ -1,0 +1,54 @@
+CREATE OR REPLACE PACKAGE dynsql
+IS
+   PROCEDURE trc;
+   PROCEDURE notrc;
+   FUNCTION tracing RETURN BOOLEAN;
+
+   PROCEDURE parse 
+      (cur IN INTEGER, 
+       sqlstr IN VARCHAR2, 
+       dbmsmode IN INTEGER := NULL);
+END;
+/    
+CREATE OR REPLACE PACKAGE BODY dynsql
+IS
+   g_trace BOOLEAN := FALSE;
+
+   PROCEDURE trc
+   IS
+   BEGIN
+      g_trace := TRUE;
+   END;
+   PROCEDURE notrc
+   IS
+   BEGIN
+      g_trace := FALSE;
+   END;
+
+   FUNCTION tracing RETURN BOOLEAN
+   IS
+   BEGIN
+      RETURN g_trace;
+   END;
+
+   PROCEDURE parse 
+      (cur IN INTEGER, sqlstr IN VARCHAR2, dbmsmode IN INTEGER := NULL)
+   IS
+   BEGIN
+      IF tracing
+      THEN
+         p.l (sqlstr);
+      END IF;
+
+      DBMS_SQL.PARSE (cur, sqlstr, NVL (dbmsmode, DBMS_SQL.NATIVE));
+
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         p.l ('Parse error in ' || sqlstr);
+         p.l (SQLERRM);
+   END;
+
+END;
+/    
+   

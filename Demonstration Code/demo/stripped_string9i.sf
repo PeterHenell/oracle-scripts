@@ -1,0 +1,51 @@
+CREATE OR REPLACE FUNCTION stripped_string (
+   string_in             IN   VARCHAR2
+  ,strip_characters_in   IN   VARCHAR2
+)
+   RETURN VARCHAR2
+IS
+/*
+   Name: stripped_string
+   
+   Author: Steven Feuerstein
+   
+   Description:
+   
+   Strip or remove any unwanted characters from the specified string 
+   and close any gaps that leaves in the string. If that string is 
+   NULL, return NULL. If the set of unwanted characters is empty, 
+   then return the string unchanged. If none of the unwanted 
+   characters appear in the string, then return that string unchanged. 
+   Duplicates in the set of unwanted characters are ignored.
+   
+   Parameters
+   
+   string_in - the string from which characters are to be stripped
+   
+   strip_characters_in - a string containing the characters which are to be stripped
+   
+   Exceptions
+   
+   Raises -20000 with message "'stripped_string error: string_in contains CHR(1)." 
+   if string_in contains CHR(1)
+
+*/
+   c_workaround   CHAR (1) := CHR (1);
+BEGIN
+   IF INSTR (string_in, c_workaround) > 0
+   THEN
+      RAISE_APPLICATION_ERROR
+                      (-20000
+                      ,'stripped_string error: string_in contains CHR(1).'
+                      );
+   ELSIF strip_characters_in IS NULL
+   THEN
+      RETURN string_in;
+   ELSE
+      RETURN TRANSLATE (string_in
+                       , c_workaround || strip_characters_in
+                       ,c_workaround
+                       );
+   END IF;
+END stripped_string;
+/

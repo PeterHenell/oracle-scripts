@@ -1,0 +1,370 @@
+CREATE OR REPLACE PACKAGE vsesstat AS
+PRAGMA RESTRICT_REFERENCES (vsesstat,WNDS);
+-- Source code best viewed in FIXEDSYS 9PT or Courier New 10 Pt, 96 CHAR wide screen ----------|
+/*
+PACKAGE NAME   : vsesstat
+CREATED BY     : Eric Aksomitis (http://www.dlcwest.com/~jed/re_answer.shtml)
+CREATE DATE    : March, 1999
+OBJECTIVE      : Allow easy access to any/all of the v$sesstat table
+ERROR HANDLING : SQL-Engine default.
+MODIFICATIONS:
+Date   Author            Change
+------ ----------------- ----------------------------------
+990326 Eric Aksomitis    Original
+990720 Eric Aksomitis    Added procedrues to show all stats + custom stat display
+                         + minor enhancements to orig code
+*/
+
+/* *****************************************************************************************
+Examples of usage section (could probably be trimmed for actual use, stored here for convenience
+
+After this package is compiled (requires select access to v$sesstat and v$statname),
+these sample queries should cover all the possibilities for the package.
+NOTE : The first time this package is loaded, the CPU from taht gets thrown into the measurement
+       , so run the first part twice the first time you start using it.
+       There is also approx .03 seconds overhead added for the begin-measurement function itself
+       
+NOTE2: All objects take in a SID which defaults to NULL (later converted to the current session)
+     , this can be used to monitor another session if need be.
+
+NOTE3: TO compile the code, I had to move the / to column 2, jsut move it to col 1 to run the
+       examples
+
+EXAMPLE 1: simple start / end cpu combo:
+select vsesstat.start_cpu as ignore_me from dual;
+--  Now, the query in question:
+select count(*) from all_objects group by substr(object_id,2,1);
+select vsesstat.end_cpu as query_usage_result from dual;
+
+EXAMPLE 2: Example 1 using begin_measure
+BEGIN vsesstat.begin_measure; END;
+ /
+--  Now, the query in question:
+select count(*) from user_objects group by substr(object_id,2,1);
+select vsesstat.end_cpu as query_usage_result from dual;
+
+EXAMPLE 3: Lets see all the statistics that have changed!
+BEGIN vsesstat.begin_measure_all; END;
+ /
+--  Now, the query in question:
+select count(*) from user_objects group by substr(object_id,2,1);
+BEGIN vsesstat.show_all_stats; END;
+ /
+
+EXAMPLE 4: Lets get a customized view of what we want to see
+BEGIN vsesstat.begin_measure_all; END;
+ /
+--  Now, the query in question:
+select count(*) from user_objects group by substr(object_id,2,1);
+select vsesstat.end_cpu_custom ('!SECONDS! seconds, !133! bytes sent '
+                                 || 'to client, !134! bytes received in '
+                                 || '!135! round trips (sqlnet)')
+from dual;
+*/
+
+/*
+NAME           : start_cpu
+CREATED BY     : Eric Aksomitis (http://www.dlcwest.com/~jed/re_answer.shtml)
+CREATE DATE    : March 26, 1999
+OBJECTIVE      : Stores CPU and Logical Reads per session and SYSDATE in global
+                        variables to be compared to by end_cpu function
+PARAMETERS     : ip_sid --> USE THIS TO MONITOR CPU USAGE IN ANOTHER SESSION
+RETURNS        : Current CPU per session (ignore, end_cpu is what counts)
+MODIFICATIONS:
+Date          Author                    Change
+--------      ----------------------   ----------------------------------
+990326 Eric Aksomitis    Original
+*/
+FUNCTION start_cpu (ip_sid IN v$session.sid%TYPE DEFAULT NULL)
+RETURN v$sesstat.value%TYPE;
+PRAGMA RESTRICT_REFERENCES (start_cpu,WNDS);
+
+/*
+NAME           : begin_measure
+CREATED BY     : Eric Aksomitis (http://www.dlcwest.com/~jed/re_answer.shtml)
+CREATE DATE    : 1999-07-20
+OBJECTIVE      : Stores CPU and Logical Reads per session and SYSDATE in global
+                        variables to be compared to by end_cpu function
+                 (procedure style interface for start_cpu)
+PARAMETERS     : ip_sid --> USE THIS TO MONITOR CPU USAGE IN ANOTHER SESSION
+MODIFICATIONS:
+Date          Author                    Change
+--------      ----------------------   ----------------------------------
+990326 Eric Aksomitis    Original
+*/
+PROCEDURE begin_measure
+(  ip_sid                  IN v$session.sid%TYPE DEFAULT NULL);
+PRAGMA RESTRICT_REFERENCES (begin_measure,WNDS);
+
+/*
+NAME           : begin_measure_all
+CREATED BY     : Eric Aksomitis (http://www.dlcwest.com/~jed/re_answer.shtml)
+CREATE DATE    : 1999-07-20
+OBJECTIVE      : Stores all available stats from v$sesstat table into pl/sql table
+                 for later comparison by end_cpu, end_cpu_custom, or SHOW_ALL_STATS
+PARAMETERS     : ip_sid --> USE THIS TO MONITOR CPU USAGE IN ANOTHER SESSION
+MODIFICATIONS:
+Date          Author                    Change
+--------      ----------------------   ----------------------------------
+990326 Eric Aksomitis    Original
+*/
+PROCEDURE begin_measure_all
+(  ip_sid                  IN v$session.sid%TYPE DEFAULT NULL);
+
+/*
+NAME           : end_cpu
+CREATED BY     : Eric Aksomitis (http://www.dlcwest.com/~jed/re_answer.shtml)
+CREATE DATE    : March 26, 1999
+OBJECTIVE      : Compares CPU and Logical Reads per session and SYSDATE in global
+                   variables current values to determine CPU used since start_cpu was called
+PARAMETERS     : ip_sid --> USE THIS TO MONITOR CPU USAGE IN ANOTHER SESSION
+RETURNS        : CPU used, Elapsed Time, and Logical Reads in an english style output
+MODIFICATIONS:
+Date          Author                    Change
+--------      ----------------------   ----------------------------------
+990326 Eric Aksomitis    Original
+*/
+FUNCTION end_cpu (ip_sid IN v$session.sid%TYPE DEFAULT NULL)
+RETURN VARCHAR2;
+PRAGMA RESTRICT_REFERENCES (end_cpu,WNDS);
+
+/*
+NAME           : end_cpu_custom
+CREATED BY     : Eric Aksomitis (http://www.dlcwest.com/~jed/re_answer.shtml)
+CREATE DATE    : March 26, 1999
+OBJECTIVE      : Compares requested statistics against stored old statistics to return
+                 the difference.
+PARAMETERS     : ip_display_message -> This contains the output message and stat #'s you
+                                       want displayed.  Stats are entered in the format !##!
+                                       , so for example, you could use:
+                                       '!SECONDS! seconds elapsed, !12! centi-cpu, !9! logical reads'
+                 ip_sid --> USE THIS TO MONITOR CPU USAGE IN ANOTHER SESSION
+RETURNS        : CPU used, Elapsed Time, and Logical Reads in an english style output
+MODIFICATIONS:
+Date          Author                    Change
+--------      ----------------------   ----------------------------------
+990326 Eric Aksomitis    Original
+*/
+FUNCTION end_cpu_custom
+(  ip_display_message           IN VARCHAR2
+  ,ip_sid                       IN v$session.sid%TYPE DEFAULT NULL )
+RETURN VARCHAR2;
+PRAGMA RESTRICT_REFERENCES (end_cpu_custom,WNDS);
+
+/*
+NAME           : show_all_stats
+CREATED BY     : Eric Aksomitis (http://www.dlcwest.com/~jed/re_answer.shtml)
+CREATE DATE    : 1999-07-20
+OBJECTIVE      : Uses DBMS_OUTPUT to display all changed statistics since begin_measure_all
+                 was called.  Prints out statname, oldval, newval, difference
+PARAMETERS     : ip_sid --> USE THIS TO MONITOR CPU USAGE IN ANOTHER SESSION
+                 ip_space_after_x_lines -> starts at 3, set to null to take out blank lines
+                                           in the output.
+RETURNS        : CPU used, Elapsed Time, and Logical Reads in an english style output
+MODIFICATIONS:
+Date          Author                    Change
+--------      ----------------------   ----------------------------------
+990720 Eric Aksomitis    Original
+*/
+PROCEDURE show_all_stats
+(  ip_sid                  IN v$session.sid%TYPE DEFAULT NULL
+  ,ip_space_after_x_lines  IN PLS_INTEGER DEFAULT 3 ) ;
+
+/*
+NAME           : get_stat_value
+CREATED BY     : Dwayne King
+CREATE DATE    : 1999-07-20
+OBJECTIVE      : Returns value in v$sesstat for a given stat and sid
+PARAMETERS     : ip_sid --> USE THIS TO MONITOR CPU USAGE IN ANOTHER SESSION
+                 ip_parm_id --> statistic# from v$statname
+RETURNS        : value for stat#, sid combination (sid defautls to current session)
+MODIFICATIONS:
+Date          Author                    Change
+--------      ----------------------   ----------------------------------
+990720        Dwayne King              Original
+*/
+FUNCTION get_stat_value
+(  ip_sid                      IN v$session.sid%TYPE DEFAULT NULL,
+   ip_parm_id                  IN v$sesstat.statistic#%TYPE )
+RETURN v$sesstat.value%TYPE;
+PRAGMA RESTRICT_REFERENCES (get_stat_value,WNDS);
+
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY vsesstat AS
+
+-- Global Variables used to store start values in session for query
+TYPE t_vsesstat IS TABLE OF v$sesstat.value%TYPE INDEX BY BINARY_INTEGER;
+
+
+g_sesstat                      t_vsesstat;
+g_time_start                   PLS_INTEGER;
+
+g_sid                          v$session.sid%TYPE; -- Sid for current session (initialized)
+-- constants representing the different statistics
+c_cpu_in_session               CONSTANT NUMBER := 12;
+c_lr_in_session                CONSTANT NUMBER := 9;
+
+
+-- Returns CPU used by this session, used only internally by start_cpu and begin_measure
+FUNCTION cpu_in_session (ip_sid IN v$session.sid%TYPE DEFAULT NULL)
+RETURN v$sesstat.value%TYPE
+AS
+BEGIN
+    RETURN ( get_stat_value(ip_sid, c_cpu_in_session) );
+END;
+
+-- Returns Logical reads per session, used internally for start and end_cpu functions
+FUNCTION lr_in_session (ip_sid IN v$session.sid%TYPE DEFAULT NULL)
+RETURN v$sesstat.value%TYPE
+AS
+BEGIN
+    RETURN ( get_stat_value(ip_sid, c_lr_in_session) );
+END;
+
+
+FUNCTION get_stat_value
+(  ip_sid                      IN v$session.sid%TYPE DEFAULT NULL,
+   ip_parm_id                  IN v$sesstat.statistic#%TYPE )
+RETURN v$sesstat.value%TYPE
+AS
+  l_value                       v$sesstat.value%TYPE;
+  l_sid                         v$session.sid%TYPE := NVL(ip_sid,g_sid);
+BEGIN
+  SELECT value
+    INTO l_value
+    FROM v$sesstat
+   WHERE sid = l_sid
+     AND statistic# = ip_parm_id;
+  RETURN (l_value);
+EXCEPTION
+  WHEN OTHERS THEN
+    RAISE_APPLICATION_ERROR(-20000, 'Error determining value for parm ID '||ip_parm_id||'. '||
+                                    SQLERRM);
+END;
+
+-- Stores all available stats into PL/SQL table to be compared against later.
+PROCEDURE begin_measure_all
+(  ip_sid                  IN v$session.sid%TYPE DEFAULT NULL)
+AS
+l_sid                     v$session.sid%TYPE := NVL(ip_sid,g_sid);
+
+BEGIN
+    g_sesstat.DELETE;
+    FOR i IN (
+        SELECT statistic#, value
+          FROM v$sesstat
+         WHERE sid = l_sid )
+    LOOP
+        g_sesstat(i.statistic#) := i.value;
+    END LOOP;
+    g_time_start := TO_CHAR(SYSDATE,'SSSSS');
+END;
+
+-- Displays printout of all changed stats, old new values, and difference.
+PROCEDURE show_all_stats
+(  ip_sid                  IN v$session.sid%TYPE DEFAULT NULL
+  ,ip_space_after_x_lines  IN PLS_INTEGER DEFAULT 3 )
+
+AS
+l_sid                     v$session.sid%TYPE := NVL(ip_sid,g_sid);
+l_counter                 PLS_INTEGER := 0;
+BEGIN
+    DBMS_OUTPUT.PUT_LINE(RPAD('Stat',50)||RPAD('Old_val',10)||RPAD('New_Val',10)||'Difference');
+    DBMS_OUTPUT.PUT_LINE(RPAD('-',80,'-'));
+    FOR i IN (
+        SELECT vs.statistic#, vs.value, sn.name, ROWNUM
+          FROM v$sesstat vs, v$statname sn
+         WHERE vs.statistic# = sn.statistic#
+           AND sid = l_sid )
+    LOOP
+        IF NVL(i.value - g_sesstat(i.statistic#),0) != 0 THEN
+            DBMS_OUTPUT.PUT_LINE (RPAD(i.name,50)||RPAD(g_sesstat(i.statistic#),10)||
+                                  RPAD(i.value,10)|| TO_NUMBER(i.value - g_sesstat(i.statistic#) ));
+            l_counter := l_counter + 1;
+            IF MOD(l_counter,ip_space_after_x_lines) = 0 THEN
+                DBMS_OUTPUT.PUT_LINE(' ');
+            END IF;
+        END IF;
+    END LOOP;
+END;
+
+-- Stores start time, start cpu ,and start logical reads
+PROCEDURE begin_measure
+(  ip_sid                  IN v$session.sid%TYPE DEFAULT NULL)
+AS
+BEGIN
+    g_sesstat(c_cpu_in_session)           := cpu_in_session (ip_sid);
+    g_sesstat(c_lr_in_session) := lr_in_session (ip_sid);
+    g_time_start          := TO_CHAR(SYSDATE,'SSSSS');
+END;
+
+-- function interface for above procedure begin_measure
+FUNCTION start_cpu (ip_sid IN v$session.sid%TYPE DEFAULT NULL)
+RETURN v$sesstat.value%TYPE
+AS
+BEGIN
+    begin_measure(ip_sid);
+    RETURN g_sesstat(c_cpu_in_session);
+END;
+
+-- Displays diff between now and old values from beggining of query for CPU/TIME/Logical reads
+FUNCTION end_cpu (ip_sid IN v$session.sid%TYPE DEFAULT NULL)
+RETURN VARCHAR2
+AS
+l_result                       VARCHAR2(2000);
+BEGIN
+  l_result := ((cpu_in_session(ip_sid) - g_sesstat(c_cpu_in_session) ) / 100) || ' CPU Secs, '
+              || (TO_NUMBER(TO_CHAR(SYSDATE,'SSSSS')) - g_time_start)
+              || ' Seconds elapsed, ' || (lr_in_session(ip_sid) - g_sesstat(c_lr_in_session))
+              || ' Logical Reads';
+  RETURN l_result;
+END;
+
+-- Displays custom display of any available stat as given in ip_display_message
+-- (see package spec for syntax rules and example)
+FUNCTION end_cpu_custom (
+   ip_display_message           IN VARCHAR2
+  ,ip_sid                       IN v$session.sid%TYPE DEFAULT NULL )
+RETURN VARCHAR2
+AS
+l_result                       VARCHAR2(2000);
+l_stat_no                      VARCHAR2(10);
+l_index                        PLS_INTEGER;
+l_end_stat_spot                PLS_INTEGER;
+
+BEGIN
+    l_result := ip_display_message;
+    -- Now we loop through l_result and replace !stat#! with the actual value
+    -- Note: there is no code built to handle improper syntax!!
+    LOOP
+        l_index := INSTR(l_result,'!');
+        EXIT WHEN l_index = 0; -- No !'s means we have nothing left to do.
+        l_end_stat_spot := INSTR(l_result,'!',l_index+1); -- find end ! for !##! syntax
+        -- Now retrieve the ## between !##!
+        l_stat_no := UPPER(SUBSTR(l_result,l_index+1,l_end_stat_spot - l_index - 1));
+
+        IF l_stat_no = 'SECONDS' THEN
+            l_result := REPLACE(l_result, -- Replace !SECONDS! with elapsed seconds
+                                '!' || l_stat_no || '!',
+                                (TO_NUMBER(TO_CHAR(SYSDATE,'SSSSS')) - g_time_start));
+        ELSE
+            l_result := REPLACE(l_result, -- Replace !**! with change in stat for stat# **
+                                '!' || l_stat_no || '!',
+                                get_stat_value (ip_sid,l_stat_no) - g_sesstat(l_stat_no));
+        END IF;
+    END LOOP;
+    RETURN l_result;
+-- No exception clause, because I can't handle the exception, so It will go back to calling prog
+END;
+
+-- Initialization section - run once when package is first instantiated.
+BEGIN
+    SELECT sid
+      INTO g_sid -- used as default sid (session id) throughout package.
+      FROM v$session
+     WHERE audsid = userenv('sessionid');
+END;
+/
+

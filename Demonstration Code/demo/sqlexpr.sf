@@ -1,0 +1,48 @@
+CREATE OR REPLACE FUNCTION sqlexpr (sqlexpr_in IN VARCHAR2)
+   RETURN VARCHAR2
+IS
+   sqlstr   VARCHAR2 (32767) := 'SELECT ' || sqlexpr_in || ' from dual';
+   retval   VARCHAR2 (32767);
+
+   PROCEDURE pl (
+      str         IN   VARCHAR2
+     ,len         IN   INTEGER := 80
+     ,expand_in   IN   BOOLEAN := TRUE
+   )
+   IS
+      v_len   PLS_INTEGER     := LEAST (len, 255);
+      v_str   VARCHAR2 (2000);
+   BEGIN
+      IF LENGTH (str) > v_len
+      THEN
+         v_str := SUBSTR (str, 1, v_len);
+         DBMS_OUTPUT.put_line (v_str);
+         pl (SUBSTR (str, len + 1), v_len, expand_in);
+      ELSE
+         v_str := str;
+         DBMS_OUTPUT.put_line (v_str);
+      END IF;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         IF expand_in
+         THEN
+            DBMS_OUTPUT.ENABLE (1000000);
+            DBMS_OUTPUT.put_line (v_str);
+         ELSE
+            RAISE;
+         END IF;
+   END pl;
+BEGIN
+   EXECUTE IMMEDIATE sqlstr
+                INTO retval;
+
+   RETURN retval;
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      pl ('SQLEXPR Failure: ' || DBMS_UTILITY.format_error_stack);
+      pl (sqlstr);
+      RAISE;
+END sqlexpr;
+/

@@ -1,0 +1,129 @@
+/* Formatted by PL/Formatter v3.1.2.1 on 2001/01/19 14:44 */
+
+CREATE OR REPLACE PROCEDURE showentdiags (i_entid IN INTEGER)
+IS
+/*
+|| This is an excerpt from an application to display Oracle Designer (release 6)
+|| model information in a browser using Oracle Application Server 4.0.8, and is
+|| an example of how to use UTL_HTTP to determine if a valid URL exists. The
+|| procedure lists all Entitiy Relationship Diagrams in which the given Entity
+|| appears. Some of the ERDs have been saved as Adobe Accrobat pdf files, and
+|| can be displayed to the user. We want to display information about the
+|| diagram whether or not the pdf has been created.  This method eliminates
+|| having to store information in the database about whether or not the file
+|| exists -- prone to error.  Now, when the file is placed in the proper
+|| directory on the Application Server it automagically appears as a link in the
+|| browser.
+||
+|| Author: Howard Gluckman, CSG Systems, Inc.
+||                 howard_gluckman@csgsystems.com
+*/
+   v_webdir    VARCHAR2 (250);
+   v_url       VARCHAR2 (250);
+   v_urltext   VARCHAR2 (2000);
+
+   CURSOR getdiag (i_entid IN INTEGER)
+   IS
+      SELECT d.id, d.name, d.author, d.application_system_owned_by
+        FROM ci_diagrams d, ci_diagram_element_usages deu
+       WHERE d.id = deu.diagram_reference
+         AND d.diagram_type = 'ERD'
+         AND deu.cielement_reference = i_entid
+       ORDER BY d.name;
+BEGIN
+   FOR drec IN getdiag (i_entid)
+   LOOP
+/*
+|| first we call a function that builds up the diagram location
+|| based on the application system ID
+*/
+      v_webdir := wdiag.webdir (drec.application_system_owned_by, 'ERD');
+/*
+|| To build up v_url, I concantenate a call to function that returns
+|| the server name with the appropriate web directory, and then the
+|| diagram name (with spaces replaced by '_'), and finally appended
+|| with '.pdf' (they're always Accrobat files).
+*/
+      v_url :=
+         web.getservername || v_webdir || REPLACE (drec.name, ' ', '_') || '.pdf';
+
+      BEGIN
+/*
+|| an annonymous block so we can trap a utl_http.request_failed
+|| exception (if needed)
+*/
+        -- request the URL
+         v_urltext := UTL_HTTP.request (v_url);
+
+/*
+|| OAS returns a Not Found page if the URL is invalid
+*/
+         IF SUBSTR (v_urltext, 1, 28) = '<HTML><HEAD><TITLE>Not Found'
+         THEN
+/*
+|| If it can't find a URL, we still want to list the diagram
+|| name, just without a link.
+*/
+            HTP.listitem (drec.name);
+         ELSE
+/*
+|| I'm assuming if it found the URL, then we have a valid
+|| diagram.  Build up the link to display the diagram pdf.
+*/
+            HTP.listitem (HTF.anchor2 (v_webdir ||
+                                          REPLACE (drec.name, ' ', '_') ||
+                                          '.pdf',
+                             drec.name,
+                             ctarget   => '_window'
+                          )
+            );
+         END IF;
+      EXCEPTION
+         -- if all else fails.
+         WHEN UTL_HTTP.request_failed
+         THEN
+            HTP.listitem (drec.name);
+      END;
+   END LOOP;
+END showentdiags;
+/
+
+
+CREATE OR REPLACE FUNCTION urlexists (i_url IN VARCHAR2)
+   RETURN BOOLEAN
+IS
+/*
+|| Function to see if a URL exists.  This can be used when presenting a list
+|| from the database using Oracle Application Server.  If the URL exists, you
+|| can have PL/SQL build the link, but if not, you can just present the data
+|| as a list item.
+||
+|| Author:  Howard Gluckman, CSG Systems
+||    howard_gluckman@csgsystems.com
+*/
+
+   retval      BOOLEAN;
+   v_urltext   VARCHAR2 (2000);
+BEGIN
+   v_urltext := UTL_HTTP.request (i_url);
+
+   IF SUBSTR (v_urltext, 1, 28) = '<HTML><HEAD><TITLE>Not Found'
+   THEN
+      /*
+      || OAS returns a Not Found page when there is no hit.
+      */
+
+      retval := FALSE;
+   ELSE
+      retval := TRUE;
+   END IF;
+
+   RETURN retval;
+EXCEPTION
+   WHEN UTL_HTTP.request_failed
+   THEN
+      RETURN FALSE;
+END urlexists;
+/
+
+

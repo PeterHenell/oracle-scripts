@@ -1,0 +1,37 @@
+create or replace function month_list
+  (d1 date, d2 date)
+  return varchar2
+/*
+From the PL/SQL Pipeline by Steve Cosner
+
+SQL> set serveroutput on size 20000
+SQL> declare
+  2    Procedure T(d1 varchar2,d2 varchar2) is begin
+  3      dbms_output.put_line(
+  4        month_list(to_date(d1,'dd-mon-yyyy'),to_date(d2,'dd-mon-yyyy')));
+  5    End T;
+  6  begin
+  7    T('11-JAN-2000','27-JUN-2000');
+  8    T('31-oct-2000','05-Feb-2001');
+  9    T('01-oct-2000','28-Feb-2002');
+ 10  end;
+ 11  /
+Jan, Feb, Mar, Apr, May, Jun
+Oct, Nov, Dec, Jan, Feb
+Oct, Nov, Dec, Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep
+
+*/
+is
+  comma_space  Varchar2(2);
+  Rtrn_Txt     Varchar2(60);
+  d3           Date  := d1;
+begin
+  For i in 1..12 Loop
+    Rtrn_Txt := Rtrn_Txt || comma_space || To_Char(d3,'Mon');
+    comma_space := ', ';
+    exit when trunc(d3,'MM') >= trunc(d2,'MM');
+    d3 := Add_Months(d3,1);
+  End loop;
+  Return (Rtrn_Txt);
+end month_list;
+/

@@ -1,0 +1,13 @@
+CREATE OR REPLACE FUNCTION nth_from_n (n_in IN NUMBER)
+   RETURN VARCHAR2
+IS
+BEGIN
+   RETURN LOWER (
+             TO_CHAR (TO_DATE (n_in || '-01-2000', 'DD-MM-YYYY'), 'DDth'));
+END;
+/
+
+BEGIN
+   DBMS_OUTPUT.put_line (nth_from_n (15));
+END;
+/

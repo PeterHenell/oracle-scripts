@@ -1,0 +1,226 @@
+CREATE OR REPLACE PACKAGE psdesc
+IS
+   c_varchar2       CONSTANT PLS_INTEGER := 1;
+   c_nvarchar2      CONSTANT PLS_INTEGER := 1;
+   c_number         CONSTANT PLS_INTEGER := 2;
+   c_integer        CONSTANT PLS_INTEGER := 2;
+   c_binary_integer CONSTANT PLS_INTEGER := 3;
+   c_pls_integer    CONSTANT PLS_INTEGER := 3;
+   c_long           CONSTANT PLS_INTEGER := 8;
+   c_rowid          CONSTANT PLS_INTEGER := 11;
+   c_date           CONSTANT PLS_INTEGER := 12;
+   c_raw            CONSTANT PLS_INTEGER := 23;
+   c_longraw        CONSTANT PLS_INTEGER := 24;
+   c_char           CONSTANT PLS_INTEGER := 96;
+   c_nchar          CONSTANT PLS_INTEGER := 96;
+   c_mlslabel       CONSTANT PLS_INTEGER := 106;
+   c_record         CONSTANT PLS_INTEGER := 250;
+   c_indexby_table  CONSTANT PLS_INTEGER := 251;
+   c_boolean        CONSTANT PLS_INTEGER := 252;
+
+   /* Oracle8 datatypes */
+   c_clob           CONSTANT PLS_INTEGER := 112;
+   c_nclob          CONSTANT PLS_INTEGER := 112;
+   c_blob           CONSTANT PLS_INTEGER := 113;
+   c_bfile          CONSTANT PLS_INTEGER := 114;
+   c_object_type    CONSTANT PLS_INTEGER := 121;
+   c_nested_table   CONSTANT PLS_INTEGER := 122;
+   c_varray         CONSTANT PLS_INTEGER := 123;
+   
+   /* Parameter modes */
+   c_in CONSTANT PLS_INTEGER := 0;
+   c_out CONSTANT PLS_INTEGER := 1;
+   c_inout CONSTANT PLS_INTEGER := 2;
+
+   /* PL/SQL tables which will hold the output from calls to
+      DBMS_DESCRIBE.DESCRIBE_PROCEDURE */
+   g_overload      DBMS_DESCRIBE.NUMBER_TABLE;
+   g_position      DBMS_DESCRIBE.NUMBER_TABLE;
+   g_level         DBMS_DESCRIBE.NUMBER_TABLE;
+   g_argument_name DBMS_DESCRIBE.VARCHAR2_TABLE;
+   g_datatype      DBMS_DESCRIBE.NUMBER_TABLE;
+   g_default_value DBMS_DESCRIBE.NUMBER_TABLE;
+   g_in_out        DBMS_DESCRIBE.NUMBER_TABLE;
+   g_length        DBMS_DESCRIBE.NUMBER_TABLE;
+   g_precision     DBMS_DESCRIBE.NUMBER_TABLE;
+   g_scale         DBMS_DESCRIBE.NUMBER_TABLE;
+   g_radix         DBMS_DESCRIBE.NUMBER_TABLE;
+   g_spare         DBMS_DESCRIBE.NUMBER_TABLE;
+
+   /* Holds the descriptions of the datatypes */
+   g_datatype_names DBMS_DESCRIBE.VARCHAR2_TABLE;
+
+   /* Holds the descriptions of the parameter modes. */
+   g_mode_names DBMS_DESCRIBE.VARCHAR2_TABLE;
+
+   /* A single record holding all the information for one argument. */
+   TYPE arglist_rt IS RECORD (
+     overload NUMBER,
+     position NUMBER
+    ,level NUMBER
+    ,argument_name VARCHAR2 (30)
+    ,datatype NUMBER
+    ,default_value NUMBER
+    ,in_out NUMBER
+    ,length NUMBER
+    ,precision NUMBER
+    ,scale NUMBER
+    ,radix NUMBER);
+
+   /* Wrapper for DBMS_DESCRIBE.DESCRIBE_PROCEDURE. Throws all the
+      argument information into the g_ arrays defined above. */
+   PROCEDURE args (obj IN VARCHAR2);
+
+   /* Displays all the argument information using DBMS_OUTPUT.PUT_LINE. */
+   PROCEDURE showargs (obj IN VARCHAR2 := NULL);
+
+   FUNCTION numargs RETURN INTEGER;
+
+   /* Returns all the information for a specified argument. */
+   FUNCTION arg (pos IN INTEGER) RETURN arglist_rt;
+END;
+/
+CREATE OR REPLACE PACKAGE BODY psdesc
+IS
+   g_object_name VARCHAR2 (200);
+
+   PROCEDURE args (obj IN VARCHAR2)
+   IS
+   BEGIN
+      g_object_name := obj;
+
+      DBMS_DESCRIBE.DESCRIBE_PROCEDURE (obj, NULL, NULL,
+         g_overload,
+         g_position,
+         g_level,
+         g_argument_name,
+         g_datatype,
+         g_default_value,
+         g_in_out,
+         g_length,
+         g_precision,
+         g_scale,
+         g_radix,
+         g_spare);
+   END;
+
+   PROCEDURE showargs (obj IN VARCHAR2 := NULL)
+   IS
+      v_onearg arglist_rt;
+      v_last_overload PLS_INTEGER;
+
+      FUNCTION strval (num IN INTEGER, padto IN INTEGER) RETURN VARCHAR2
+      IS 
+      BEGIN
+         RETURN LPAD (TO_CHAR (num), padto) || ' ';
+      END;
+   BEGIN
+      IF obj IS NOT NULL
+      THEN
+         args (obj);
+      END IF;
+
+      IF g_position.COUNT > 0
+      THEN
+         DBMS_OUTPUT.PUT_LINE (
+            'OvLd Pos Lev Type            Name                               Mode  Def Len');
+         DBMS_OUTPUT.PUT_LINE (
+            '---- --- --- --------------- --------------------------------- ------ --- ----');
+         FOR argrow IN g_position.FIRST .. g_position.LAST
+         LOOP
+            v_onearg := arg (argrow);
+
+            IF v_last_overload != v_onearg.overload
+            THEN
+               DBMS_OUTPUT.PUT_LINE ('----');
+               v_last_overload := v_onearg.overload;
+
+            ELSIF v_last_overload IS NULL
+            THEN
+               v_last_overload := v_onearg.overload;
+            END IF;
+
+            DBMS_OUTPUT.PUT_LINE (
+               strval (v_onearg.overload, 4) ||
+               strval (v_onearg.position, 3) ||
+               strval (v_onearg.level, 3) ||
+               RPAD (g_datatype_names(v_onearg.datatype), 16) ||
+			   '( ' || v_onearg.datatype || ')' ||
+               RPAD (LPAD (' ', 2*v_onearg.level, ' ') || 
+                  NVL (v_onearg.argument_name, 'RETURN Value'), 
+                  34) ||
+               RPAD (g_mode_names(v_onearg.in_out), 5) ||
+               strval (v_onearg.default_value, 3) ||
+               strval (v_onearg.length, 4));          
+         END LOOP;
+      END IF;
+   END;
+
+   FUNCTION arg (pos IN INTEGER) RETURN arglist_rt
+   IS
+      retval arglist_rt;
+   BEGIN
+      IF g_object_name IS NULL
+      THEN
+         DBMS_OUTPUT.PUT_LINE 
+            ('You must first call psdesc.args to load the arrays.');
+      ELSE
+         retval.overload := g_overload (pos);
+         retval.position := g_position (pos);
+         retval.level := g_level (pos);
+         retval.argument_name := g_argument_name (pos);
+         retval.datatype := g_datatype (pos);
+         retval.default_value := g_default_value (pos);
+         retval.in_out := g_in_out (pos);
+         retval.length := g_length (pos);
+         retval.precision := g_precision (pos);
+         retval.scale := g_scale (pos);
+         retval.radix := g_radix (pos);
+         RETURN retval;
+      END IF;
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         RETURN retval;
+   END;
+
+   FUNCTION numargs RETURN INTEGER
+   IS
+   BEGIN
+      IF g_object_name IS NULL
+      THEN
+         RETURN NULL;
+      ELSE
+         RETURN g_position.COUNT;
+      END IF;
+   END;
+
+BEGIN
+   /* Initialize the two "translation" arrays. */
+
+   g_datatype_names (c_varchar2) := 'VARCHAR2';
+   g_datatype_names (c_number) := 'NUMBER';
+   g_datatype_names (c_binary_integer) := 'BINARY_INTEGER';
+   g_datatype_names (c_long) := 'LONG';
+   g_datatype_names (c_rowid) := 'ROWID';
+   g_datatype_names (c_date) := 'DATE';
+   g_datatype_names (c_raw) := 'RAW';
+   g_datatype_names (c_longraw) := 'LONG RAW';
+   g_datatype_names (c_char) := 'CHAR';
+   g_datatype_names (c_mlslabel) := 'MLSLABEL';
+   g_datatype_names (c_record) := 'RECORD';
+   g_datatype_names (c_indexby_table) := 'INDEX-BY TABLE';
+   g_datatype_names (c_boolean) := 'BOOLEAN';
+   g_datatype_names (c_object_type) := 'OBJECT TYPE';
+   g_datatype_names (c_nested_table) := 'NESTED TABLE';
+   g_datatype_names (c_varray) := 'VARRAY';
+   g_datatype_names (c_clob) := 'CLOB';
+   g_datatype_names (c_blob) := 'BLOB';
+   g_datatype_names (c_bfile) := 'BFILE';
+
+   g_mode_names (c_in) := 'IN';
+   g_mode_names (c_out) := 'OUT';
+   g_mode_names (c_inout) := 'IN OUT';
+END;
+/
+

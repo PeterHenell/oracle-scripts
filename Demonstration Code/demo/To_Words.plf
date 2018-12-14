@@ -1,0 +1,345 @@
+-- ______________________________________________________________________
+-- |									|
+-- |		     Number To Words Conversion Function		|
+-- |____________________________________________________________________|
+--
+-- FILE:	To_Words.plf
+-- LOCATION:
+-- TITLE:	Number To Words Conversion Function
+-- TYPE:	ORACLE PL/SQL Stored Function
+-- VERSION:	1.0
+-- CREATED:	August 12, 1997
+-- AUTHOR:	Solomon Yakobson
+-- WARNING:
+-- DESCRIPTION:	Number To Words Conversion Function converts  into  words
+--		any number with whole and fractional parts  not exceeding
+--		38 digits each. For converting dollar  amounts fractional
+--		part must not exceed 2 digits.
+--		Function has the following parameters:
+--
+--		1. IN mode parameter NumberIN is NUMBER  to be  converted
+--		   into words.
+--		2. IN mode parameter FormatIN is VARCHAR2 defining number
+--		   to words conversion  rules. It is case insensitive and
+--		   has the following syntax:
+--
+--		   [<Case>][<Type>][<Zero>][.[<Zero>]]
+--
+--		   <Case> defines  word case.  It is one character string
+--		   and can have value U - upper case, L - lower  case  or
+--		   C - capitalized. If omitted, <Case> defaults to L.
+--
+--		   <Type>  defines type of number to be  converted. It is
+--		   one character  string and can have value N - number or
+--		   $ - dollar amount. If omitted, <Type> defaults to $.
+--
+--		   <Zero> defines whether whole or fractional part should
+--		   be skipped when equal to 0. If <Zero> is prefixed with
+--		   period (.) it applies to fractional part, otherwise it
+--		   applies to whole part. <Zero>  is one character string
+--		   and can have value S - skip or D - display.  If <Zero>
+--		   is omitted, it defaults to S when <Type>  is N or to D
+--		   when <Type> is $.
+--		   NOTE: NumberIN = 0 will be converted to 'zero', not to
+--			 NULL when <Zero> is set to S for both whole  and
+--			 fractional parts.
+--
+--		Function can raise the following errors:
+--
+--		Error			Message Text
+--		------  -------------------------------------------------
+--		01481	Invalid number format model
+--		01722	Invalid number
+--
+-- MODIFICATION
+-- HISTORY:
+-- ______________________________________________________________________
+
+CREATE OR REPLACE
+  FUNCTION To_Words(NumberIN		IN NUMBER,
+		    FormatIN		IN VARCHAR2 DEFAULT 'L$D.D',
+		    ScaleIN		IN NUMBER DEFAULT NULL
+		   ) RETURN VARCHAR2
+    IS
+	InvalidNumberFormatModel	EXCEPTION;
+	PRAGMA EXCEPTION_INIT(InvalidNumberFormatModel,-1481);
+	InvalidNumber			EXCEPTION;
+	PRAGMA EXCEPTION_INIT(InvalidNumber,-1722);
+	TYPE GroupTableType IS TABLE OF VARCHAR2(20)
+	  INDEX BY BINARY_INTEGER;
+	Position		PLS_INTEGER := 1;
+	ConversionCase		CHAR(1) := 'L';
+	ConversionType		CHAR(1) := '$';
+	WholeZero		CHAR(1) := 'D';
+	FractionalZero		CHAR(1) := 'D';
+	GroupTable		GroupTableType;
+	GroupIndex		NUMBER;
+	Filler			CHAR(1);
+	Words			VARCHAR2(2000);
+	WholePart		NUMBER;
+	FractionalPart		NUMBER;
+	FractionalDigits	NUMBER;
+	Remainder		NUMBER;
+	Suffix			VARCHAR2(50);
+    BEGIN
+
+	-- Validate format
+
+	Filler			:= UPPER(SUBSTR(FormatIN,Position,1));
+	IF Filler IN ('U','L','C')
+	  THEN
+	    ConversionCase	:= Filler;
+	    Position		:= Position + 1;
+	    Filler		:= UPPER(SUBSTR(FormatIN,Position,1));
+	END IF;
+	IF Filler IN ('N','$')
+	  THEN
+	    IF Filler = 'N'
+	      THEN
+		ConversionType	:= 'N';
+		WholeZero	:= 'S';
+		FractionalZero	:= 'S';
+	    END IF;
+	    Position		:= Position + 1;
+	    Filler		:= UPPER(SUBSTR(FormatIN,Position,1));
+	END IF;
+	IF Filler IN ('S','D')
+	  THEN
+	    WholeZero		:= Filler;
+	    Position		:= Position + 1;
+	    Filler		:= UPPER(SUBSTR(FormatIN,Position,1));
+	END IF;
+	IF Filler = '.'
+	  THEN
+	    Position		:= Position + 1;
+	    Filler		:= UPPER(SUBSTR(FormatIN,Position,1));
+	    IF Filler IN ('S','D')
+	      THEN
+		FractionalZero	:= Filler;
+		Position	:= Position + 1;
+		Filler		:= UPPER(SUBSTR(FormatIN,Position,1));
+	    END IF;
+	END IF ;
+	IF Filler IS NOT NULL
+	  THEN
+	    RAISE InvalidNumberFormatModel;
+	END IF;
+	IF NumberIN IS NULL
+	  THEN
+	    RETURN NULL;
+	END IF;
+
+	-- Initialize Group Table
+
+	GroupTable(0)	:= '';
+	GroupTable(1)	:= ' ten';
+	GroupTable(2)	:= ' hundred';
+	GroupTable(3)	:= ' thousand';
+	GroupTable(4)	:= ' ten thousand';
+	GroupTable(5)	:= ' hundred thousand';
+	GroupTable(6)	:= ' million';
+	GroupTable(7)	:= ' ten million';
+	GroupTable(8)	:= ' hundred million';
+	GroupTable(9)	:= ' billion';
+	GroupTable(10)	:= ' ten billion';
+	GroupTable(11)	:= ' hundred billion';
+	GroupTable(12)	:= ' trillion';
+	GroupTable(13)	:= ' ten trillion';
+	GroupTable(14)	:= ' hundred trillion';
+	GroupTable(15)	:= ' quadrillion';
+	GroupTable(16)	:= ' ten quadrillion';
+	GroupTable(17)	:= ' hundred quadrillion';
+	GroupTable(18)	:= ' quintillion';
+	GroupTable(19)	:= ' ten quintillion';
+	GroupTable(20)	:= ' hundred quintillion';
+	GroupTable(21)	:= ' sextillion';
+	GroupTable(22)	:= ' ten sextillion';
+	GroupTable(23)	:= ' hundred sextillion';
+	GroupTable(24)	:= ' septillion';
+	GroupTable(25)	:= ' ten septillion';
+	GroupTable(26)	:= ' hundred septillion';
+	GroupTable(27)	:= ' octillion';
+	GroupTable(28)	:= ' ten octillion';
+	GroupTable(29)	:= ' hundred octillion';
+	GroupTable(30)	:= ' nonillion';
+	GroupTable(31)	:= ' ten nonillion';
+	GroupTable(32)	:= ' hundred nonillion';
+	GroupTable(33)	:= ' nonillion';
+	GroupTable(34)	:= ' ten nonillion';
+	GroupTable(35)	:= ' hundred nonillion';
+	GroupTable(36)	:= ' decillion';
+	GroupTable(37)	:= ' ten decillion';
+	GroupTable(38)	:= ' hundred decillion';
+
+	-- Calculate whole and fractional parts
+
+	WholePart	:= ABS(TRUNC(NumberIN));
+	FractionalPart	:= ABS(NumberIN) - WholePart;
+
+	-- Check if fractional part is 0
+
+	IF FractionalPart = 0
+	  THEN
+
+	  -- When fractional part is 0.
+
+	    -- Check if 0 fractional part should be displayed.
+
+	    IF FractionalZero = 'D'
+	      THEN
+		IF ConversionType = '$'
+		  THEN
+		    Words	:= 'zero cents';
+		  ELSE
+		    Words	:= 'zero tenth';
+		END IF;
+		Suffix		:= ' and ';
+	    END IF;
+	  ELSE
+
+	  -- When fractional part is not 0.
+
+	    -- Calculate fractional part digit number based on conversion
+	    -- type. Note, TO_CHAR results in an additional character for
+	    -- the decimal point. Therefore, we subtract 1 from LENGTH.
+
+	    IF ConversionType = 'N'
+	      THEN
+		FractionalDigits	:= LENGTH(TO_CHAR(FractionalPart)) - 1;
+		IF FractionalDigits > 38
+		  THEN
+		    RAISE InvalidNumber;
+		END IF;
+		Suffix			:= GroupTable(FractionalDigits) || 'th';
+		FractionalPart		:= FractionalPart *
+						POWER(10,FractionalDigits);
+	      ELSE
+
+		-- Dollar amount should not have more than two  fractional
+		-- digits.  TO_CHAR results in an additional character for
+		-- the decimal point. Therefore, we compare LENGTH to 3.
+
+		IF LENGTH(TO_CHAR(FractionalPart)) > 3
+		  THEN
+		    RAISE InvalidNumber;
+		END IF;
+		FractionalDigits	:= 2; 
+		FractionalPart		:= FractionalPart * 100;
+		IF FractionalPart = 1
+		  THEN
+		    Suffix		:= ' cent';
+		  ELSE
+		    Suffix		:= ' cents';
+		END IF;
+	    END IF;
+	    IF FractionalPart <= 5373484
+	      THEN
+		Words	:= TO_CHAR(TO_DATE(FractionalPart,'j'),'jsp') ||
+				Suffix;
+	      ELSE
+		GroupIndex	:= 0;
+		Filler		:= NULL;
+		WHILE FractionalPart != 0 LOOP
+		  Remainder	:= Mod(FractionalPart,1000);
+		  IF Remainder != 0
+		    THEN
+		      Words	:= TO_CHAR(TO_DATE(Remainder,'j'),'jsp') ||
+					GroupTable(GroupIndex) || Filler ||
+					Words;
+		      Filler	:= ' ';
+		  END IF;
+		  GroupIndex	:= GroupIndex + 3;
+		  FractionalPart:= TRUNC(FractionalPart / 1000);
+		END LOOP;
+		Words	:= Words || Suffix;
+	    END IF;
+	    Suffix		:= ' and ';
+	END IF;
+
+	-- Check if Whole Part is 0
+
+	IF WholePart = 0
+	  THEN
+
+	  -- When whole part is 0.
+
+	    -- Check if 0 whole part should be displayed.
+
+	    IF WholeZero = 'D'
+	      THEN
+		IF ConversionType = '$'
+		  THEN
+		    Words	:= 'zero dollars' || Suffix || Words;
+		  ELSE
+		    Words	:= 'zero' || Suffix || Words;
+		END IF;
+	    END IF;
+	  ELSE
+
+	  -- When whole part is not 0.
+
+	    -- Check if dollar conversion.
+	    
+	    IF ConversionType = '$'
+	      THEN
+
+	      -- When dollar conversion.
+
+		-- Check if whole part is equal to 1.
+
+		IF WholePart = 1
+		  THEN
+		    Suffix	:= ' dollar' || Suffix;
+		  ELSE
+		    Suffix	:= ' dollars' || Suffix;
+		END IF;
+	    END IF;
+	    IF WholePart <= 5373484
+	      THEN
+		Words	:= TO_CHAR(TO_DATE(WholePart,'j'),'jsp') ||
+				Suffix || Words;
+	      ELSE
+		IF LENGTH(TO_CHAR(WholePart)) > 38
+		  THEN
+		    RAISE InvalidNumber;
+		END IF;
+		GroupIndex	:= 0;
+		Filler		:= NULL;
+		Words		:= Suffix || Words;
+		WHILE WholePart != 0 LOOP
+		  Remainder	:= Mod(WholePart,1000);
+		  IF Remainder != 0
+		    THEN
+		      Words	:= TO_CHAR(TO_DATE(Remainder,'j'),'jsp') ||
+					GroupTable(GroupIndex) || Filler ||
+					Words;
+		      Filler	:= ' ';
+		  END IF;
+		  GroupIndex	:= GroupIndex + 3;
+		  WholePart	:= TRUNC(WholePart / 1000);
+		END LOOP;
+	    END IF;
+	END IF;
+
+	IF Words IS NULL
+	  THEN
+	    Words	:= 'zero';
+	END IF;
+	IF Sign(NumberIN) = -1
+	  THEN
+	    Words	:= 'minus ' || Words;
+	END IF;
+
+	-- Convert to proper case.
+
+	IF ConversionCase = 'U'
+	  THEN
+	    Words	:= UPPER(Words);
+	ELSIF ConversionCase = 'C'
+	  THEN
+	    Words	:= INITCAP(Words);
+	END IF;
+
+	RETURN Words;
+END;
+/

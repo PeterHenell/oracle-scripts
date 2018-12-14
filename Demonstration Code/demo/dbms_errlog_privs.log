@@ -1,0 +1,203 @@
+Connected.
+
+PL/SQL procedure successfully completed.
+
+
+PL/SQL procedure successfully completed.
+
+Connected.
+
+Table created.
+
+
+PL/SQL procedure successfully completed.
+
+
+Synonym dropped.
+
+
+PL/SQL procedure successfully completed.
+
+
+Grant succeeded.
+
+
+Synonym created.
+
+Connected.
+   UPDATE plch_employees
+   *
+ERROR at line 4:
+ORA-06550: line 4, column 4: 
+PL/SQL: ORA-00942: table or view does not exist 
+ORA-06550: line 4, column 4: 
+PL/SQL: SQL Statement ignored 
+
+
+Connected.
+
+Grant succeeded.
+
+Connected.
+   UPDATE plch_employees
+   *
+ERROR at line 4:
+ORA-06550: line 4, column 4: 
+PL/SQL: ORA-00942: table or view does not exist 
+ORA-06550: line 4, column 4: 
+PL/SQL: SQL Statement ignored 
+
+
+
+Rollback complete.
+
+Connected.
+
+Grant succeeded.
+
+
+Synonym created.
+
+Connected.
+Privs and synonym in place, can perform update.                                 
+Updated = 1                                                                     
+
+PL/SQL procedure successfully completed.
+
+
+Rollback complete.
+
+Connected.
+
+Synonym dropped.
+
+Connected.
+
+Synonym created.
+
+Private synonym on log table works, too.                                        
+Updated = 1                                                                     
+
+PL/SQL procedure successfully completed.
+
+
+Rollback complete.
+
+Connected.
+
+Synonym dropped.
+
+DROP TABLE err$_plch_employees
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist 
+
+
+
+PL/SQL procedure successfully completed.
+
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ ORA_ERR_NUMBER$                                    NUMBER
+ ORA_ERR_MESG$                                      VARCHAR2(2000)
+ ORA_ERR_ROWID$                                     ROWID
+ ORA_ERR_OPTYP$                                     VARCHAR2(2)
+ ORA_ERR_TAG$                                       VARCHAR2(2000)
+ EMPLOYEE_ID                                        VARCHAR2(4000)
+ LAST_NAME                                          VARCHAR2(4000)
+ SALARY                                             VARCHAR2(4000)
+
+Local log table, specifying owner of table                                      
+Updated = 1                                                                     
+
+PL/SQL procedure successfully completed.
+
+
+Rollback complete.
+
+Connected.
+DROP SYNONYM err$_plch_employees
+             *
+ERROR at line 1:
+ORA-01434: private synonym to be dropped does not exist 
+
+
+
+Table dropped.
+
+BEGIN
+*
+ERROR at line 1:
+ORA-01031: insufficient privileges 
+ORA-06512: at "SYS.DBMS_ERRLOG", line 260 
+ORA-06512: at line 2 
+
+
+ERROR:
+ORA-04043: object ERR$_PLCH_EMPLOYEES does not exist 
+
+
+   UPDATE plch_employees
+   *
+ERROR at line 4:
+ORA-06550: line 4, column 4: 
+PL/SQL: ORA-00942: table or view does not exist 
+ORA-06550: line 4, column 4: 
+PL/SQL: SQL Statement ignored 
+
+
+
+Rollback complete.
+
+Connected.
+
+PL/SQL procedure successfully completed.
+
+Connected.
+
+Grant succeeded.
+
+
+Synonym dropped.
+
+
+Synonym created.
+
+
+Table dropped.
+
+Connected.
+DROP SYNONYM err$_plch_employees
+             *
+ERROR at line 1:
+ORA-01434: private synonym to be dropped does not exist 
+
+
+DROP TABLE err$_plch_employees
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist 
+
+
+
+PL/SQL procedure successfully completed.
+
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ ORA_ERR_NUMBER$                                    NUMBER
+ ORA_ERR_MESG$                                      VARCHAR2(2000)
+ ORA_ERR_ROWID$                                     ROWID
+ ORA_ERR_OPTYP$                                     VARCHAR2(2)
+ ORA_ERR_TAG$                                       VARCHAR2(2000)
+ EMPLOYEE_ID                                        VARCHAR2(4000)
+ LAST_NAME                                          VARCHAR2(4000)
+ SALARY                                             VARCHAR2(4000)
+
+Local log table, using create any table privilege                               
+Updated = 1                                                                     
+
+PL/SQL procedure successfully completed.
+
+
+Rollback complete.
+

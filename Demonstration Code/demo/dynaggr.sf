@@ -1,0 +1,36 @@
+CREATE OR REPLACE FUNCTION dynaggr (
+   tab IN VARCHAR2,
+   col IN VARCHAR2,
+   grpfunc IN VARCHAR2 := 'SUM',
+   whr IN VARCHAR2 := NULL
+   ) 
+  RETURN NUMBER
+IS
+   sqlstr VARCHAR2(2000) :=
+      'SELECT ' || grpfunc || '(' || col || ')
+         FROM ' || tab ||
+      ' WHERE ' || NVL (whr, '1=1');
+       
+   cur PLS_INTEGER := DBMS_SQL.OPEN_CURSOR;
+   fdbk PLS_INTEGER;
+   retval NUMBER;
+BEGIN
+   DBMS_SQL.PARSE (cur, sqlstr, DBMS_SQL.NATIVE);
+   
+   DBMS_SQL.DEFINE_COLUMN (cur, 1, 1);   
+   fdbk := DBMS_SQL.EXECUTE_AND_FETCH (cur);
+   DBMS_SQL.COLUMN_VALUE (cur, 1, retval);
+   DBMS_SQL.CLOSE_CURSOR (cur);
+   
+   RETURN retval;
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      fdbk := DBMS_SQL.LAST_ERROR_POSITION;
+      DBMS_OUTPUT.PUT_LINE (SQLERRM);
+      DBMS_OUTPUT.PUT_LINE (sqlstr);               
+      DBMS_OUTPUT.PUT_LINE (LPAD ('^', fdbk, '-'));  
+      DBMS_SQL.CLOSE_CURSOR (cur);
+      RETURN NULL;       
+END dynaggr;
+/   

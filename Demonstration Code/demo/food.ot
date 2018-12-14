@@ -1,0 +1,137 @@
+DROP TABLE sustenance;
+DROP TABLE sweet_nothings;
+DROP TABLE meal;
+DROP TABLE brunches;
+DROP TYPE dessert_t FORCE
+/
+
+DROP TYPE cake_t FORCE
+/
+
+DROP TYPE food_t FORCE
+/
+
+CREATE TYPE food_t AS OBJECT (
+   name VARCHAR2(100),
+   food_group  VARCHAR2 (100),
+   grown_in    VARCHAR2 (100)
+   )
+   NOT FINAL
+   ;
+/
+
+CREATE TYPE dessert_t UNDER food_t (
+   contains_chocolate    CHAR(1),
+   year_created          NUMBER(4)
+   )
+   NOT FINAL
+   ;
+/
+
+CREATE TYPE cake_t UNDER dessert_t (
+   diameter      NUMBER,
+   inscription   VARCHAR2(200)
+   )
+   ;
+/ 
+ 
+CREATE TABLE sustenance OF food_t;
+
+/* 
+   Insert three rows into the sustenance table. In the third
+   statement, I take advantage of substitutability to insert
+   an object of type DESSERT into a table consisting of objects
+   of type FOOD.
+*/
+DECLARE
+   my_favorite_vegetables food_t :=
+      food_t ('Brussel Sprouts', 'VEGETABLE', 'farm' );
+BEGIN
+   INSERT INTO sustenance
+        VALUES (my_favorite_vegetables);
+
+   INSERT INTO sustenance
+        VALUES (dessert_t (
+           'Jello', 'PROTEIN', 'bowl', 'N', 1887 ) );
+
+   INSERT INTO sustenance
+        VALUES (cake_t (
+            'Marzepan Delight', 'CARBOHYDRATE', 'bakery',
+            'N', 1634, 8, 'Happy Birthday!' ) );
+END;
+/
+
+CREATE TABLE sweet_nothings OF dessert_t;
+
+/* These inserts will work; cakes are kinds of dessert. */
+BEGIN
+   INSERT INTO sweet_nothings
+        VALUES (dessert_t (
+            'Jello', 'PROTEIN', 'bowl', 'N', 1887));
+
+   INSERT INTO sweet_nothings
+        VALUES (cake_t (
+            'Marzepan Delight', 'CARBOHYDRATE', 'bakery',
+            'N', 1634, 8, 'Happy Birthday!' ) );
+END;
+/
+
+/* These inserts will not work; 
+   a food is not necessarily a type of dessert. */
+BEGIN
+   INSERT INTO sweet_nothings
+        VALUES (dessert_t (
+           'Jello','PROTEIN','bowl','N', 1887));
+
+   INSERT INTO sweet_nothings
+        VALUES (food_t ('Brussel Sprouts', 'VEGETABLE', 'farm' ) );
+END;
+/
+
+DECLARE
+-- I declare a food, but initialize it with
+-- a dessert, a more specific type of broad.
+   mmm_good food_t :=
+      dessert_t ('Super Brownie', 'CARBOHYDRATE', 
+         'my oven', 'Y', 1994);
+BEGIN
+   DBMS_OUTPUT.PUT_LINE (mmm_good.name);
+END;
+/
+
+DECLARE
+-- Again, I substitute, but this time
+-- I also try to access my cake attribute.
+   mmm_good food_t :=
+      dessert_t ('Super Brownie', 'CARBOHYDRATE', 
+         'my oven', 'Y', 1994);
+BEGIN
+   DBMS_OUTPUT.PUT_LINE (mmm_good.contains_chocolate);
+END;
+/
+
+DECLARE  
+-- Substitutability within a collection.
+   TYPE foodstuffs_nt IS TABLE OF food_t;
+
+   fridge_contents   foodstuffs_nt
+   := foodstuffs_nt (food_t ('Eggs benedict', 'PROTEIN', 'Farm'),
+       dessert_t ('Strawberries and cream', 'FRUIT', 'Backyard', 'N', 2001),
+       cake_t (
+          'Chocolate Supreme',
+          'CARBOHYDATE',
+          'Kitchen',
+          'Y',
+          2001,
+          8,
+          'Happy Birthday, Veva'
+       )
+      );
+BEGIN
+   FOR indx IN fridge_contents.FIRST .. fridge_contents.LAST
+   LOOP
+      DBMS_OUTPUT.put_line (fridge_contents (indx).NAME);
+   END LOOP;
+END;
+/
+

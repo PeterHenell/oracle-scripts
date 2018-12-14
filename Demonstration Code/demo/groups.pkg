@@ -1,0 +1,270 @@
+CREATE OR REPLACE PACKAGE groups
+IS
+-----------------------------------------------------------------------------
+--AUTHOR : Anunaya Shrivastava
+--DATE :18-APR-2000
+--USAGE:
+--PURPOSE: 
+--DEPENDENCIES : DBMS_SQL package
+--
+--Acknowledgement : Suganthi Natrajan
+--
+-- GENERAL NOTES : This package processes the records from a table.  
+-- 1. Groups the records
+-- 2. Applies the group sum function 
+-- 3. Returns the data in a pl/sql table   
+-----------------------------------------------------------------------------------------------
+
+-- record to define the structure of the table.
+   TYPE grouper IS RECORD(
+      col1                          VARCHAR2 (32000),
+      col2                          VARCHAR2 (32000));
+
+-- table of records to hold the values from the dynamic cursor
+   TYPE grouper_tab IS TABLE OF grouper
+      INDEX BY BINARY_INTEGER;
+
+---Procedure performing group action
+   PROCEDURE sums (
+      table_name IN VARCHAR2,
+      group_column IN VARCHAR2,
+      grouping_columns IN VARCHAR2,
+      p_delimiter IN VARCHAR2 DEFAULT NULL
+   );
+
+   FUNCTION sums (
+      table_name IN VARCHAR2,
+      group_column IN VARCHAR2,
+      grouping_columns IN VARCHAR2,
+      p_delimiter IN VARCHAR2 DEFAULT NULL,
+      disp_sums IN BOOLEAN := FALSE
+   ) RETURN grouper_tab;
+   
+END groups;
+/
+
+
+
+CREATE OR REPLACE PACKAGE BODY groups
+IS
+
+   g_datatype VARCHAR2 (200);
+   
+---Private function to build the query string based on parameters.
+   FUNCTION query_build (
+      table_name IN VARCHAR2,
+      group_column IN VARCHAR2,
+      grouping_columns IN VARCHAR2
+   )
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      RETURN 'SELECT ' || group_column || ',' ||
+                REPLACE (grouping_columns, ',', '||') ||
+                ' From ' ||
+                table_name ||
+                ' Order by ' ||
+                grouping_columns;
+   END query_build;
+
+---Private function to return a dynamic PL/SQL table after accepting query string as an input
+--- This function uses DBMS_SQL to excute the cursor that is formed at runtime.
+
+   FUNCTION load_temp_tab (query_string IN VARCHAR2)
+      RETURN grouper_tab
+   IS
+      c INTEGER;
+      grouping_columns VARCHAR2 (32000);
+      col_to_group VARCHAR2 (32000);
+      exec_cur INTEGER;
+      v_query_string VARCHAR2 (32000);
+      group_tab groups.grouper_tab;
+      next_row NUMBER;
+   BEGIN
+      c := DBMS_SQL.open_cursor;
+      DBMS_SQL.parse (c, query_string, DBMS_SQL.v7);
+      DBMS_SQL.define_column (c, 1, col_to_group, 2000);
+      DBMS_SQL.define_column (c, 2, grouping_columns, 2000);
+      exec_cur := DBMS_SQL.execute (c);
+
+      LOOP
+         IF DBMS_SQL.fetch_rows (c) = 0
+         THEN
+            EXIT;
+         ELSE
+            next_row := NVL (next_row, 0) + 1;
+            DBMS_SQL.column_value (
+               c,
+               1,
+               group_tab (next_row).col1
+            );
+            DBMS_SQL.column_value (
+               c,
+               2,
+               group_tab (next_row).col2
+            );
+         END IF;
+      END LOOP;
+
+      DBMS_SQL.close_cursor (c);
+      RETURN group_tab;
+   END load_temp_tab;
+
+--This private procedure processes the pl/sql table and makes groups and performs
+-- group actions
+
+   PROCEDURE process_temp_tab (
+      temp_tab grouper_tab,
+      l_delimiter IN VARCHAR2 DEFAULT NULL,
+      disp_sums IN BOOLEAN := FALSE
+   )
+   IS
+      v_current_rec VARCHAR2 (32000);
+      v_prev_rec VARCHAR2 (32000);
+      next_row NUMBER := 0;
+      v_total NUMBER := 0;
+      v_totaled_group VARCHAR2 (32000);
+      tot_tab grouper_tab;
+      v_concat_total VARCHAR2 (32000);
+   BEGIN
+      FOR i IN temp_tab.FIRST .. temp_tab.LAST
+      LOOP
+         v_current_rec := temp_tab (i).col2;
+
+         IF    (v_prev_rec IS NULL)
+            OR (v_prev_rec = v_current_rec)
+         THEN
+            IF g_datatype = 'NUMBER'
+            THEN
+               v_total := v_total + temp_tab (i).col1;
+            ELSE
+               v_concat_total :=
+                 v_concat_total || l_delimiter ||
+                    temp_tab (i).col1;
+            END IF;
+
+            v_totaled_group := v_current_rec;
+         ELSE
+            next_row := NVL (tot_tab.LAST, 0) + 1;
+
+            IF g_datatype = 'NUMBER'
+            THEN
+               tot_tab (next_row).col1 := v_total;
+               tot_tab (next_row).col2 := v_totaled_group;
+            ELSE
+               tot_tab (next_row).col1 := v_concat_total;
+               tot_tab (next_row).col2 := v_totaled_group;
+            END IF;
+
+            IF g_datatype = 'NUMBER'
+            THEN
+               v_total := 0;
+               v_total := v_total + temp_tab (i).col1;
+            ELSE
+               v_concat_total := NULL;
+               v_concat_total :=
+                 v_concat_total || l_delimiter ||
+                    temp_tab (i).col1;
+            END IF;
+
+            v_totaled_group := v_current_rec;
+         END IF;
+
+         v_prev_rec := v_current_rec;
+      END LOOP;
+
+      next_row := NVL (tot_tab.LAST, 0) + 1;
+
+      IF g_datatype = 'NUMBER'
+      THEN
+         tot_tab (next_row).col1 := v_total;
+         tot_tab (next_row).col2 := v_totaled_group;
+      ELSE
+         tot_tab (next_row).col1 := v_concat_total;
+         tot_tab (next_row).col2 := v_totaled_group;
+      END IF;
+
+      If disp_sums
+      THEN
+         FOR i IN tot_tab.FIRST .. tot_tab.LAST
+         LOOP
+            DBMS_OUTPUT.put_line (
+               tot_tab (i).col2 || '-----' || tot_tab (i).col1
+            );
+         END LOOP;
+      END IF;
+   END process_temp_tab;
+
+---Public function to validate the table and find the datatype 
+---Also display by various calls to the private functions
+---the grouped output with the group actions of Summation performed.
+
+   PROCEDURE sums (
+      table_name IN VARCHAR2,
+      group_column IN VARCHAR2,
+      grouping_columns IN VARCHAR2,
+      p_delimiter VARCHAR2 DEFAULT NULL
+   )
+   IS
+      v_tab grouper_tab;
+   BEGIN
+      v_tab := 
+         sums (table_name, group_column, grouping_columns, p_delimiter, TRUE);
+         
+      v_tab.DELETE;
+   END sums;
+   
+   FUNCTION sums (
+      table_name IN VARCHAR2,
+      group_column IN VARCHAR2,
+      grouping_columns IN VARCHAR2,
+      p_delimiter IN VARCHAR2 DEFAULT NULL,
+      disp_sums IN BOOLEAN := FALSE
+   ) RETURN grouper_tab
+   IS
+      v_query_string VARCHAR2 (32000);
+      v_tab grouper_tab;
+      v_table_name VARCHAR2 (60);
+      v_column_name VARCHAR2 (60);
+   BEGIN
+      v_table_name := UPPER (table_name);
+      v_column_name := UPPER (group_column);
+
+      BEGIN
+         SELECT data_type
+           INTO g_datatype
+           FROM all_tab_columns
+          WHERE table_name = v_table_name
+            AND column_name = v_column_name;
+      EXCEPTION
+         WHEN NO_DATA_FOUND
+         THEN
+            raise_application_error (
+               -25000,
+               'Did not find anything'
+            );
+         WHEN TOO_MANY_ROWS
+         THEN
+            raise_application_error (-25001, 'Too many rows');
+         WHEN OTHERS
+         THEN
+            raise_application_error (-25002, 'Others Errors');
+      END;
+
+-------Process the grouping logic------------------------
+      v_query_string :=
+        query_build (
+           table_name,
+           group_column,
+           grouping_columns
+        );
+      v_tab := load_temp_tab (v_query_string);
+      process_temp_tab (v_tab, p_delimiter, disp_sums);
+      
+      RETURN v_tab;
+   END sums;   
+   
+END groups;
+/
+
+   

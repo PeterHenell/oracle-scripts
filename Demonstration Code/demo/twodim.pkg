@@ -1,0 +1,73 @@
+CREATE OR REPLACE PACKAGE twodim
+IS
+   TYPE dim1_aat IS TABLE OF VARCHAR2 ( 32767 )
+      INDEX BY PLS_INTEGER;
+
+   TYPE dim2_aat IS TABLE OF dim1_aat
+      INDEX BY PLS_INTEGER;
+
+   PROCEDURE setcell (
+      array_in   IN OUT   dim2_aat
+    , dim1_in             PLS_INTEGER
+    , dim2_in             PLS_INTEGER
+    , value_in   IN       VARCHAR2
+   );
+
+   FUNCTION getcell (
+      array_in   IN   dim2_aat
+    , dim1_in         PLS_INTEGER
+    , dim2_in         PLS_INTEGER
+   )
+      RETURN VARCHAR2;
+
+   FUNCTION EXISTS (
+      array_in   IN   dim2_aat
+    , dim1_in         PLS_INTEGER
+    , dim2_in         PLS_INTEGER
+   )
+      RETURN BOOLEAN;
+END twodim;
+/
+
+CREATE OR REPLACE PACKAGE BODY twodim
+IS
+   PROCEDURE setcell (
+      array_in   IN OUT   dim2_aat
+    , dim1_in             PLS_INTEGER
+    , dim2_in             PLS_INTEGER
+    , value_in   IN       VARCHAR2
+   )
+   IS
+   BEGIN
+      array_in ( dim2_in ) ( dim1_in ) := value_in;
+   END;
+
+   FUNCTION getcell (
+      array_in   IN   dim2_aat
+    , dim1_in         PLS_INTEGER
+    , dim2_in         PLS_INTEGER
+   )
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      RETURN array_in ( dim2_in ) ( dim1_in );
+   END;
+
+   FUNCTION EXISTS (
+      array_in   IN   dim2_aat
+    , dim1_in         PLS_INTEGER
+    , dim2_in         PLS_INTEGER
+   )
+      RETURN BOOLEAN
+   IS
+      l_value VARCHAR2 ( 32767 );
+   BEGIN
+      l_value := array_in ( dim2_in ) ( dim1_in );
+      RETURN TRUE;
+   EXCEPTION
+      WHEN NO_DATA_FOUND OR VALUE_ERROR
+      THEN
+         RETURN FALSE;
+   END;
+END twodim;
+/

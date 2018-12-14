@@ -1,0 +1,196 @@
+CREATE OR REPLACE PACKAGE emplu1
+IS
+   FUNCTION onerow ( employee_id_in IN employees.employee_id%TYPE )
+      RETURN employees%ROWTYPE;
+END;
+/
+
+CREATE OR REPLACE PACKAGE emplu2
+IS
+   FUNCTION onerow ( employee_id_in IN employees.employee_id%TYPE )
+      RETURN employees%ROWTYPE;
+
+   FUNCTION onerow_incremental ( employee_id_in IN employees.employee_id%TYPE )
+      RETURN employees%ROWTYPE;
+
+   PROCEDURE clear_cache;
+
+   PROCEDURE load_cache;
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY emplu1
+IS
+   FUNCTION onerow ( employee_id_in IN employees.employee_id%TYPE )
+      RETURN employees%ROWTYPE
+   IS
+      onerow_rec employees%ROWTYPE;
+   BEGIN
+      SELECT *
+        INTO onerow_rec
+        FROM employees
+       WHERE employee_id = employee_id_in;
+
+      RETURN onerow_rec;
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         RETURN NULL;
+      WHEN TOO_MANY_ROWS
+      THEN
+         --log_error;
+         RAISE;
+      WHEN OTHERS
+      THEN
+         --log_error;
+         RAISE;
+   END;
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY emplu2
+IS
+   TYPE employee_tt IS TABLE OF employees%ROWTYPE
+      INDEX BY PLS_INTEGER;
+
+   employee_cache employee_tt;
+
+   PROCEDURE clear_cache
+   IS
+   BEGIN
+      employee_cache.DELETE;
+   END;
+
+   PROCEDURE load_cache
+   IS
+   BEGIN
+      FOR rec IN ( SELECT *
+                    FROM employees )
+      LOOP
+         IF employee_cache.EXISTS ( rec.employee_id )
+         THEN
+            RAISE TOO_MANY_ROWS;
+         ELSE
+            employee_cache ( rec.employee_id ) := rec;
+         END IF;
+      END LOOP;
+   END load_cache;
+
+   -- Assumes entire table is already loaded into the collection.
+   FUNCTION onerow ( employee_id_in IN employees.employee_id%TYPE )
+      RETURN employees%ROWTYPE
+   IS
+   BEGIN
+      RETURN employee_cache ( employee_id_in );
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         RETURN emplu1.onerow ( employee_id_in );
+   END onerow;
+
+   -- Loads the cache as each row is queried/needed.
+   -- Minimizes need to query row a second time in session.
+   FUNCTION onerow_incremental ( employee_id_in IN employees.employee_id%TYPE )
+      RETURN employees%ROWTYPE
+   IS
+      CURSOR comp_cur
+      IS
+         SELECT *
+           FROM employees
+          WHERE employee_id = employee_id_in;
+
+      retval employees%ROWTYPE;
+   BEGIN
+      IF employee_cache.EXISTS ( employee_id_in )
+      THEN
+         retval := employee_cache ( employee_id_in );
+      ELSE
+         OPEN comp_cur;
+
+         FETCH comp_cur
+          INTO retval;
+
+         CLOSE comp_cur;
+
+         IF retval.employee_id IS NOT NULL
+         THEN
+            employee_cache ( employee_id_in ) := retval;
+         END IF;
+      END IF;
+
+      RETURN retval;
+   END onerow_incremental;
+BEGIN
+   load_cache;
+END emplu2;
+/
+
+CREATE OR REPLACE PACKAGE emplu3
+IS
+   FUNCTION onerow ( employee_id_in IN employees.employee_id%TYPE )
+      RETURN employees%ROWTYPE;
+
+   FUNCTION onerow ( last_name_id_in IN employees.last_name%TYPE )
+      RETURN employees%ROWTYPE;
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY emplu3
+IS
+   TYPE employee_tt IS TABLE OF employees%ROWTYPE
+      INDEX BY PLS_INTEGER;
+
+   TYPE employees_by_name_tt IS TABLE OF employees%ROWTYPE
+      INDEX BY employees.last_name%TYPE;
+
+   temp_employee_cache employee_tt;
+   employee_cache employee_tt;
+   employee_by_names_cache employees_by_name_tt;
+
+   -- Assumes entire table is already loaded into the collection.
+   FUNCTION onerow ( employee_id_in IN employees.employee_id%TYPE )
+      RETURN employees%ROWTYPE
+   IS
+   BEGIN
+      RETURN employee_cache ( employee_id_in );
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         RETURN emplu1.onerow ( employee_id_in );
+   END onerow;
+
+   FUNCTION onerow ( last_name_id_in IN employees.last_name%TYPE )
+      RETURN employees%ROWTYPE
+   IS
+   BEGIN
+      RETURN employee_by_names_cache ( last_name_id_in );
+   END onerow;
+BEGIN
+   /* In two steps:
+      1. Use BULK COLLECT to retrieve data rapidly.
+     2. Move from sequential to primary key-indexed collection.*/
+   DECLARE
+      l_row PLS_INTEGER;
+   BEGIN
+      SELECT e1.*
+      BULK COLLECT INTO temp_employee_cache
+        FROM employees e1, employees;
+
+      DBMS_OUTPUT.put_line (    'Loaded into temporary cache = '
+                             || temp_employee_cache.COUNT
+                           );
+      l_row := temp_employee_cache.FIRST;
+
+      WHILE ( l_row IS NOT NULL )
+      LOOP
+         employee_cache ( temp_employee_cache ( l_row ).employee_id ) :=
+                                                  temp_employee_cache ( l_row );
+         employee_by_names_cache ( temp_employee_cache ( l_row ).last_name ) :=
+                                                  temp_employee_cache ( l_row );
+         l_row := temp_employee_cache.NEXT ( l_row );
+      END LOOP;
+
+      temp_employee_cache.DELETE;
+   END;
+END emplu3;
+/

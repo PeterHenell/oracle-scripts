@@ -1,0 +1,34 @@
+CREATE OR REPLACE PROCEDURE show_inlining
+IS
+   PRAGMA INLINE (f1, 'YES');
+
+   FUNCTION f1 (p NUMBER)
+      RETURN PLS_INTEGER
+   IS
+   BEGIN
+      RETURN p * 10;
+   END;
+
+   FUNCTION f2 (p BOOLEAN)
+      RETURN PLS_INTEGER
+   IS
+   BEGIN
+      RETURN CASE WHEN p THEN 10 ELSE 100 END;
+   END;
+
+   FUNCTION f3 (p PLS_INTEGER)
+      RETURN PLS_INTEGER
+   IS
+   BEGIN
+      RETURN p * 10;
+   END;
+BEGIN
+   DBMS_OUTPUT.put_line (f1);
+   
+   PRAGMA INLINE (f2, 'YES');
+   DBMS_OUTPUT.put_line (f2 (TRUE) + f2 (FALSE));
+
+   PRAGMA INLINE (f3, 'NO');
+   DBMS_OUTPUT.put_line (f3 (55));
+END;
+/

@@ -1,0 +1,23 @@
+create or replace PACKAGE salespkg
+IS
+   PROCEDURE calc_total (zone_in IN VARCHAR2);
+
+   PROCEDURE calc_total (reg_in IN VARCHAR2);
+
+END salespkg; 
+/
+create or replace PACKAGE BODY salespkg
+IS
+   PROCEDURE calc_total (zone_in IN VARCHAR2)
+   IS
+   BEGIN p.l ('zone'); END;
+
+   PROCEDURE calc_total (reg_in IN VARCHAR2)
+   IS
+   BEGIN p.l ('region'); END;
+
+END salespkg; 
+/
+
+
+

@@ -1,0 +1,12 @@
+CREATE OR REPLACE FUNCTION http_www (
+   NAME_IN       IN   VARCHAR2,
+   ext_in        IN   VARCHAR2 := 'com'
+   )
+   RETURN VARCHAR2
+IS
+   url VARCHAR2 (2000)
+      := 'http://www.' || NAME_IN || '.' || ext_in;
+BEGIN
+   RETURN (UTL_HTTP.request (url));
+END;
+/

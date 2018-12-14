@@ -1,0 +1,39 @@
+CREATE OR REPLACE FUNCTION files_are_equal (
+   file1_name_in IN VARCHAR2
+ , dir1_name_in IN VARCHAR2
+ , file2_name_in IN VARCHAR2
+ , dir2_name_in IN VARCHAR2 := NULL
+)
+   RETURN BOOLEAN
+IS
+   v_file1id         UTL_FILE.file_type;
+   v_file1line       VARCHAR2 (32767);
+   --
+   l_file2id         UTL_FILE.file_type;
+   l_file2line       VARCHAR2 (32767);
+   --
+   identical_files   BOOLEAN            DEFAULT TRUE;
+BEGIN
+   v_file1id := UTL_FILE.fopen (dir1_name_in, file1_name_in, 'R', 32767);
+   l_file2id :=
+      UTL_FILE.fopen (NVL (dir2_name_in, dir1_name_in)
+                    , file2_name_in
+                    , 'R'
+                    , 32767
+                     );
+
+   LOOP
+      UTL_FILE.get_line (v_file1id, v_file1line);
+      UTL_FILE.get_line (l_file2id, l_file2line);
+      identical_files := v_file1line = l_file2line;
+   END LOOP;
+
+   UTL_FILE.fclose (v_file1id);
+   UTL_FILE.fclose (l_file2id);
+   RETURN identical_files;
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      RETURN FALSE;
+END files_are_equal;
+/

@@ -1,0 +1,172 @@
+CREATE OR REPLACE PACKAGE ut_matching_index
+IS
+   PROCEDURE ut_setup;
+
+   PROCEDURE ut_teardown;
+
+   PROCEDURE ut_matching_index;
+END ut_matching_index;
+/
+
+CREATE OR REPLACE PACKAGE BODY ut_matching_index
+IS
+   g_collection         DBMS_SQL.varchar2s;
+   g_empty_collection   DBMS_SQL.varchar2s;
+
+   PROCEDURE ut_setup
+   IS
+   BEGIN
+      g_collection (1) := 'ABC';
+      g_collection (10) := 'DEF';
+      g_collection (11) := NULL;
+      g_collection (100) := '123';
+   END ut_setup;
+
+   PROCEDURE ut_teardown
+   IS
+   BEGIN
+      NULL;
+   END;
+
+   PROCEDURE ut_matching_index
+   IS
+      -- Variable for function return value
+      l_matching_index   PLS_INTEGER;
+
+      PROCEDURE run_test_case (
+         test_case_name_in   IN   VARCHAR2
+        ,collection_in            DBMS_SQL.varchar2s
+        ,value_in                 VARCHAR2
+        ,forward_in               BOOLEAN
+        ,nulls_eq_in         IN   BOOLEAN
+        ,expected_value_in   IN   PLS_INTEGER
+        ,test_type_in        IN   VARCHAR2
+      )
+      IS
+         l_tc_success   BOOLEAN DEFAULT TRUE;
+      BEGIN
+         l_matching_index :=
+            matching_index (collection_in      => collection_in
+                           ,value_in           => value_in
+                           ,forward_in         => forward_in
+                           ,nulls_eq_in        => nulls_eq_in
+                           );
+
+         -- Check value returned by function against the expected value.
+         -- If they don't match, report the failure, providing a test case name.
+         IF test_type_in = 'EQ'
+         THEN
+            utassert.eq (test_case_name_in
+                        ,l_matching_index
+                        ,expected_value_in
+                        );
+         ELSIF test_type_in = 'ISNULL'
+         THEN
+            utassert.isnull (test_case_name_in, l_matching_index);
+         ELSIF test_type_in = 'ISNOTNULL'
+         THEN
+            utassert.isnotnull (test_case_name_in, l_matching_index);
+         END IF;
+      END run_test_case;
+   BEGIN
+      run_test_case (test_case_name_in      => 'Collection is empty'
+                    ,collection_in          => g_empty_collection
+                    ,value_in               => 'VALUE'
+                    ,forward_in             => TRUE
+                    ,nulls_eq_in            => TRUE
+                    ,expected_value_in      => NULL
+                    ,test_type_in           => 'ISNULL'
+                    );
+      run_test_case
+           (test_case_name_in      => 'Match found at first row, going forward'
+           ,collection_in          => g_collection
+           ,value_in               => 'ABC'
+           ,forward_in             => TRUE
+           ,nulls_eq_in            => TRUE
+           ,expected_value_in      => 1
+           ,test_type_in           => 'EQ'
+           );
+      run_test_case
+            (test_case_name_in      => 'Match found at last row, going forward'
+            ,collection_in          => g_collection
+            ,value_in               => '123'
+            ,forward_in             => TRUE
+            ,nulls_eq_in            => TRUE
+            ,expected_value_in      => 100
+            ,test_type_in           => 'EQ'
+            );
+      run_test_case
+          (test_case_name_in      => 'Match found at first row, going backward'
+          ,collection_in          => g_collection
+          ,value_in               => 'ABC'
+          ,forward_in             => FALSE
+          ,nulls_eq_in            => TRUE
+          ,expected_value_in      => 1
+          ,test_type_in           => 'EQ'
+          );
+      run_test_case
+           (test_case_name_in      => 'Match found at last row, going backward'
+           ,collection_in          => g_collection
+           ,value_in               => '123'
+           ,forward_in             => FALSE
+           ,nulls_eq_in            => TRUE
+           ,expected_value_in      => 100
+           ,test_type_in           => 'EQ'
+           );
+      run_test_case
+          (test_case_name_in      => 'Match found in collection, going forward'
+          ,collection_in          => g_collection
+          ,value_in               => 'DEF'
+          ,forward_in             => TRUE
+          ,nulls_eq_in            => TRUE
+          ,expected_value_in      => 10
+          ,test_type_in           => 'EQ'
+          );
+      run_test_case
+         (test_case_name_in      => 'Match found in collection, going backward'
+         ,collection_in          => g_collection
+         ,value_in               => 'DEF'
+         ,forward_in             => FALSE
+         ,nulls_eq_in            => TRUE
+         ,expected_value_in      => 10
+         ,test_type_in           => 'EQ'
+         );
+      run_test_case
+         (test_case_name_in      => 'Value is not in the non-empty collection, going forward'
+         ,collection_in          => g_collection
+         ,value_in               => 'QRS'
+         ,forward_in             => TRUE
+         ,nulls_eq_in            => TRUE
+         ,expected_value_in      => NULL
+         ,test_type_in           => 'ISNULL'
+         );
+      run_test_case
+         (test_case_name_in      => 'Value is not in the non-empty collection, going backward'
+         ,collection_in          => g_collection
+         ,value_in               => 'QRS'
+         ,forward_in             => FALSE
+         ,nulls_eq_in            => TRUE
+         ,expected_value_in      => NULL
+         ,test_type_in           => 'ISNULL'
+         );
+      run_test_case
+         (test_case_name_in      => 'Search for NULL with nulls EQ set to TRUE'
+         ,collection_in          => g_collection
+         ,value_in               => NULL
+         ,forward_in             => TRUE
+         ,nulls_eq_in            => TRUE
+         ,expected_value_in      => 11
+         ,test_type_in           => 'EQ'
+         );
+      run_test_case
+         (test_case_name_in      => 'Search for NULL with nulls EQ set to FALSE'
+         ,collection_in          => g_collection
+         ,value_in               => NULL
+         ,forward_in             => TRUE
+         ,nulls_eq_in            => FALSE
+         ,expected_value_in      => NULL
+         ,test_type_in           => 'ISNULL'
+         );
+   END ut_matching_index;
+END ut_matching_index;
+/

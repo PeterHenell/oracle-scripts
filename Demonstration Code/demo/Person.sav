@@ -1,0 +1,100 @@
+import java.util.Date;
+
+class Person {
+   String name;
+   long weight;
+   Date dob;
+   
+   void showPunishment () {};
+}
+
+class Citizen extends Person {
+   String nation;
+   String politicalPreference;
+   
+   public Citizen (String Pname, String Pnation, String Ppref) {
+      name = Pname;
+      nation = Pnation;
+      politicalPreference = Ppref; 
+   }
+    
+   public String toString () {
+      return name + " is a citizen of " + nation +
+         " with a political preference of " + politicalPreference;
+   }
+   
+   void showPunishment (){
+      System.out.println (this);
+      System.out.println ("Punishment? Go to jail, do not pass Go.");
+   }
+}
+
+class Corporation extends Person {
+   long numEmployees;
+   long CEOCompensation;
+
+   public Corporation (String Pname, long PempCount, long PceoComp) {
+      name = Pname;
+      numEmployees = PempCount;
+      CEOCompensation = PceoComp;
+   }
+   
+   void maximizeProfits () {
+      // same as numEmployees = numEmployees / 2;
+      numEmployees /= 2;
+      
+      CEOCompensation *= 100;
+   }
+   
+   public String toString () {
+      return name + " is a corporate citizen with " + numEmployees +
+         " employees, paying its CEO " + CEOCompensation;
+   }
+   
+   void showPunishment (){
+      System.out.println ("-------Suppose This 'Person' Committed a Crime.-------");
+      System.out.println (this);
+      System.out.println ("Punishment? Increase political contribution.");
+   }
+}
+
+class WarCriminal extends Citizen {
+   long numberMurdered;
+   String victimNation;
+
+   public WarCriminal (
+      String Pname, String Pnation, String PvictimNation, long Pvictims) {
+      super (Pname, Pnation, "Above the Law");
+      numberMurdered = Pvictims;
+      victimNation = PvictimNation;
+   }
+   
+   void showPunishment (){
+      System.out.println (this);
+      System.out.println (name + " killed " + numberMurdered + 
+         "  in " + victimNation);
+      System.out.println ("Punishment? Win Nobel Peace Prize.");
+   }
+}
+
+class Progress {
+   public static void main (String[] args) {
+      Citizen OnDeathRow = 
+         new Citizen ("Mumia Abul Jamal", "USA", "Radical");
+         
+      Corporation TheGlobalMonster = 
+         new Corporation ("NorthrupFordMattel", 5000000, 50000000);
+         
+      WarCriminal WiseMan = 
+         new WarCriminal ("Henry Kissinger", "USA", "Vietname & Cambodia", 1000000);
+      
+      TheGlobalMonster.maximizeProfits();
+      
+      Person[] bigHappyFamily = {OnDeathRow, TheGlobalMonster, WiseMan};   
+      
+      for (int persIndx = 0; persIndx < bigHappyFamily.length; persIndx++)
+         bigHappyFamily[persIndx].showPunishment();
+   }
+}   
+
+

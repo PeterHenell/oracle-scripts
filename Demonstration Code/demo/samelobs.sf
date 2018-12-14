@@ -1,0 +1,41 @@
+/* Formatted on 2001/11/21 14:29 (Formatter Plus v4.5.2) */
+CREATE OR REPLACE FUNCTION samelobs (
+   lob1           IN   CLOB,
+   lob2           IN   CLOB,
+   chunk_length   IN   PLS_INTEGER := 2000
+)
+   RETURN BOOLEAN
+IS
+   chunk1      VARCHAR2 (32767);
+   chunk2      VARCHAR2 (32767);
+   start_loc   PLS_INTEGER      := 1;
+   retval      BOOLEAN;
+BEGIN
+   LOOP
+      chunk1 :=
+          DBMS_LOB.SUBSTR (lob1, amount => chunk_length, offset => start_loc);
+      chunk2 :=
+          DBMS_LOB.SUBSTR (lob2, amount => chunk_length, offset => start_loc);
+      retval := chunk1 = chunk2;
+
+      IF NOT retval
+      THEN
+         EXIT;
+      ELSIF  chunk1 IS NULL AND chunk2 IS NULL
+      THEN
+         EXIT;
+      ELSE
+         start_loc :=   start_loc
+                      + chunk_length
+                      - 1;
+      END IF;
+   END LOOP;
+
+   RETURN retval;
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      RETURN FALSE;
+END;
+/
+

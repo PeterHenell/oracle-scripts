@@ -1,0 +1,14 @@
+PL/Generator Session
+09/2000
+
+TIME_COUNT      UNIT           TEXT                                                                               
+--------------- -------------- -----------------------------------------------------                       
+   170630-11238 GENX.PLGDOIR   2704-  FETCH alias_cur INTO alias_rec;                                      
+    93940-6137  GENX.PLGDOIR   3637-  SELECT objid, objtype, info, infotype, attrname                       
+                                         attrtype                                                                        
+                                                                                                                  
+    73834-22476 GENX.PLGDOIR   2706-       CLOSE alias_cur;                                                     
+    54710-11239 GENX.PLGDOIR   79-    SELECT objid, owner, objname, info, doc                                   
+    23096-27991 GENX.PLGGEN    1098-       cur_inout := DBMS_SQL.OPEN_CURSOR;                                   
+    15803-49153 GENX.PLGSTR    50-          RETURN (SUBSTR (string_in, v_start, v_numchar                       
+

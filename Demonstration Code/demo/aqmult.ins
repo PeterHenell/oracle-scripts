@@ -1,0 +1,44 @@
+/* Define the major object type. */
+DROP TYPE student_conc_t FORCE;
+
+CREATE TYPE student_conc_t IS OBJECT  
+   (student VARCHAR2(30),
+    major VARCHAR2(100));
+/
+/* Define the skeleton of a database table to hold the student data. */
+DROP TABLE student_intention;
+
+CREATE TABLE student_intention
+   (name VARCHAR2(30),
+    ssn CHAR(11),
+    conc_study VARCHAR2(100));
+
+/* Create a queue that supports multiple consumers and then
+   initialize the subscriber list and the database table. */
+BEGIN
+   aq.stop_and_drop ('conc_qtable');
+
+   /* Create the queue table and queue for multiple consumers. */ 
+   DBMS_AQADM.CREATE_QUEUE_TABLE
+      (queue_table => 'conc_qtable',
+       queue_payload_type => 'student_conc_t',
+       multiple_consumers => TRUE); 
+
+   DBMS_AQADM.CREATE_QUEUE ('conc_queue', 'conc_qtable');
+
+   DBMS_AQADM.START_QUEUE ('conc_queue'); 
+
+   DELETE FROM student_intention;
+
+   INSERT INTO student_intention VALUES 
+      ('Steven Feuerstein', '123-45-6789', 'Mathematics');
+   INSERT INTO student_intention VALUES 
+      ('Eli Feuerstein', '123-45-6780', 'Philosophy');
+   INSERT INTO student_intention VALUES 
+      ('Veva Feuerstein', '123-45-6781', 'Pottery');
+   INSERT INTO student_intention VALUES 
+      ('Chris Feuerstein', '123-45-6782', 'Art');
+
+   COMMIT;
+END;
+/

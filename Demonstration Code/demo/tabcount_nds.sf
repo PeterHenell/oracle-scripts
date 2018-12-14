@@ -1,0 +1,25 @@
+CREATE OR REPLACE FUNCTION table_count (
+   owner_in        IN all_tables.owner%TYPE
+ , table_name_in   IN all_tables.table_name%TYPE)
+   RETURN PLS_INTEGER
+   AUTHID CURRENT_USER
+IS
+   l_return       PLS_INTEGER;
+BEGIN
+   EXECUTE IMMEDIATE
+      'SELECT COUNT(*) FROM ' || owner_in || '.' || table_name_in
+      INTO l_return;
+
+   RETURN l_return;
+END;
+/
+
+/* Some examples */
+
+BEGIN
+   DBMS_OUTPUT.put_line (table_count (USER, 'EMPLOYEES'));
+   DBMS_OUTPUT.put_line (
+      table_count (USER, 'EMPLOYEES', 'department_id = 50'));
+   DBMS_OUTPUT.put_line (table_count (USER, 'DEPARTMENTS'));
+END;
+/

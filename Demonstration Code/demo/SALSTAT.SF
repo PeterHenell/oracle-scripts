@@ -1,0 +1,37 @@
+create or replace FUNCTION sal_stat 
+  (dept_id_in IN dept.deptno%TYPE, stat_type_in IN VARCHAR2)
+  RETURN NUMBER
+IS
+  stat_type_int VARCHAR2(20) := UPPER (stat_type_in);
+
+  CURSOR stat_cur IS 
+    SELECT MAX (sal) max_sal,
+         MIN (sal) min_sal,
+         SUM (sal) sum_sal,
+         COUNT (DISTINCT sal) count_sal,
+         AVG (sal) avg_sal
+      FROM dept D, emp E
+     WHERE D.deptno = E.deptno (+)
+       AND D.deptno = dept_id_in;
+  stat_rec stat_cur%ROWTYPE;
+
+  return_value NUMBER;
+BEGIN
+  -- Retrieve the statistics for salaries in a department.
+  OPEN stat_cur; FETCH stat_cur INTO stat_rec;
+
+  -- Set the return value according to the type of statistic requested.
+  IF    stat_cur%NOTFOUND       THEN return_value := NULL;
+  ELSIF stat_type_int = 'MAX'   THEN return_value := stat_rec.max_sal;
+  ELSIF stat_type_int = 'MIN'   THEN return_value := stat_rec.min_sal;
+  ELSIF stat_type_int = 'SUM'   THEN return_value := stat_rec.sum_sal;
+  ELSIF stat_type_int = 'COUNT' THEN return_value := stat_rec.count_sal;
+  ELSIF stat_type_int = 'AVG'   THEN return_value := stat_rec.avg_sal;
+  END IF;
+
+  -- Clean up and return the value.
+  CLOSE stat_cur;
+  RETURN return_value;
+
+END sal_stat;
+/

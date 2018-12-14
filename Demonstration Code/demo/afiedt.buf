@@ -1,0 +1,11 @@
+WITH 
+   FUNCTION active
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      RETURN plch_constants.active;
+   END;
+SELECT account_name
+  FROM plch_accounts
+ WHERE account_status = active
+/

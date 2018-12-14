@@ -1,0 +1,59 @@
+DROP SEQUENCE dyn_seq
+/
+
+CREATE SEQUENCE dyn_seq
+/
+
+DECLARE
+   l_nextkey   PLS_INTEGER;
+BEGIN
+   SELECT dyn_seq.NEXTVAL INTO l_nextkey FROM sys.DUAL;
+END;
+/
+
+CREATE OR REPLACE FUNCTION NEXT_KEY (sequence_in IN VARCHAR2)
+   RETURN PLS_INTEGER
+   AUTHID CURRENT_USER
+IS
+   retval   PLS_INTEGER;
+BEGIN
+   EXECUTE IMMEDIATE 'SELECT ' || sequence_in || '.NEXTVAL FROM SYS.dual'
+      INTO retval;
+
+   RETURN retval;
+END NEXT_KEY;
+/
+
+BEGIN
+   DBMS_OUTPUT.put_line (NEXT_KEY ('dyn_seq'));
+   DBMS_OUTPUT.put_line (NEXT_KEY ('dyn_seq'));
+END;
+/
+
+/* And in 11g... */
+
+DECLARE
+   l_nextkey   PLS_INTEGER;
+BEGIN
+   l_nextkey := dyn_seq.NEXTVAL;
+END;
+/
+
+CREATE OR REPLACE FUNCTION NEXT_KEY (sequence_in IN VARCHAR2)
+   RETURN PLS_INTEGER
+   AUTHID CURRENT_USER
+IS
+   retval   PLS_INTEGER;
+BEGIN
+   EXECUTE IMMEDIATE 'BEGIN :newkey := ' || sequence_in || '.NEXTVAL; END;'
+      USING OUT retval;
+
+   RETURN retval;
+END NEXT_KEY;
+/
+
+BEGIN
+   DBMS_OUTPUT.put_line (NEXT_KEY ('dyn_seq'));
+   DBMS_OUTPUT.put_line (NEXT_KEY ('dyn_seq'));
+END;
+/

@@ -1,0 +1,501 @@
+/* Formatted by PL/Formatter v.1.1.0 on 1998/08/25 22:27  (10:27 PM) */
+DROP PACKAGE pstabpkg;
+
+CREATE OR REPLACE PACKAGE pstabpkg
+AS
+   
+   -- 
+   -- Author:  Jack C. Mackey  
+   -- 
+   --
+   -- Developed under PL/SQL Release 2.3.2.0.0 - Production
+   --
+   -- Description:  Hashed string(key) and row(pointer) indexing 
+   --
+   --
+   -- Algorithm:   1 - calculate hashed value for string
+   --              2 - verify that this is not a duplicate
+   --                  and not a secondary(different string same hashed value)
+   --              3 - if step 2 is true add string value at row = hashed
+   --                  value, set row to this string's row, set secondary
+   --                  index to NULL
+   --              4 - if step 2 is false then follow chain of secondary
+   --                  entries until secondary index is NULL, add new 
+   --                  new secondary index
+   --
+   -- Usage:
+   --       was_added := add_string('abcdefg', 1);
+   --          adds string value 'abcdefg' with row 1
+   --          duplicate strings are ok, but the caller must
+   --          insure that the row values passed are not duplicated
+   --          as well as non-zero
+   --          TRUE returned when duplicate hash value.
+   --          FALSE is returned when unique hash value.
+   --
+   --       all_added := add_strings(p_string_table);
+   --          adds all the strings in p_string_table;
+   --          the number of strings added is returned.
+   --
+   --       the_row := inrow('abcdefg');
+   --          returns the row number of the first occurance of the string
+   --          value 'abcdefg'
+   --
+   --       more_rows := getrow('abcdefg', return_row);
+   --          IF return_row is zero, the row number of the first occurance 
+   --          of the string 'abcdefg' is returned in return_row, if the 
+   --          string is not found zero is returned in return_row
+   --
+   --          When getrow returns TRUE, there are more rows for the
+   --          string value 'abcdefg', by calling getrow again, the
+   --          next row is returned in return_row
+   --          Note: for the next row to be returned the passed return_row
+   --                must be the row that was returned in the previous call 
+   --                to getrow
+   --
+   -- Name           Date       Version Change                       
+   -- -------------- ---------- ------- -----------------------------
+   -- Jack Mackey    11/16/1997 A.0.00  New
+   -- Jack Mackey    12/08/1997 A.0.01  add FIRST,LAST,NEXT to addstrings 
+   -- Jack Mackey    01/02/1997 A.0.02  add comments
+   --
+   -- type definitions 
+   --
+   TYPE string_tabtype IS TABLE OF VARCHAR2(100)
+      INDEX BY BINARY_INTEGER;
+
+   TYPE t_str_rec IS RECORD (
+      str                        VARCHAR2(100),
+      str_row                    BINARY_INTEGER,
+      secndry                    BINARY_INTEGER
+   );
+
+   TYPE t_str_ix IS TABLE OF t_str_rec
+      INDEX BY BINARY_INTEGER;
+
+   
+   -- 
+   -- global variables 
+   --
+   g_version                     VARCHAR2(6) := 'A.0.01';
+   
+   --
+   g_str_ix                      t_str_ix;   -- used to index primary string indices --
+   g_secndry_ix                  t_str_ix;   -- used to index secondary string indices --
+   g_secndry_count               BINARY_INTEGER := 0;   -- number of secondary index entries --
+   g_base                        BINARY_INTEGER := 2;   -- start hashed index at 2 --
+   
+   --g_size            BINARY_INTEGER := 2147483647;  -- max hashed index value --
+   g_size                        BINARY_INTEGER := 4;   -- max hashed index value --
+
+   FUNCTION add_string (p_addstring IN VARCHAR2, p_add_row IN BINARY_INTEGER)
+      RETURN BOOLEAN;
+
+   
+   -- add a string value to the index with row value add_row
+   --
+   -- returns true if duplicates
+   --
+   -- returns false if first occurance of addstring value
+   FUNCTION add_strings (p_addstrings IN string_tabtype)
+      RETURN BINARY_INTEGER;
+
+   
+   -- index all strings contained in string table using the actual string_tabtype
+   -- index as the actual row
+   --
+   -- returns actual number of strings added
+   --
+   -- note: duplicates are ok
+   -- 
+   FUNCTION del_strings
+      RETURN BOOLEAN;
+
+   
+   -- deletes all strings added
+   --
+   -- returns true if deletion was performed
+   FUNCTION getrow (p_str IN VARCHAR2, p_str_row IN OUT BINARY_INTEGER)
+      RETURN BOOLEAN;
+
+   
+   -- getrow will return the next str_row after the passed str_row
+   --
+   -- The returned getrow value will be false, after no additional
+   -- rows are available for the passed str value
+   --
+   -- ie. set str_row to zero and the row for the first 
+   --     occurence of str will be returned as str_row
+   --
+   --     call getrow again with the same p_str value and
+   --     p_str_row = last p_str_row, the next occurance after the
+   --     passed str_row will be returned.
+   --     
+   --  
+   FUNCTION inrow (str IN VARCHAR2)
+      RETURN BINARY_INTEGER;
+
+-- returns the row for the first occurance of str value
+END pstabpkg;
+/
+CREATE OR REPLACE PACKAGE BODY pstabpkg
+AS
+   
+   --
+   --
+   -- 
+   FUNCTION add_string (p_addstring IN VARCHAR2, p_add_row IN BINARY_INTEGER)
+      RETURN BOOLEAN
+   AS
+      l_add_string                  BOOLEAN := FALSE;   -- false means not a secondary --
+      l_new_hash                    BINARY_INTEGER := 0;
+   BEGIN
+      IF p_add_row = 0
+      THEN
+         RETURN FALSE;
+      END IF;
+
+      l_new_hash := DBMS_UTILITY.get_hash_value (p_addstring, g_base, g_size);
+
+      IF g_str_ix.exists (l_new_hash)
+      THEN
+         
+         --
+         -- primary exists, add secondary --
+         --
+         l_add_string := TRUE;
+
+         IF g_str_ix (l_new_hash).secndry IS NULL
+         THEN
+            
+            --
+            -- add first secondary --
+            --
+            g_secndry_count := g_secndry_count + 1;
+            g_str_ix  (l_new_hash).secndry := g_secndry_count;
+            g_secndry_ix  (g_secndry_count).str := p_addstring;
+            g_secndry_ix  (g_secndry_count).str_row := p_add_row;
+            g_secndry_ix  (g_secndry_count).secndry := NULL;
+         ELSE
+            
+            --
+            -- one or more secondaries exist --
+            --
+            -- note: l_new_hash changes its use here, 
+            --       it will now be used as the next secondary index 
+            --
+            l_new_hash := g_str_ix (l_new_hash).secndry;
+
+            LOOP
+               
+               -- 
+               -- check if this is an available next secondary --
+               -- 
+               IF g_secndry_ix (l_new_hash).secndry IS NULL
+               THEN
+                  
+                  --
+                  -- yes, this one is available --
+                  --
+                  EXIT;
+               END IF;
+
+               
+               -- 
+               -- not available, check next one --
+               --
+               l_new_hash := g_secndry_ix (l_new_hash).secndry;
+            END LOOP;
+
+            
+            --
+            -- add new secondary --
+            --
+            g_secndry_count := g_secndry_count + 1;
+            g_secndry_ix  (l_new_hash).secndry := g_secndry_count;
+            g_secndry_ix  (g_secndry_count).str := p_addstring;
+            g_secndry_ix  (g_secndry_count).str_row := p_add_row;
+            g_secndry_ix  (g_secndry_count).secndry := NULL;
+         END IF;
+      ELSE
+         
+         --
+         -- this is the first entry for a string with this hash value --
+         --
+         g_str_ix  (l_new_hash).str := p_addstring;
+         g_str_ix  (l_new_hash).str_row := p_add_row;
+         g_str_ix  (l_new_hash).secndry := NULL;
+      END IF;
+
+      RETURN l_add_string;
+   END add_string;
+
+   FUNCTION add_strings (p_addstrings IN string_tabtype)
+      RETURN BINARY_INTEGER
+   AS
+      
+      --
+      -- set l_end to the last index value --
+      --
+      l_end                         BINARY_INTEGER := p_addstrings.last;
+      
+      --
+      -- set l_count to the first index value --
+      --
+      l_count                       BINARY_INTEGER := p_addstrings.first;
+      
+      --
+      -- return the value of l_actual_count --
+      --
+      l_actual_count                BINARY_INTEGER := 0;
+      
+      --
+      -- l_bool determines if the string was added --
+      --
+      l_bool                        BOOLEAN;
+   BEGIN
+      IF l_count IS NOT NULL
+      THEN
+         LOOP
+            l_bool := add_string (p_addstrings (l_count), l_count);
+
+            IF l_bool = TRUE
+            THEN
+               
+               --
+               -- string was indexed --
+               --
+               l_actual_count := l_actual_count + 1;
+            END IF;
+
+            IF l_count = l_end
+            THEN
+               
+               --
+               -- no more strings to add --
+               --
+               EXIT;
+            END IF;
+
+            
+            --
+            -- get next string index --
+            --
+            l_count := p_addstrings.next (l_count);
+         END LOOP;
+      END IF;
+
+      RETURN l_actual_count;
+   END add_strings;
+
+   FUNCTION del_strings
+      RETURN BOOLEAN
+   AS
+      l_del_strings                 BOOLEAN := TRUE;
+   BEGIN
+      
+      --
+      -- delete all the indexed strings --
+      --
+      g_str_ix.delete;
+      g_secndry_ix.delete;
+      g_secndry_count := 0;
+      RETURN l_del_strings;
+   END del_strings;
+
+   FUNCTION check_secndry (
+      p_secndry IN BINARY_INTEGER,
+      p_str IN VARCHAR2,
+      p_sec_ptr IN OUT BINARY_INTEGER,
+      p_next_sec IN OUT BINARY_INTEGER,
+      p_next_row IN OUT BINARY_INTEGER
+      )
+      RETURN BOOLEAN
+   
+   --
+   -- check_secndry is used internally -- 
+   --
+   AS
+      l_check_secndry               BOOLEAN := FALSE;
+   BEGIN
+      
+      --
+      -- set returned secondary ptr/index to passed ptr/index --
+      --
+      p_sec_ptr := p_secndry;
+
+      LOOP
+         
+         --
+         -- locate next entry or current entry if zero passed as next row --
+         --
+         IF     g_secndry_ix (p_sec_ptr).str = p_str
+            AND p_next_row = 0
+         THEN
+            
+            --
+            -- string is a match and p_next_row value is zero --
+            --
+            l_check_secndry := TRUE;
+            p_next_row := g_secndry_ix (p_sec_ptr).str_row;
+            p_next_sec := g_secndry_ix (p_sec_ptr).secndry;
+            EXIT;
+         END IF;
+
+         IF g_secndry_ix (p_sec_ptr).secndry IS NULL
+         THEN
+            
+            --
+            -- entry was not found and no more secondaries exist --
+            -- return is FALSE 
+            p_next_row := 0;
+            p_next_sec := NULL;
+            EXIT;
+         END IF;
+
+         IF p_next_row = g_secndry_ix (p_sec_ptr).str_row
+         THEN
+            
+            --
+            -- the next string match is row we want --
+            -- 
+            p_sec_ptr := p_sec_ptr;
+            p_next_row := 0;
+         END IF;
+
+         
+         --
+         -- get next secondary --
+         --
+         p_sec_ptr := g_secndry_ix (p_sec_ptr).secndry;
+      END LOOP;
+
+      RETURN l_check_secndry;
+   END check_secndry;
+
+   FUNCTION getrow (p_str IN VARCHAR2, p_str_row IN OUT BINARY_INTEGER)
+      RETURN BOOLEAN
+   AS
+      l_getrow                      BOOLEAN := FALSE;
+      l_next_row                    BINARY_INTEGER := 0;
+      l_new_hash                    BINARY_INTEGER := 0;
+      l_new_secndry                 BINARY_INTEGER := 0;
+      l_secndry                     BINARY_INTEGER := 0;
+      l_sec_ptr                     BINARY_INTEGER := 0;
+   BEGIN
+      
+      -- 
+      -- calculate hash value --
+      --
+      l_new_hash := DBMS_UTILITY.get_hash_value (p_str, g_base, g_size);
+
+      IF g_str_ix.exists (l_new_hash)
+      THEN
+         
+         --
+         -- an entry exists for this hash value --
+         --
+         IF     g_str_ix (l_new_hash).str = p_str
+            AND p_str_row = 0
+         THEN
+            
+            --
+            -- string value correct and first row was requested --
+            --
+            p_str_row := g_str_ix (l_new_hash).str_row;
+
+            IF g_str_ix (l_new_hash).secndry IS NOT NULL
+            THEN
+               
+               --
+               -- check if their is another entry for this string value --
+               -- will return TRUE if there is another entry
+               -- otherwise FALSE is returned
+               --
+               l_getrow :=
+                  check_secndry (g_str_ix (l_new_hash).secndry,
+                  p_str,
+                  l_sec_ptr,
+                  l_new_secndry,
+                  l_next_row
+                  );
+            END IF;
+         ELSE
+            
+            --
+            -- next row requested or secondary entry --
+            --
+            IF g_str_ix (l_new_hash).str_row != p_str_row
+            THEN
+               
+               --
+               -- we want some row other than the first row in the chain --
+               -- so lets start at the passed row value                  --
+               --
+               l_next_row := p_str_row;
+            END IF;
+
+            
+            --  
+            -- get the secondary entry with a matching string value --
+            -- for the next row                                     --
+            --
+            l_getrow :=
+               check_secndry (g_str_ix (l_new_hash).secndry,
+               p_str,
+               l_sec_ptr,
+               l_new_secndry,
+               l_next_row
+               );
+            
+            --
+            -- set the passed row to next row, which is the one returned    --
+            -- also note, if none were found then the next row will be zero --
+            --
+            p_str_row := l_next_row;
+
+            IF l_new_secndry IS NULL
+            THEN
+               
+               --
+               -- no more secondaries exist --
+               --
+               l_getrow := FALSE;
+            ELSE
+               
+               --
+               -- check if there are more secondaries with the same string value --
+               --
+               l_getrow :=
+                  check_secndry (l_sec_ptr,
+                  p_str,
+                  l_sec_ptr,
+                  l_new_secndry,
+                  l_next_row
+                  );
+            END IF;
+         END IF;
+      END IF;
+
+      RETURN l_getrow;
+   END getrow;
+
+   FUNCTION inrow (str IN VARCHAR2)
+      RETURN BINARY_INTEGER
+   AS
+      l_inrow                       BINARY_INTEGER := 0;
+      l_bool                        BOOLEAN;
+   BEGIN
+      
+      --
+      -- call getrow with the passed string value and a row value of zero --
+      -- which will request the first matching string                     --
+      --
+      l_bool := getrow (str, l_inrow);
+      RETURN l_inrow;
+   END inrow;
+END pstabpkg;
+/
+
+
+
+ 

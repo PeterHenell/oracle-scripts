@@ -1,0 +1,22 @@
+<envReport>
+   <reportID>70689</reportID>
+   <source>ThickPlating, Inc.</source>
+   <Violations>
+      <Incident ReportedOn="01/15/2001"
+                ReportedBy="STEVEN.HARRISON">
+          Waste dumped in river</Incident>
+      <Incident ReportedOn="02/07/2001"
+                ReportedBy="SANDRA.HAJIJ">
+          Chimney filters disabled</Incident>
+   </Violations>
+   <NextSteps>
+      <Action actionType="Media">
+       Press release to announce results to public and call
+       for fines and penalties.
+      </Action>
+      <Action actionType="Legal">
+       File suit in state and federal courts.
+      </Action>
+   </NextSteps>
+</envReport>
+

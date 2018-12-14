@@ -1,0 +1,45 @@
+CREATE OR REPLACE FUNCTION allrows_by (
+   append_to_from_in     IN   VARCHAR2 DEFAULT NULL
+ , row_delimiter_in      IN   VARCHAR2 DEFAULT '|'
+ , column_delimiter_in   IN   VARCHAR2 DEFAULT '^'
+)
+   RETURN VARCHAR2
+IS
+   -- Record type and variable to hold data retrieved from table.
+   TYPE employee_rt IS RECORD (
+      employee_id   NUMBER (4)
+    , salary        NUMBER (7, 2)
+   );
+
+   TYPE id_sal_tt IS TABLE OF employee_rt
+      INDEX BY PLS_INTEGER;
+
+   l_employees      id_sal_tt;
+   l_row            PLS_INTEGER;
+   -- Returning a string...
+   l_return_value   VARCHAR2 (32767);
+BEGIN
+   -- Append to FROM clause any text supplied by the user.
+   EXECUTE IMMEDIATE    'SELECT EMPLOYEE_ID, SALARY FROM EMPLOYEE'
+                     || ' '
+                     || append_to_from_in
+   BULK COLLECT INTO l_employees;
+
+   l_row := l_employees.FIRST;
+
+   WHILE (l_row IS NOT NULL)
+   LOOP
+      -- Add to string
+      l_return_value :=
+            l_return_value
+         || row_delimiter_in
+         || l_employees (l_row).employee_id
+         || column_delimiter_in
+         || l_employees (l_row).salary;
+      l_row := l_employees.NEXT (l_row);
+   END LOOP;
+
+   -- Return the entire collection.
+   RETURN LTRIM (l_return_value, row_delimiter_in);
+END allrows_by;
+/

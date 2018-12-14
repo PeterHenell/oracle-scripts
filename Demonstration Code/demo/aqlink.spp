@@ -1,0 +1,175 @@
+/*
+|| This is an INCOMPLETE implementation of a package which
+|| demonstrates the ability of DBMS_AQ to perform workflow
+|| processing. 
+||
+|| Steven Feuerstein
+*/
+
+CREATE OR REPLACE PACKAGE apply_pkg
+IS
+   c_received CONSTANT INTEGER := 0;
+   c_completed CONSTANT INTEGER := 1;
+   c_well_written CONSTANT INTEGER := 2;
+   c_defended CONSTANT INTEGER := 3;
+   c_approved CONSTANT INTEGER := 4;
+   c_rejected CONSTANT INTEGER := 5;
+
+   PROCEDURE start_process (student_in IN VARCHAR2);
+
+   PROCEDURE reserve_application 
+      (student_in IN VARCHAR2, 
+       consumer_in IN VARCHAR2, 
+       app_out OUT application_t);
+
+
+   PROCEDURE promote_application (app_in IN application_t);
+   
+   PROCEDURE reject_application (app_in IN application_t);
+END apply_pkg;
+/ 
+CREATE OR REPLACE PACKAGE BODY apply_pkg
+IS
+   c_qtable CONSTANT aq.name_type := 'application_qtable';
+   c_queue CONSTANT aq.name_type := 'application_queue';
+   
+   g_msgid aq.msgid_type;
+
+   PROCEDURE start_process (student_in IN VARCHAR2)
+   IS
+      queueopts DBMS_AQ.ENQUEUE_OPTIONS_T;
+      msgprops DBMS_AQ.MESSAGE_PROPERTIES_T;
+
+      application_obj application_t;
+      looked_at_by DBMS_AQ.AQ$_RECIPIENT_LIST_T;
+   BEGIN
+      /* Enqueue the application; received from postal service. */
+      application_obj := application_t (student_in, c_received);
+
+      DBMS_AQ.ENQUEUE (c_queue, queueopts, msgprops, application_obj, g_msgid); );
+   END;
+
+   PROCEDURE reserve_application 
+      (student_in IN VARCHAR2, 
+       consumer_in IN VARCHAR2, 
+       app_out OUT application_t,
+       msg_out OUT aq.msgid_type)
+   IS
+      obj student_application_t;
+      v_msgid aq.msgid_type;
+
+      queueopts DBMS_AQ.DEQUEUE_OPTIONS_T;
+      msgprops DBMS_AQ.MESSAGE_PROPERTIES_T;
+
+      first_dequeue BOOLEAN := TRUE;
+   BEGIN
+      /* The dequeue operation: lock the application in the
+         queue so that no one else can do anything with it
+         while I work on it. */
+   END;
+
+   PROCEDURE promote_application 
+      (app_in IN application_t, msg_in IN aq.msgid_type)
+   IS
+      Dqueueopts DBMS_AQ.DEQUEUE_OPTIONS_T;
+      Dmsgprops DBMS_AQ.MESSAGE_PROPERTIES_T;
+
+      Equeueopts DBMS_AQ.ENQUEUE_OPTIONS_T;
+      Emsgprops DBMS_AQ.MESSAGE_PROPERTIES_T;
+
+      application_obj application_t;
+      looked_at_by DBMS_AQ.AQ$_RECIPIENT_LIST_T;
+   BEGIN
+      /* Ready to move the application along in the process.
+         Dequeue it and then requeue it with the new state. */
+   END;
+   
+   PROCEDURE reject_application (msg_in IN aq.msgid_type)
+   IS
+   BEGIN
+      /* Move the application to the exception queue;
+         This person is not coming to our school. */
+   END;
+    
+   PROCEDURE change_it_again 
+      (student_in IN VARCHAR2, new_application_in IN VARCHAR2)
+   IS
+      queueopts DBMS_AQ.ENQUEUE_OPTIONS_T;
+      msgprops DBMS_AQ.MESSAGE_PROPERTIES_T;
+      application_obj application_t;
+      those_who_need_to_know DBMS_AQ.AQ$_RECIPIENT_LIST_T;
+   BEGIN
+      /* What is the current application? */
+      v_application := current_choice (student_in);
+
+      /* Update the database table. */
+      UPDATE student_intention
+         SET application_study = new_application_in
+       WHERE name = student_in;
+
+      /* IF changing from math or philosophy to business,
+         build a special recipient list and add that to
+         the enqueue operation. */
+      IF v_application IN (c_philosophy, c_mathematics) AND
+         new_application_in = c_business
+      THEN
+         /* Notify the school psychologist and professor of ethics. */
+         those_who_need_to_know (1) := SYS.AQ$_AGENT ('Doctor Baddreams');
+         those_who_need_to_know (2) := SYS.AQ$_AGENT ('Professor Whatswrong');
+
+         msgprops.recipient_list := those_who_need_to_know;
+      END IF;
+
+      /* Put a message on the queue so that everyone is
+         properly notified. Notice I will coordinate visibility
+         of this message with a COMMIT of the entire transaction.*/
+      queueopts.visibility := DBMS_AQ.ON_COMMIT;
+
+      DBMS_AQ.ENQUEUE (c_queue, queueopts, msgprops, application_obj, g_msgid);
+   END;
+
+   PROCEDURE show_application (curious_in IN VARCHAR2)
+   IS
+      obj student_application_t;
+      v_msgid aq.msgid_type;
+
+      queueopts DBMS_AQ.DEQUEUE_OPTIONS_T;
+      msgprops DBMS_AQ.MESSAGE_PROPERTIES_T;
+
+      first_dequeue BOOLEAN := TRUE;
+   BEGIN
+      queueopts.consumer_name := curious_in;
+
+      /* Loop through the contents of the queue looking for
+         matches on the specified recipient name. */
+      LOOP
+         /* Non-destructive dequeue */
+         queueopts.wait := DBMS_AQ.NO_WAIT;
+         queueopts.visibility := DBMS_AQ.IMMEDIATE;
+
+         DBMS_AQ.DEQUEUE (queue_name => c_queue,
+            dequeue_options => queueopts,
+            message_properties => msgprops,
+            payload => obj,
+            msgid => v_msgid);
+
+         IF first_dequeue
+         THEN
+            DBMS_OUTPUT.PUT_LINE 
+               ('Showing to ' || curious_in || 
+                ' applications Changed on ' || SYSDATE-1);
+            first_dequeue := FALSE;
+         END IF;
+
+         DBMS_OUTPUT.PUT_LINE 
+            (obj.student || ' changed application to ' || obj.application);
+      END LOOP;
+
+   EXCEPTION
+      WHEN aq.dequeue_timeout
+      THEN
+         NULL;
+   END;
+END apply_pkg;
+/ 
+

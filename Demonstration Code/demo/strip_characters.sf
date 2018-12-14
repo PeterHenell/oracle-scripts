@@ -1,0 +1,14 @@
+CREATE OR REPLACE FUNCTION strip_characters (
+   expression_in    IN   VARCHAR2
+  ,characters_in    IN   VARCHAR2
+  ,placeholder_in   IN   VARCHAR2 DEFAULT CHR(1)
+)
+   RETURN VARCHAR2
+IS
+BEGIN
+   RETURN TRANSLATE ( expression_in
+                    , placeholder_in || characters_in
+                    , placeholder_in
+                    );
+END strip_characters;
+/

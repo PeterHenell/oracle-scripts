@@ -1,0 +1,371 @@
+CREATE OR REPLACE PACKAGE insga
+/*
+|| Author: Steven Feuerstein
+||
+|| Overview: API to SGA shared pool area cache of PL/SQL code.
+||           Provides various programs to access information of
+||           interest to PL/SQL developers for tuning access to
+||           their code in the SGA.
+||
+|| Dependencies:
+||    Run grantv$.sql to grant access to any number of V$
+||    accessed in this package -- or run from SYS!
+||
+||    pl.sp - Replacement for DBMS_OUTPUT.PUT_LINE
+||
+|| Either compile/run in SYS or run the GRANTV$.sql script
+|| to make sure you have access to the needed views.
+*/
+IS
+   /* Interface to:
+   
+   V$DB_OBJECT_CACHE
+       Name           Type
+       -------------- ----
+       OWNER          VARCHAR2(64)
+       NAME           VARCHAR2(1000)
+       DB_LINK        VARCHAR2(64)
+       NAMESPACE      VARCHAR2(15)  TABLE/PROCEDURE for PACKAGE
+                                    BODY for PACKAGE BODY
+       TYPE           VARCHAR2(24)  NOT LOADED, PACKAGE, PACKAGE BODY
+       SHARABLE_MEM   NUMBER  0 if not loaded
+       LOADS          NUMBER  0 if not loaded
+       EXECUTIONS     NUMBER  0 if not loaded
+       LOCKS          NUMBER
+       PINS           NUMBER
+       KEPT           VARCHAR2(3)
+       
+   And V$SQLAREA
+   */
+
+   CURSOR cache_cur (
+      nm IN VARCHAR2 := NULL,
+      sch IN VARCHAR2 := NULL,
+      tp IN VARCHAR2 := '%',
+      minLoads IN INTEGER := 1,
+      minExecutions IN INTEGER := 1,
+      isKept IN VARCHAR2,
+      includeSYS IN VARCHAR2
+      )
+   IS
+      SELECT c.OWNER,
+             c.NAME ,
+             DB_LINK,
+             NAMESPACE,
+             c.TYPE,
+             SHARABLE_MEM,
+             LOADS,
+             EXECUTIONS,
+             LOCKS,
+             PINS,
+             KEPT
+       FROM  V$DB_OBJECT_CACHE C
+             /* object cache does not accumulate execution data by
+                program unit, but by block of code executed,
+             (SELECT DISTINCT owner, object_name
+                FROM ALL_OBJECTS
+               WHERE owner LIKE sch
+                 AND (includesys = 'Y' OR
+                       (owner NOT IN ('SYS', 'SYSTEM')))) O */
+      WHERE C.owner LIKE NVL (sch, USER)
+        AND (INSTR (UPPER (c.name), UPPER (nm)) > 0 
+             OR UPPER (c.name) LIKE UPPER (nm)) -- LIKE NVL (UPPER (nm), '%')
+        AND c.type LIKE NVL (UPPER (tp), '%')
+        AND loads >= minLoads
+        AND executions >= minExecutions
+        AND (kept = UPPER (isKept) OR isKept IS NULL)
+        AND c.type != 'SYNONYM'
+        AND (includesys = 'Y' OR (owner NOT IN ('SYS', 'SYSTEM')))
+       ORDER BY c.owner, c.name, c.type;
+
+   CURSOR cachesize_cur (
+      nm IN VARCHAR2 := NULL,
+      sch IN VARCHAR2 := NULL,
+      tp IN VARCHAR2 := '%',
+      minLoads IN INTEGER := 1,
+      minExecutions IN INTEGER := 0,
+      isKept IN VARCHAR2,
+      includeSYS IN VARCHAR2
+      )
+   IS
+      SELECT c.OWNER          ,
+             c.NAME           ,
+             DB_LINK        ,
+             NAMESPACE      ,
+             c.TYPE           ,
+             SHARABLE_MEM   ,
+             LOADS          ,
+             EXECUTIONS     ,
+             LOCKS          ,
+             PINS           ,
+             KEPT           ,
+             s.code_size,
+             s.code_size + s.parsed_size kept_size
+       FROM  V$DB_OBJECT_CACHE C,
+             (SELECT DISTINCT owner, object_name
+                FROM ALL_OBJECTS
+               WHERE owner LIKE sch
+                 AND (includesys = 'Y' OR
+                       (owner NOT IN ('SYS', 'SYSTEM')))) O,
+             DBA_OBJECT_SIZE S
+      WHERE C.owner LIKE NVL (UPPER (sch), USER)
+        AND c.name LIKE NVL (UPPER (nm), '%')
+        AND C.name = o.object_name
+        AND c.type LIKE NVL (UPPER (tp), '%')
+        AND loads >= minLoads
+        AND executions >= minExecutions
+        AND (kept = UPPER (isKept) OR isKept IS NULL)
+        AND c.type != 'SYNONYM'
+        AND S.owner = c.owner
+        AND O.owner = c.owner
+        AND S.name = o.object_name
+        AND S.type = C.type
+       ORDER BY c.owner, c.name, c.type;
+
+   PROCEDure showDBcache (
+      nm IN VARCHAR2 := '%',
+      sch IN VARCHAR2 := USER,
+      tp IN VARCHAR2 := '%',
+      minLoads IN INTEGER := 1,
+      minExecutions IN INTEGER := 1,
+      isKept IN BOOLEAN := NULL,
+      includeSYS IN BOOLEAN := FALSE
+      );
+
+   PROCEDure showDBcache_size (
+      nm IN VARCHAR2 := '%',
+      sch IN VARCHAR2 := USER,
+      tp IN VARCHAR2 := '%',
+      minLoads IN INTEGER := 1,
+      minExecutions IN INTEGER := 0,
+      isKept IN BOOLEAN := NULL,
+      includeSYS IN BOOLEAN := FALSE
+      );
+
+   FUNCTION numExecutions (
+      nm IN VARCHAR2,
+      sch IN VARCHAR2 := USER,
+      tp IN VARCHAR2 := '%')
+      RETURN INTEGER;
+      
+   FUNCTION numLoads (
+      nm IN VARCHAR2,
+      sch IN VARCHAR2 := USER,
+      tp IN VARCHAR2 := '%')
+      RETURN INTEGER;
+      
+   PROCEDure show_hitratio;
+   
+   FUNCTION lcd_sql (
+      str IN VARCHAR2, 
+      startat IN INTEGER := 1,
+      stopat IN INTEGER := NULL,
+      remove_list IN VARCHAR2 := NULL)
+      RETURN VARCHAR2;
+   PRAGMA RESTRICT_REFERENCES (lcd_sql, WNDS, WNPS);
+   
+   PROCEDURE show_similar (
+      sqltext IN VARCHAR2 := '%',
+      startat IN INTEGER := 1,
+      stopat IN PLS_INTEGER := NULL,
+      remove_list IN VARCHAR2 := NULL);
+END;
+/
+CREATE OR REPLACE PACKAGE BODY insga
+IS
+   PROCEDURE println (rec IN cache_cur%ROWTYPE) IS
+   BEGIN
+      pl (
+         rec.owner || '.' || rec.name || ' (' || rec.type || ')' ||
+         ' Loads: ' || rec.loads ||
+         ' Execs: ' || rec.executions ||
+         ' Kept: ' || rec.kept);
+   END;
+
+   PROCEDURE println_size (rec IN cachesize_cur%ROWTYPE) IS
+   BEGIN
+      pl (
+         rec.owner || '.' || rec.name || ' (' || rec.type || ')' ||
+         ' Loads: ' || rec.loads ||
+         ' Execs: ' || rec.executions ||
+         ' Kept: ' || rec.kept ||
+         ' Code size: ' || rec.code_size ||
+         ' Kept size: ' || rec.kept_size);
+   END;
+
+   PROCEDure showDBcache (
+      nm IN VARCHAR2 := NULL,
+      sch IN VARCHAR2 := NULL,
+      tp IN VARCHAR2 := '%',
+      minLoads IN INTEGER := 1,
+      minExecutions IN INTEGER := 1,
+      isKept IN BOOLEAN := NULL,
+      includeSYS IN BOOLEAN := FALSE
+      )
+  IS
+     v_kept VARCHAR2(3) := NULL;
+     v_sys CHAR(1) := 'N';
+  BEGIN
+     IF isKept THEN v_kept := 'YES';
+     ELSIF NOT isKept THEN v_kept := 'NO';
+     END IF;
+
+     IF includeSYS THEN v_sys := 'Y'; END IF;
+
+     FOR rec IN cache_cur (
+        nm, sch, tp, minLoads, minExecutions, v_kept, v_sys)
+     LOOP
+        println (rec);
+     END LOOP;
+  END;
+
+   PROCEDure showDBcache_size (
+      nm IN VARCHAR2 := NULL,
+      sch IN VARCHAR2 := NULL,
+      tp IN VARCHAR2 := '%',
+      minLoads IN INTEGER := 1,
+      minExecutions IN INTEGER := 0,
+      isKept IN BOOLEAN := NULL,
+      includeSYS IN BOOLEAN := FALSE
+      )
+  IS
+     v_kept VARCHAR2(3) := NULL;
+     v_code PLS_INTEGER := 0;
+     v_total PLS_INTEGER := 0;
+     v_sys CHAR(1) := 'N';
+  BEGIN
+     IF isKept THEN v_kept := 'YES';
+     ELSIF NOT isKept THEN v_kept := 'NO';
+     END IF;
+
+     IF includeSYS THEN v_sys := 'Y'; END IF;
+
+     FOR rec IN cachesize_cur (
+        nm, sch, tp, minLoads, minExecutions, v_kept, v_sys)
+     LOOP
+        println_size (rec);
+        v_code := v_code + rec.code_size;
+        v_total := v_total + rec.kept_size;
+     END LOOP;
+
+     pl ('Total code size: ' || v_code);
+     pl ('Total kept size (code + parsed): ' || v_total);
+  END;
+
+   FUNCTION numExecutions (
+      nm IN VARCHAR2,
+      sch IN VARCHAR2 := USER,
+      tp IN VARCHAR2 := '%')
+      RETURN INTEGER
+   IS
+      cache_rec cache_cur%ROWTYPE;
+   BEGIN
+      OPEN cache_cur (nm, sch, tp, 0, 0, NULL, 'Y');
+      FETCH cache_cur INTO cache_rec;
+      CLOSE cache_cur;
+      RETURN cache_rec.executions;
+   END;
+      
+   FUNCTION numLoads (
+      nm IN VARCHAR2,
+      sch IN VARCHAR2 := USER,
+      tp IN VARCHAR2 := '%')
+      RETURN INTEGER
+   IS
+      cache_rec cache_cur%ROWTYPE;
+   BEGIN
+      OPEN cache_cur (nm, sch, tp, 0, 0, NULL, 'Y');
+      FETCH cache_cur INTO cache_rec;
+      CLOSE cache_cur;
+      RETURN cache_rec.loads;
+   END;
+
+   PROCEDure show_hitratio
+   IS
+      hit_ratio NUMBER;
+   BEGIN
+      SELECT (1 - (SUM (getmisses) / 
+                    (SUM (gets) + SUM (getmisses))))
+              * 100 
+        INTO hit_ratio
+        FROM V$ROWCACHE
+       WHERE gets + getmisses != 0;
+  
+     pl ('ROW CACHE Hit ratio = ' || TO_CHAR (hit_ratio, '99.99') || '%');
+     IF hit_ratio < 95
+     THEN
+       pl ('*** This ratio is below 95%. ' ||
+          'Consider raising the SHARED_POOL_SIZE init.ora parameter.');
+     END IF;
+     
+      SELECT (SUM (pins) / (SUM (pins) + SUM (reloads))) * 100 
+        INTO hit_ratio
+        FROM V$LIBRARYCACHE;
+  
+     pl ('LIBRARY CACHE Hit ratio = ' || TO_CHAR (hit_ratio, '99.99') || '%');
+     IF hit_ratio < 95
+     THEN
+       pl ('*** This ratio is below 95%. ' ||
+          'Consider raising the SHARED_POOL_SIZE init.ora parameter.');
+     END IF;
+     
+   END;
+   
+   FUNCTION lcd_sql (
+      str IN VARCHAR2, 
+      startat IN INTEGER := 1,
+      stopat IN INTEGER := NULL,
+      remove_list IN VARCHAR2 := NULL)
+      RETURN VARCHAR2
+   IS
+      v_remove VARCHAR2(100) :=
+         NVL (remove_list, ' ' || CHR(10) || CHR(9));
+   BEGIN
+      RETURN SUBSTR (
+         TRANSLATE (UPPER (str), 'A' || v_remove, 'A'), startat, stopat);
+   END;
+
+   PROCEDURE show_similar (
+      sqltext IN VARCHAR2 := '%',
+      startat IN INTEGER := 1,
+      stopat IN PLS_INTEGER := NULL,
+      remove_list IN VARCHAR2 := NULL)
+   IS
+      CURSOR same_cur (text IN VARCHAR2)
+      IS
+         SELECT lcd_sql (SQL_TEXT, startat, stopat, remove_list) text
+           FROM V$SQLAREA
+          WHERE UPPER (SQL_TEXT) LIKE sqltext
+          GROUP BY lcd_sql (SQL_TEXT, startat, stopat, remove_list)
+          HAVING COUNT(*) > 1;
+          
+      CURSOR text_cur (str IN VARCHAR2)
+      IS
+         SELECT sql_text
+           FROM V$SQLAREA A
+          WHERE lcd_sql (SQL_TEXT, startat, stopat, remove_list) = str;
+
+      /*
+      Not sure about how best to use SQLTEXT here...
+      CURSOR text_cur (str IN VARCHAR2)
+      IS
+         SELECT T.sql_text
+           FROM V$SQLAREA A, V$SQLTEXT T
+          WHERE A.address = T.address
+            AND A.hash_value = T.hash_value
+            AND TRANSLATE (UPPER (A.SQL_TEXT), 'A ' || CHR(10), 'A') = str
+          ORDER BY T.address, T.piece;
+      */
+   BEGIN
+      FOR same_rec IN same_cur (sqltext)
+      LOOP
+         pl ('*** Possible Statement Redundancy:');
+         FOR text_rec IN text_cur (same_rec.text)
+         LOOP
+            pl ('     ' || text_rec.sql_text);
+         END LOOP;
+      END LOOP;
+   END;
+END;
+/
+

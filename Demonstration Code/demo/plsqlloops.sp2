@@ -1,0 +1,66 @@
+CREATE OR REPLACE PACKAGE tmr
+IS
+   PROCEDURE capture;
+   PROCEDURE show_elapsed;
+END tmr;
+/
+
+CREATE OR REPLACE PACKAGE BODY tmr
+IS       
+   last_timing NUMBER := NULL;
+
+   PROCEDURE capture  
+   IS
+   BEGIN
+     last_timing := DBMS_UTILITY.GET_TIME;
+   END;
+
+   PROCEDURE show_elapsed 
+   IS
+   BEGIN
+      DBMS_OUTPUT.PUT_LINE
+         (DBMS_UTILITY.GET_TIME - last_timing);
+   END;
+
+END tmr;
+/
+
+CREATE OR REPLACE PROCEDURE show_birthdays (second_row IN INTEGER)
+IS
+   birthdays PLVtab.date_table;
+   v_row PLS_INTEGER;
+BEGIN
+   birthdays(1) := '20-mar-72';
+   birthdays(second_row) := '01-oct-86';
+
+   tmr.capture;
+   FOR rowind IN 
+      NVL (birthdays.FIRST, 0) .. NVL (birthdays.LAST, -1)
+   LOOP
+      IF birthdays.EXISTS (rowind)
+      THEN
+         DBMS_OUTPUT.PUT_LINE (birthdays(rowind));
+      END IF;
+   END LOOP;
+   tmr.show_elapsed;
+
+   tmr.capture;
+   FOR rowind IN NVL (birthdays.FIRST, 0) .. NVL (birthdays.LAST, -1)
+   LOOP
+      BEGIN
+         DBMS_OUTPUT.PUT_LINE (birthdays(rowind));
+      EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
+      END;
+   END LOOP;
+   tmr.show_elapsed;
+
+   tmr.capture;
+   v_row := birthdays.FIRST;
+   LOOP
+      EXIT WHEN v_row IS NULL;
+      DBMS_OUTPUT.PUT_LINE (birthdays(v_row));
+      v_row := birthdays.NEXT (v_row);
+   END LOOP;
+   tmr.show_elapsed;
+END;
+/

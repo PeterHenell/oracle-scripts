@@ -1,0 +1,24 @@
+CREATE OR REPLACE FUNCTION num_instr (string_in    IN VARCHAR2
+                                    , substring_in IN VARCHAR2
+                                     )
+   RETURN PLS_INTEGER
+IS
+   c_sub_length   CONSTANT PLS_INTEGER := LENGTH (substring_in);
+   l_start        PLS_INTEGER := 1;
+   l_location     PLS_INTEGER;
+   l_return       PLS_INTEGER := 0;
+BEGIN
+   IF string_in IS NULL
+   THEN
+      RETURN NULL;
+   ELSE
+      LOOP
+         l_location := INSTR (string_in, substring_in, l_start);
+         EXIT WHEN l_location = 0;
+         l_return := l_return + 1;
+         l_start := l_location + c_sub_length;
+      END LOOP;
+
+      RETURN l_return;
+   END IF;
+END;

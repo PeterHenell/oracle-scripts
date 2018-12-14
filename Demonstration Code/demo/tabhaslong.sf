@@ -1,0 +1,28 @@
+CREATE OR REPLACE FUNCTION tabhaslong (tab IN VARCHAR2) 
+RETURN BOOLEAN IS
+   coltab PLVcols.col_tabtype := PLVcols.fortab (UPPER (tab));
+   colnum PLS_INTEGER := 1;
+   retval BOOLEAN := FALSE;
+BEGIN
+   LOOP
+      EXIT WHEN retval OR colnum > coltab.COUNT;
+      retval := coltab(colnum).data_type = 'LONG';
+      colnum := colnum + 1;
+   END LOOP;
+   RETURN retval;
+END;
+/
+
+DROP TABLE tab_with_long;
+
+CREATE TABLE tab_with_long (
+   rightnow DATE,
+	thought_of_the_day LONG
+	);
+
+BEGIN
+   p.l (tabhaslong ('emp'), 'Does emp have long column?');
+   p.l (tabhaslong ('tab_with_long'), 
+      'Does tab_with_long have long column?');
+END;
+/

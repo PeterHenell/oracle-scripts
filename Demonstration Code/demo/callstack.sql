@@ -1,0 +1,43 @@
+SPOOL callstack.log
+
+CREATE OR REPLACE PROCEDURE proc1
+IS
+BEGIN
+   DBMS_OUTPUT.put_line (DBMS_UTILITY.format_call_stack);
+END;
+/
+
+CREATE OR REPLACE PACKAGE pkg1
+IS
+   PROCEDURE proc2;
+END pkg1;
+/
+
+CREATE OR REPLACE PACKAGE BODY pkg1
+IS
+   PROCEDURE proc2
+   IS
+   BEGIN
+      proc1;
+   END;
+END pkg1;
+/
+
+CREATE OR REPLACE PROCEDURE proc3
+IS
+BEGIN
+   FOR indx IN 1 .. 1000
+   LOOP
+      NULL;
+   END LOOP;
+
+   pkg1.proc2;
+END;
+/
+
+BEGIN
+   proc3;
+END;
+/
+
+SPOOL OFF

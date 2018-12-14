@@ -1,0 +1,115 @@
+CREATE OR REPLACE PACKAGE altind
+/* Alternate Index, no conflict resolution. */
+IS
+   FUNCTION onerow (employee_id_in IN employee.employee_id%TYPE)
+      RETURN employee%ROWTYPE;
+
+   FUNCTION onerow (
+      last_name_in IN employee.last_name%TYPE,
+      usehash IN BOOLEAN := TRUE
+      )
+      RETURN employee%ROWTYPE;
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY altind
+IS
+   c_maxrange CONSTANT PLS_INTEGER := POWER (2, 31) - 1;
+   strt CONSTANT       PLS_INTEGER := 2;
+   g_maxrange          PLS_INTEGER := c_maxrange;
+
+   TYPE tab_tabtype IS TABLE OF employee%ROWTYPE
+      INDEX BY BINARY_INTEGER;
+
+   loadtab tab_tabtype;
+
+   TYPE hash_rectype IS RECORD (
+      str employee.last_name%TYPE,
+      key employee.employee_id%TYPE
+   );
+
+   TYPE hash_tabtype IS TABLE OF hash_rectype
+      INDEX BY BINARY_INTEGER;
+
+   hashtab hash_tabtype;
+
+   FUNCTION hashval (str IN VARCHAR2)
+      RETURN PLS_INTEGER
+   IS
+   BEGIN
+      RETURN DBMS_UTILITY.get_hash_value (str, strt, g_maxrange);
+   END;
+
+   PROCEDURE add_to_altind (str_in IN VARCHAR2, key_in IN PLS_INTEGER)
+   IS
+      end_search BOOLEAN := FALSE;
+      v_row      PLS_INTEGER := hashval (str_in);
+   BEGIN
+      hashtab (v_row).str := str_in;
+      hashtab (v_row).key := key_in;
+   END;
+   
+   FUNCTION keyval (str_in IN VARCHAR2)
+      RETURN PLS_INTEGER
+   IS
+      end_search BOOLEAN := FALSE;
+   BEGIN
+      RETURN hashtab (hashval (str_in)).key;
+   END;
+
+   FUNCTION onerow (employee_id_in IN employee.employee_id%TYPE)
+      RETURN employee%ROWTYPE
+   IS
+   BEGIN
+      RETURN loadtab (employee_id_in);
+   END;
+
+   FUNCTION onerow (
+      last_name_in IN employee.last_name%TYPE,
+      usehash IN BOOLEAN := TRUE
+      )
+      RETURN employee%ROWTYPE
+   IS
+      v_employee_id employee.employee_id%TYPE;
+      v_row         PLS_INTEGER;
+   BEGIN
+      IF usehash
+      THEN
+         v_employee_id := keyval (last_name_in);
+      ELSE
+         v_row := loadtab.first;
+
+         LOOP
+            EXIT WHEN v_row IS NULL;
+
+            IF loadtab (v_row).last_name = last_name_in
+            THEN
+               v_employee_id := v_row;
+               EXIT;
+            END IF;
+
+            v_row := loadtab.next (v_row);
+         END LOOP;
+      END IF;
+
+      RETURN onerow (v_employee_id);
+   END;
+
+   PROCEDURE loadcache
+   IS
+   BEGIN
+      loadtab.delete;
+      hashtab.delete;
+
+      FOR rec IN  (SELECT *
+                   FROM employee)
+      LOOP
+         loadtab  (rec.employee_id) := rec;
+         add_to_altind (rec.last_name, rec.employee_id);
+      END LOOP;
+   END;
+
+BEGIN
+   loadcache;
+END;
+/

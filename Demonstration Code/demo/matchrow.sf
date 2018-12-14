@@ -1,0 +1,58 @@
+CREATE OR REPLACE FUNCTION matching_row (
+   the_value       VARCHAR2
+  ,the_rg_name     VARCHAR2
+  ,the_rg_column   VARCHAR2
+)
+   RETURN INTEGER
+IS
+   rg_id               recordgroup;
+   gc_id               groupcolumn;
+   col_val             VARCHAR2 (80);
+   invalid_parameter   EXCEPTION;
+   the_rowcount        INTEGER;
+   rg_row_num          INTEGER;            -- 9/2001 London Don't use ROWNUM!
+   l_the_value         SETTINGS.big_string_t := UPPER (the_value);
+   retval              INTEGER;
+
+   PROCEDURE check_inputs
+   IS
+   BEGIN
+      rg_id := FIND_GROUP (the_rg_name);
+
+      IF ID_NULL (rg_id)
+      THEN
+         MESSAGE ('Record Group ' || the_rg_name || ' does not exist.');
+         RAISE invalid_parameter;
+      END IF;
+
+      gc_id := FIND_COLUMN (the_rg_name || '.' || the_rg_column);
+
+      IF ID_NULL (gc_id)
+      THEN
+         MESSAGE ('Column ' || the_rg_column || ' does not exist.');
+         RAISE invalid_parameter;
+      END IF;
+   END;
+BEGIN
+   check_inputs;
+   rg_row_num := 1;
+   the_rowcount := GET_GROUP_ROW_COUNT (rg_id);
+
+   WHILE (retval IS NULL AND rg_row_num <= the_rowcount)
+   LOOP
+      col_val := GET_GROUP_CHAR_CELL (gc_id, j);
+
+      IF UPPER (col_val) = l_the_value
+      THEN
+         retval := rg_row_num;
+      ELSE
+         rg_row_num := rg_row_num + 1;
+      END IF;
+   END LOOP;
+
+   RETURN retval;
+EXCEPTION
+   WHEN invalid_parameter
+   THEN
+      RETURN NULL;
+END;

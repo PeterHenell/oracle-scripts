@@ -1,0 +1,30 @@
+CREATE OR REPLACE FUNCTION totcomp 
+   (sal_in IN PLS_INTEGER, 
+    comm_in IN NUMBER := NULL)
+   RETURN NUMBER
+
+/* Now the function modifies a table. 
+   It can no longer be used in SQL. */
+IS
+BEGIN
+   DELETE FROM emp;
+   RETURN (sal_in + NVL (comm_in, 0));
+END;
+/
+
+SELECT COUNT(*) FROM emp;
+
+BEGIN
+   p.l (totcomp (100, 300));
+END;
+/
+
+SELECT COUNT(*) FROM emp;
+
+ROLLBACK;
+
+SELECT COUNT(*) FROM emp;
+
+SELECT ename, totcomp (sal, comm) total
+FROM emp;
+

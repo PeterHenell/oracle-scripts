@@ -1,0 +1,215 @@
+/* Formatted by PL/Formatter v3.0.5.0 on 2000/06/21 08:20 */
+
+CREATE OR REPLACE FUNCTION eqpipes (
+   check_this_in IN VARCHAR2,
+   against_this_in IN VARCHAR2
+)
+   RETURN BOOLEAN
+IS
+   -- DBMS_PIPE functionality provided by John Beresniewicz, Savant Corp
+
+   c_varchar2 CONSTANT PLS_INTEGER := 9;
+   c_number CONSTANT PLS_INTEGER := 6;
+   c_date CONSTANT PLS_INTEGER := 12;
+   c_rowid CONSTANT PLS_INTEGER := 11;
+   c_raw CONSTANT PLS_INTEGER := 23;
+   
+   -- For pipe equality checking
+   TYPE message_rectype IS RECORD(
+   
+      item_type INTEGER,
+      mvarchar2 VARCHAR2 (4093),
+      mdate     DATE,
+      mnumber   NUMBER,
+      mrowid    ROWID,
+      mraw      RAW (4093));
+
+   /*
+   || message_tbltype tables can hold an ordered list of
+   || message items, thus any message can be captured
+   */
+   TYPE message_tbltype IS TABLE OF message_rectype
+      INDEX BY BINARY_INTEGER;
+      
+   check_tab message_tbltype;
+   against_tab message_tbltype;
+   check_status PLS_INTEGER;
+   against_status PLS_INTEGER;
+   retval BOOLEAN := FALSE;
+
+   PROCEDURE receive_and_unpack (
+      pipe_in IN VARCHAR2,
+      message_tbl_out OUT message_tbltype,
+      pipe_status_out OUT PLS_INTEGER
+   )
+   IS
+      invalid_item_type EXCEPTION;
+      null_message_tbl message_tbltype;
+      next_item INTEGER;
+      item_count INTEGER := 0;
+   BEGIN
+      pipe_status_out :=
+        DBMS_PIPE.receive_message (
+           pipe_in,
+           timeout => 0
+        );
+
+      IF pipe_status_out != 0
+      THEN
+         RAISE invalid_item_type;
+      END IF;
+
+      LOOP
+         next_item :=
+               DBMS_PIPE.next_item_type;
+         EXIT WHEN next_item = 0;
+         item_count := item_count + 1;
+         message_tbl_out (item_count).item_type :=
+                              next_item;
+
+         IF next_item = c_varchar2
+         THEN
+            DBMS_PIPE.unpack_message (
+               message_tbl_out (
+                  item_count
+               ).mvarchar2
+            );
+      ELSIF next_item = c_number
+      THEN
+         DBMS_PIPE.unpack_message (
+            message_tbl_out (
+               item_count
+            ).mnumber
+         );
+         ELSIF next_item = c_rowid
+         THEN
+            DBMS_PIPE.unpack_message_rowid (
+               message_tbl_out (
+                  item_count
+               ).mrowid
+            );
+         ELSIF next_item = c_date
+         THEN
+            DBMS_PIPE.unpack_message (
+               message_tbl_out (
+                  item_count
+               ).mdate
+            );
+         ELSIF next_item = c_raw
+         THEN
+            DBMS_PIPE.unpack_message_raw (
+               message_tbl_out (
+                  item_count
+               ).mraw
+            );
+         ELSE
+            RAISE invalid_item_type;
+         END IF;
+
+         next_item :=
+               DBMS_PIPE.next_item_type;
+      END LOOP;
+   EXCEPTION
+      WHEN invalid_item_type
+      THEN
+         message_tbl_out :=
+                       null_message_tbl;
+   END receive_and_unpack;
+
+   PROCEDURE compare_pipe_tabs (
+      tab1 message_tbltype,
+      tab2 message_tbltype,
+      same_out OUT BOOLEAN
+   )
+   IS
+      indx PLS_INTEGER := tab1.FIRST;
+   BEGIN
+      LOOP
+         EXIT WHEN indx IS NULL;
+
+         BEGIN
+            IF tab1 (indx).item_type = c_varchar2
+            THEN
+               same_out :=
+                 tab1 (indx).mvarchar2 =
+                    tab2 (indx).mvarchar2;
+            ELSIF tab1 (indx).item_type =
+                                       c_number
+            THEN
+               same_out :=
+                 tab1 (indx).mnumber =
+                     tab2 (indx).mnumber;
+            ELSIF tab1 (indx).item_type =
+                                      c_date
+            THEN
+               same_out :=
+                 tab1 (indx).mdate =
+                       tab2 (indx).mdate;
+            ELSIF tab1 (indx).item_type =
+                                      c_rowid
+            THEN
+               same_out :=
+                 tab1 (indx).mrowid =
+                      tab2 (indx).mrowid;
+            ELSIF tab1 (indx).item_type =
+                                      c_raw
+            THEN
+               same_out :=
+                 tab1 (indx).mraw =
+                        tab2 (indx).mraw;
+            END IF;
+         EXCEPTION
+            WHEN OTHERS
+            THEN
+               same_out := FALSE;
+         END;
+
+         EXIT WHEN NOT same_out;
+         indx := tab1.NEXT (indx);
+      END LOOP;
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         same_out := FALSE;
+   END;
+BEGIN
+   -- Compare contents of two pipes.
+   LOOP
+      receive_and_unpack (
+         check_this_in,
+         check_tab,
+         check_status
+      );
+      receive_and_unpack (
+         against_this_in,
+         against_tab,
+         against_status
+      );
+
+      IF (
+                check_status = 0
+            AND against_status = 0
+         )
+      THEN
+         compare_pipe_tabs (
+            check_tab,
+            against_tab,
+            retval
+         );
+         EXIT WHEN NOT retval;
+      ELSIF (
+                   check_status = 1
+               AND against_status = 1
+            )                -- time out
+      THEN
+         retval := TRUE;
+         EXIT;
+      ELSE
+         retval := FALSE;
+         EXIT;
+      END IF;
+   END LOOP;
+
+   RETURN retval;
+END;
+/

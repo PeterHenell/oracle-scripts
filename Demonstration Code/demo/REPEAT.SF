@@ -1,0 +1,41 @@
+CREATE OR REPLACE FUNCTION recrep 
+   (string_in IN VARCHAR2, 
+    action_in IN VARCHAR2 := NULL,
+    count_in IN INTEGER := 1)
+   RETURN VARCHAR2
+IS
+   v_action VARCHAR2(10) := UPPER (action_in);  
+   initval VARCHAR2(32000);
+   nextval VARCHAR2(32000); 
+   v_retval VARCHAR2(32000);
+   
+BEGIN
+   assert
+      (v_action IN ('UL', 'LU', 'N'),
+       'Please enter UL LU or N');
+   assert
+      (num_in >= 0, 'Duplication count must be at least 0.');
+
+   IF v_action = 'UL'
+   THEN
+      initval := UPPER (string_in);   
+      nextval := LOWER (string_in);
+   ELSIF v_action = 'LU'
+   THEN
+      initval := LOWER (string_in);      
+      nextval := UPPER (string_in);
+   ELSE
+      initval := string_in;      
+      nextval := string_in;
+   END IF; 
+
+   IF count_in = 1
+   THEN
+      RETURN initval || nextval;
+   ELSE
+      RETURN (initval || 
+           repeated (nextval, 'N' , count_in-1));
+   END IF;
+
+END recrep;
+/

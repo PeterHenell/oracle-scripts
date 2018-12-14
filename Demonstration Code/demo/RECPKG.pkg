@@ -1,0 +1,27 @@
+create or replace PACKAGE emp_pkg
+IS
+   TYPE comp_rectype IS RECORD 
+     (salcomp emp.sal%TYPE, total NUMBER);
+
+   FUNCTION bonus_amt 
+     (emp_in IN emp.empno%TYPE,
+      comp_in IN comp_rectype) RETURN NUMBER;
+END;
+/
+create or replace PACKAGE BODY emp_pkg
+IS
+   FUNCTION bonus_amt 
+     (emp_in IN emp.empno%TYPE,
+      comp_in IN comp_rectype) RETURN NUMBER
+   IS
+   BEGIN
+      IF comp_in.salcomp <= comp_in.total
+	  THEN
+	     RETURN 10000;
+      ELSE  
+	     RETURN 0;
+	  END IF;
+   END;
+END;
+/
+

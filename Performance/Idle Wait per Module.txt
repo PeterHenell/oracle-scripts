@@ -1,0 +1,1 @@
+SELECT SUM(TIME_WAITED) total_time,module FROM dba_hist_active_sess_history h JOIN dba_hist_snapshot sn ON h.snap_id = sn.snap_id WHERE sn.begin_interval_time BETWEEN TO_DATE('03/12/09 00:00','MM/DD/YY HH24:MI') AND TO_DATE('03/12/09 12:00','MM/DD/YY HH24:MI') group by module order by total_time desc

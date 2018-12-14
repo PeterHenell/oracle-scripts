@@ -1,0 +1,103 @@
+CREATE OR REPLACE PACKAGE arrayupd
+IS 
+   PROCEDURE col 
+      (tab IN VARCHAR2,
+       keycol IN VARCHAR2, 
+       valcol IN VARCHAR2, 
+       keylist IN DBMS_SQL.NUMBER_TABLE,
+       vallist IN DBMS_SQL.VARCHAR2_TABLE);
+
+   PROCEDURE col 
+      (tab IN VARCHAR2,
+       keycol IN VARCHAR2, 
+       valcol IN VARCHAR2, 
+       keylist IN DBMS_SQL.NUMBER_TABLE,
+       vallist IN DBMS_SQL.DATE_TABLE);
+
+   PROCEDURE col 
+      (tab IN VARCHAR2,
+       keycol IN VARCHAR2, 
+       valcol IN VARCHAR2, 
+       keylist IN DBMS_SQL.NUMBER_TABLE,
+       vallist IN DBMS_SQL.NUMBER_TABLE);
+END arrayupd;
+/
+CREATE OR REPLACE PACKAGE BODY arrayupd
+IS 
+   PROCEDURE col 
+      (tab IN VARCHAR2,
+       keycol IN VARCHAR2, 
+       valcol IN VARCHAR2, 
+       keylist IN DBMS_SQL.NUMBER_TABLE,
+       vallist IN DBMS_SQL.VARCHAR2_TABLE)
+   IS
+      cur INTEGER := DBMS_SQL.OPEN_CURSOR;
+      fdbk INTEGER;
+   BEGIN
+      DBMS_SQL.PARSE
+        (cur, 
+         'UPDATE ' || tab ||
+           ' SET ' || valcol || ' = :vals ' ||
+         ' WHERE ' || keycol || ' = :keys',
+         DBMS_SQL.NATIVE);
+
+      DBMS_SQL.BIND_ARRAY (cur, 'keys', keylist);
+      DBMS_SQL.BIND_ARRAY (cur, 'vals', vallist);
+
+      fdbk := DBMS_SQL.EXECUTE (cur);
+      
+      DBMS_SQL.CLOSE_CURSOR (cur);
+   END;
+
+   PROCEDURE col 
+      (tab IN VARCHAR2,
+       keycol IN VARCHAR2, 
+       valcol IN VARCHAR2, 
+       keylist IN DBMS_SQL.NUMBER_TABLE,
+       vallist IN DBMS_SQL.DATE_TABLE)
+   IS
+      cur INTEGER := DBMS_SQL.OPEN_CURSOR;
+      fdbk INTEGER;
+   BEGIN
+      DBMS_SQL.PARSE
+        (cur, 
+         'UPDATE ' || tab ||
+           ' SET ' || valcol || ' = :vals ' ||
+         ' WHERE ' || keycol || ' = :keys',
+         DBMS_SQL.NATIVE);
+
+      DBMS_SQL.BIND_ARRAY (cur, 'keys', keylist);
+      DBMS_SQL.BIND_ARRAY (cur, 'vals', vallist);
+
+      fdbk := DBMS_SQL.EXECUTE (cur);
+      
+      DBMS_SQL.CLOSE_CURSOR (cur);
+   END;
+
+   PROCEDURE col 
+      (tab IN VARCHAR2,
+       keycol IN VARCHAR2, 
+       valcol IN VARCHAR2, 
+       keylist IN DBMS_SQL.NUMBER_TABLE,
+       vallist IN DBMS_SQL.NUMBER_TABLE)
+   IS
+      cur INTEGER := DBMS_SQL.OPEN_CURSOR;
+      fdbk INTEGER;
+   BEGIN
+      DBMS_SQL.PARSE
+        (cur, 
+         'UPDATE ' || tab ||
+           ' SET ' || valcol || ' = :vals ' ||
+         ' WHERE ' || keycol || ' = :keys',
+         DBMS_SQL.NATIVE);
+
+      DBMS_SQL.BIND_ARRAY (cur, 'keys', keylist);
+      DBMS_SQL.BIND_ARRAY (cur, 'vals', vallist);
+
+      fdbk := DBMS_SQL.EXECUTE (cur);
+      
+      DBMS_SQL.CLOSE_CURSOR (cur);
+   END;
+
+END arrayupd;
+/

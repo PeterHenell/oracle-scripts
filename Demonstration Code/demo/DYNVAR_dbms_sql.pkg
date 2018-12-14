@@ -1,0 +1,75 @@
+CREATE OR REPLACE PACKAGE dynvar
+IS
+   PROCEDURE assign (expr_in IN VARCHAR2, var_inout IN OUT VARCHAR2);
+   FUNCTION val (var_in IN VARCHAR2) RETURN VARCHAR2;
+   PROCEDURE copyto (val_in IN VARCHAR2, nm_in IN VARCHAR2);
+   
+   PROCEDURE trc;
+   PROCEDURE notrc;
+   FUNCTION tracing RETURN BOOLEAN;
+   
+END dynvar;
+/
+CREATE OR REPLACE PACKAGE BODY dynvar
+IS
+   cur PLS_INTEGER := DBMS_SQL.OPEN_CURSOR;
+   fdbk PLS_INTEGER;
+
+   g_trc BOOLEAN := FALSE;
+   PROCEDURE trc IS BEGIN g_trc := TRUE; END;
+   PROCEDURE notrc IS BEGIN g_trc := FALSE; END;
+   FUNCTION tracing RETURN BOOLEAN IS BEGIN RETURN g_trc; END;   
+   
+   PROCEDURE assign (expr_in IN VARCHAR2, var_inout IN OUT VARCHAR2)
+   IS
+   BEGIN
+      IF tracing
+      THEN
+         DBMS_OUTPUT.PUT_LINE 
+            ('dynvar assigning ' || expr_in || ' to ' || var_inout);
+      END IF;
+      
+      DBMS_SQL.PARSE (cur, 
+         'BEGIN :var := ''' || expr_in || '''; END;', DBMS_SQL.NATIVE);
+      DBMS_SQL.BIND_VARIABLE (cur, 'var', 'a', 2000);
+      fdbk := DBMS_SQL.EXECUTE (cur);
+      DBMS_SQL.VARIABLE_VALUE (cur, 'var', var_inout);
+   END;
+
+   FUNCTION val (var_in IN VARCHAR2) RETURN VARCHAR2
+   IS
+      retval VARCHAR2(2000);
+   BEGIN
+      IF tracing
+      THEN
+         DBMS_OUTPUT.PUT_LINE ('dynvar retrieving value of ' || var_in);
+      END IF;
+
+      DBMS_SQL.PARSE 
+         (cur, 'BEGIN :val := ' || var_in || '; END;', DBMS_SQL.NATIVE);
+      DBMS_SQL.BIND_VARIABLE (cur, 'val', 'a', 2000);
+      fdbk := DBMS_SQL.EXECUTE (cur);
+      DBMS_SQL.VARIABLE_VALUE (cur, 'val', retval);
+      RETURN retval;
+   END;
+
+   PROCEDURE copyto (val_in IN VARCHAR2, nm_in IN VARCHAR2)
+   IS
+   BEGIN
+      IF tracing
+      THEN
+         DBMS_OUTPUT.PUT_LINE ('dynvar copying value ' || val_in ||
+            ' to ' || nm_in);
+      END IF;
+
+      DBMS_SQL.PARSE 
+         (cur, 
+          'BEGIN ' || nm_in || ' := ''' || val_in || '''; END;', 
+          DBMS_SQL.NATIVE);
+      fdbk := DBMS_SQL.EXECUTE (cur);
+   END;
+   
+END dynvar;
+/
+
+ 

@@ -1,0 +1,19 @@
+<ATRESULT>
+<VAR name="default.results">
+<SHEET type="output">
+<TEXT>Connected as scott on ORACLE92
+Create completed successfully
+Create completed successfully
+</TEXT>
+<R line="1">
+<C>Connected as scott on ORACLE92</C>
+</R>
+<R line="1">
+<C>Create completed successfully</C>
+</R>
+<R line="14">
+<C>Create completed successfully</C>
+</R>
+</SHEET>
+</VAR>
+</ATRESULT>

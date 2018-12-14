@@ -1,0 +1,30 @@
+CREATE OR REPLACE PACKAGE psemp
+IS
+   TYPE emp_tabtype IS
+      TABLE OF emp%ROWTYPE
+      INDEX BY BINARY_INTEGER;
+
+   emp_tab emp_tabtype;
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY psemp
+IS
+   CURSOR empcur IS SELECT * FROM emp;
+BEGIN   
+   FOR rec IN empcur
+   LOOP
+      -- Sequential load using cursor attribute.
+      -- emp_tab (empcur%ROWCOUNT) := rec;
+      
+      -- Sequential load using collection method 
+      emp_tab (emp_tab.COUNT + 1) := rec;
+   END LOOP;
+
+   FOR rec IN empcur
+   LOOP
+      -- Primary key indexed load of table. 
+      emp_tab (rec.empno) := rec;
+   END LOOP;   
+END;
+/

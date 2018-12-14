@@ -1,0 +1,29 @@
+Connected as UTILITY_SCHEMA@ORACLE11 
+Table created.
+Function created.
+Grant complete.
+Procedure created.
+Grant complete.
+Connected as APP_SCHEMA@ORACLE11 
+Table created.
+PL/SQL procedure successfully completed.
+ORA-01403: no data found
+ORA-06512: at "UTILITY_SCHEMA.NAME_FROM_ID", line 9
+ORA-06512: at line 2
+ORA-01403: no data found
+ORA-06512: at "UTILITY_SCHEMA.NAME_FROM_ID", line 9
+ORA-06512: at "UTILITY_SCHEMA.SHOW_PART_NAME", line 5
+ORA-06512: at line 2
+Connected as UTILITY_SCHEMA@ORACLE11 
+Function created.
+ORA-24344: success with compilation error
+19/4    PLS-00103: Encountered the symbol "END" when expecting one of the following:          . ( * @ % & = - + ; < / > at in is mod remainder not rem          <an exponent (**)> <> or != or ~= >= <= <> and or like like2          like4 likec between || multiset member submultiset          The symbol ";" was substituted for "END" to continue.
+Connected as APP_SCHEMA@ORACLE11 
+ORA-06550: line 2, column 41:
+PLS-00905: object UTILITY_SCHEMA.NAME_FROM_ID is invalid
+ORA-06550: line 2, column 4:
+PL/SQL: Statement ignored
+ORA-06550: line 2, column 19:
+PLS-00905: object UTILITY_SCHEMA.SHOW_PART_NAME is invalid
+ORA-06550: line 2, column 4:
+PL/SQL: Statement ignored

@@ -1,0 +1,51 @@
+CONNECT hq/hq
+
+/* Create a "dummy" stolen lives table so that the analysis
+   program will compile */
+
+DROP TABLE stolen_life;
+
+CREATE TABLE stolen_life (
+   dod DATE,
+   ethnicity VARCHAR2(100),
+   victim VARCHAR2(100),
+   age NUMBER,
+   description VARCHAR2(2000)
+   );
+
+INSERT INTO stolen_life (dod, ethnicity, victim, age, description) VALUES (
+   SYSDATE, 'N/A', 'HQ Table', 0,
+   'All information is stored in city tables.');
+   
+/* Create a display program, run as DEFINER. */
+CREATE OR REPLACE PROCEDURE show_victim (
+   stolen_life IN stolen_life%ROWTYPE
+   )
+  AUTHID DEFINER
+AS
+BEGIN
+   DBMS_OUTPUT.PUT_LINE (stolen_life.victim);
+   DBMS_OUTPUT.PUT_LINE ('');
+   DBMS_OUTPUT.PUT_LINE (stolen_life.description);
+   DBMS_OUTPUT.PUT_LINE ('');
+END;
+/
+SHOW ERRORS
+
+/* Create a central analysis program, run as INVOKER. */
+CREATE OR REPLACE PROCEDURE show_descriptions
+  AUTHID CURRENT_USER
+AS
+BEGIN
+  FOR lifestolen IN (SELECT * FROM stolen_life)
+  LOOP
+     show_victim (lifestolen);
+  END LOOP;
+END;
+/
+SHOW ERRORS
+
+/* Grant execute to public and create public synonym */
+GRANT EXECUTE ON show_descriptions TO PUBLIC;
+DROP PUBLIC SYNONYM show_descriptions;
+CREATE PUBLIC SYNONYM show_descriptions FOR show_descriptions;

@@ -1,0 +1,74 @@
+CREATE OR REPLACE FUNCTION dyncalc (
+   oper_in IN VARCHAR2,
+   nargs_in IN INTEGER := 0,
+   arg1_in IN VARCHAR2 := NULL,
+   arg2_in IN VARCHAR2 := NULL,
+   arg3_in IN VARCHAR2 := NULL,
+   arg4_in IN VARCHAR2 := NULL,
+   arg5_in IN VARCHAR2 := NULL,
+   arg6_in IN VARCHAR2 := NULL,
+   arg7_in IN VARCHAR2 := NULL,
+   arg8_in IN VARCHAR2 := NULL,
+   arg9_in IN VARCHAR2 := NULL,
+   arg10_in IN VARCHAR2 := NULL
+   )
+   RETURN VARCHAR2
+/*
+|| Mod History
+||  12/9/98 - Toronto - Handle NULL argument values
+*/   
+IS
+   v_code PLV.maxvc2 := 'BEGIN :outcome := ' || oper_in;
+   cur INTEGER := DBMS_SQL.OPEN_CURSOR;
+   fdbk INTEGER;
+   retval PLV.maxvc2;
+BEGIN
+   p.l (v_code);
+   FOR argind IN 1 .. nargs_in
+   LOOP
+      IF argind = 1
+      THEN
+         v_code := v_code || '(' || NVL (arg1_in, 'NULL'); 
+      END IF;
+
+      /* Optimized in Caracas. */
+      
+      IF    argind = 2 THEN v_code := v_code || ',' || NVL (arg2_in, 'NULL'); 
+      ELSIF argind = 3 THEN v_code := v_code || ',' || NVL (arg3_in, 'NULL'); 
+      ELSIF argind = 4 THEN v_code := v_code || ',' || NVL (arg4_in, 'NULL'); 
+      ELSIF argind = 5 THEN v_code := v_code || ',' || NVL (arg5_in, 'NULL'); 
+      ELSIF argind = 6 THEN v_code := v_code || ',' || NVL (arg6_in, 'NULL'); 
+      ELSIF argind = 7 THEN v_code := v_code || ',' || NVL (arg7_in, 'NULL'); 
+      ELSIF argind = 8 THEN v_code := v_code || ',' || NVL (arg8_in, 'NULL'); 
+      ELSIF argind = 9 THEN v_code := v_code || ',' || NVL (arg9_in, 'NULL'); 
+      ELSIF argind = 10 THEN v_code := v_code || ',' || NVL (arg10_in, 'NULL'); 
+      END IF;
+
+      IF argind = nargs_in
+      THEN
+         v_code := v_code || ')'; 
+      END IF;
+      
+      p.l (v_code);
+   END LOOP;
+   
+   v_code := v_code || '; END;';
+
+   p.l (v_code);
+   
+   DBMS_SQL.PARSE (cur, v_code, DBMS_SQL.NATIVE);
+   DBMS_SQL.BIND_VARIABLE (cur, 'outcome', USER, 2000);
+   fdbk := DBMS_SQL.EXECUTE (cur);
+   DBMS_SQL.VARIABLE_VALUE (cur, 'outcome', retval);
+   DBMS_SQL.CLOSE_CURSOR (cur);
+
+   RETURN retval; 
+EXCEPTION
+   WHEN OTHERS
+	THEN
+       DBMS_SQL.CLOSE_CURSOR (cur); /* TVP */  
+	    p.l (SQLERRM);
+       p.l (v_code);
+       RETURN NULL;
+END;
+/

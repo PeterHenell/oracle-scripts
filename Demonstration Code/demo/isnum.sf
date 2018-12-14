@@ -1,0 +1,105 @@
+CREATE OR REPLACE FUNCTION isnum_ch (input IN VARCHAR2)
+   RETURN BOOLEAN
+IS
+   is_num BOOLEAN := TRUE;
+   int_count NATURAL := 0;
+   decval NATURAL := 0;
+   ch CHAR(1);
+   length_of_input NATURAL := 0;
+   sign_position BOOLEAN := FALSE;
+   sign NATURAL := 0;
+BEGIN
+   length_of_input := LENGTH (input);
+
+   IF    INSTR (input, '+') > 1
+      OR INSTR (input, '-') > 1
+   THEN
+      RETURN (FALSE);
+   ELSE
+      sign_position := TRUE;
+   END IF;
+
+   FOR i IN 1 .. length_of_input
+   LOOP
+      ch := SUBSTR (input, i, 1);
+      IF ch BETWEEN '0'AND '9'
+      THEN
+         int_count := int_count + 1;
+      ELSIF    ch = '+'
+            OR ch = '-'
+      THEN
+         sign := sign + 1;
+         IF sign > 1
+         THEN
+            is_num := FALSE;
+            EXIT;
+         END IF;
+      ELSIF ch = '.'
+      THEN
+         decval := decval + 1;
+         IF decval > 1
+         THEN
+            is_num := FALSE;
+            EXIT;
+         END IF;
+      ELSE
+         is_num := FALSE;
+         EXIT;
+      END IF;
+   END LOOP;
+   IF     int_count > 0
+      AND is_num
+   THEN
+      RETURN (TRUE);
+   ELSE
+      RETURN (FALSE);
+   END IF;
+
+EXCEPTION
+   WHEN VALUE_ERROR
+   THEN
+      RETURN (FALSE);
+END;
+/
+CREATE OR REPLACE FUNCTION isnum_ch2 (stg_in IN VARCHAR2)
+   RETURN BOOLEAN
+IS
+BEGIN
+   IF INSTR (stg_in, '-', 1, 2) > 0 OR
+      INSTR (stg_in, '+', 1, 2) > 0
+   THEN
+      RETURN FALSE;
+   ELSE
+      RETURN TRANSLATE (stg_in, '@0123456789.+-', '@') IS NULL;
+   END IF;
+END isnum_ch2;
+/
+CREATE OR REPLACE FUNCTION isnum (stg_in IN VARCHAR2)
+   RETURN BOOLEAN
+IS
+   val NUMBER;
+BEGIN
+   val := TO_NUMBER (stg_in);
+   RETURN TRUE;
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      RETURN FALSE;
+END;
+/
+CREATE OR REPLACE FUNCTION isnum_impl (stg_in IN VARCHAR2)
+/* Boston NEOUG 9/99 - Division better for overflow: TVP 9/99 */
+   RETURN BOOLEAN
+IS
+   val NUMBER;
+BEGIN
+   val := stg_in - 0; /* IOUG-A Live! 2000 No overflow issues */
+   RETURN TRUE;
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      RETURN FALSE;
+END;
+/
+
+

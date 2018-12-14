@@ -1,0 +1,36 @@
+CREATE OR REPLACE PACKAGE db
+IS
+   FUNCTION version RETURN VARCHAR2;
+   FUNCTION compatibility RETURN VARCHAR2;
+END;
+/
+CREATE OR REPLACE PACKAGE BODY db
+IS
+   v VARCHAR2(100);
+   c VARCHAR2(100);
+
+   PROCEDURE init_info
+   IS
+   BEGIN
+      IF v IS NULL
+      THEN
+         DBMS_UTILITY.DB_VERSION (v, c);
+      END IF;
+   END;
+
+   FUNCTION version RETURN VARCHAR2
+   IS
+   BEGIN
+      init_info;
+      RETURN v;      
+   END;
+
+   FUNCTION compatibility RETURN VARCHAR2
+   IS
+   BEGIN
+      init_info;
+      RETURN c;      
+   END;
+
+END;
+/

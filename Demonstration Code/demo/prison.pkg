@@ -1,0 +1,20 @@
+CREATE CONTEXT incarceration_factors USING prison_pkg;
+
+CREATE OR REPLACE PACKAGE prison_pkg
+IS
+   c_context CONSTANT VARCHAR2(30) :=
+      'incarceration_factors';
+   PROCEDURE set_contexts;
+END;
+/
+CREATE OR REPLACE PACKAGE BODY prison_pkg
+IS
+   PROCEDURE set_contexts IS 
+   BEGIN   
+      DBMS_SESSION.SET_CONTEXT (
+         c_context, 'education', 'minimal');
+      DBMS_SESSION.SET_CONTEXT (
+         c_context, 'class', 'poor');
+   END;
+END;
+/

@@ -1,0 +1,113 @@
+CREATE OR REPLACE FUNCTION verify_table_structure (
+   schema_in IN VARCHAR2
+ , table_filter_in IN VARCHAR2 DEFAULT '%'
+ , show_results_in IN BOOLEAN DEFAULT FALSE
+)
+   RETURN VARCHAR2
+IS
+   l_issues VARCHAR2 (32767);
+
+   TYPE key_col_info_rt IS RECORD (
+      table_name all_tab_columns.table_name%TYPE
+    , column_name all_tab_columns.column_name%TYPE
+    , data_type all_tab_columns.data_type%TYPE
+    , column_id all_tab_columns.column_id%TYPE
+   );
+
+   TYPE key_col_info_tt IS TABLE OF key_col_info_rt
+      INDEX BY all_tab_columns.table_name%TYPE;
+
+   l_control key_col_info_tt;
+   l_actual key_col_info_tt;
+
+   PROCEDURE load_control (col_info_out OUT key_col_info_tt)
+   IS
+      indx PLS_INTEGER;
+   BEGIN
+      /* Generate code for this section by running gen_table_structure.sql */
+      NULL;
+   END load_control;
+
+   PROCEDURE load_actual (col_info_out OUT key_col_info_tt)
+   IS
+      TYPE temp_col_info_tt IS TABLE OF key_col_info_rt
+         INDEX BY PLS_INTEGER;
+
+      l_temp temp_col_info_tt;
+      indx PLS_INTEGER;
+   BEGIN
+      SELECT table_name
+           , column_name
+           , data_type
+           , column_id
+      BULK COLLECT INTO l_temp
+        FROM all_tab_columns atc
+       WHERE atc.owner = schema_in AND atc.table_name LIKE table_filter_in;
+
+      FOR indx IN 1 .. l_temp.COUNT
+      LOOP
+         col_info_out (l_temp (indx).table_name).column_name :=
+                                                    l_temp (indx).column_name;
+         col_info_out (l_temp (indx).table_name).data_type :=
+                                                      l_temp (indx).data_type;
+         col_info_out (l_temp (indx).table_name).column_id :=
+                                                      l_temp (indx).column_id;
+      END LOOP;
+   END load_actual;
+
+   PROCEDURE compare_actual_to_control (
+      control_in IN key_col_info_tt
+    , actual_in IN key_col_info_tt
+   )
+   IS
+      indx PLS_INTEGER;
+      l_diff VARCHAR2 (32767);
+   BEGIN
+      indx := actual_in.FIRST;
+
+      WHILE (indx IS NOT NULL)
+      LOOP
+         IF    actual_in (indx).column_name != control_in (indx).column_name
+            OR actual_in (indx).data_type != control_in (indx).data_type
+            OR actual_in (indx).column_id != control_in (indx).column_id
+         THEN
+            l_diff :=
+                  'Differences found in table '
+               || indx
+               || ' between CONTROL '
+               || control_in (indx).column_name
+               || '.'
+               || control_in (indx).data_type
+               || '.'
+               || control_in (indx).column_id
+               || ' and ACTUAL '
+               || actual_in (indx).column_name
+               || '.'
+               || actual_in (indx).data_type
+               || '.'
+               || actual_in (indx).column_id;
+            l_issues := l_issues || CHR (10) || l_diff;
+
+            IF show_results_in
+            THEN
+               DBMS_OUTPUT.put_line (l_diff);
+            END IF;
+         END IF;
+
+         indx := l_actual.NEXT (indx);
+      END LOOP;
+
+      l_issues := LTRIM (l_issues, CHR (10));
+   EXCEPTION
+      WHEN VALUE_ERROR
+      THEN
+         -- Return what we've got; obviously major problems to deal with!
+         NULL;
+   END compare_actual_to_control;
+BEGIN
+   load_control (l_control);
+   load_actual (l_actual);
+   compare_actual_to_control (l_control, l_actual);
+   RETURN l_issues;
+END;
+/

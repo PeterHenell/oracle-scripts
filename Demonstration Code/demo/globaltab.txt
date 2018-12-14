@@ -1,0 +1,338 @@
+SQL> @globaltab.tst
+Connected.
+
+Grant succeeded.
+
+Connected.
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+Connected.
+
+Table dropped.
+
+
+Table dropped.
+
+
+Table created.
+
+
+Index created.
+
+
+Table created.
+
+insert into departments ( select * from hr.departments )
+                                           *
+ERROR at line 1:
+ORA-00942: table or view does not exist 
+
+
+declare /* stamp out 2 million rows */
+*
+ERROR at line 1:
+ORA-06502: PL/SQL: numeric or value error 
+ORA-06512: at line 10 
+
+
+
+0 rows updated.
+
+
+  COUNT(*)                                                                      
+----------                                                                      
+         0                                                                      
+
+
+Commit complete.
+
+
+Procedure created.
+
+ellapsed: .1                                                                    
+
+PL/SQL procedure successfully completed.
+
+
+Type created.
+
+
+Package created.
+
+
+Package body created.
+
+0                                                                               
+ellapsed: .12                                                                   
+
+PL/SQL procedure successfully completed.
+
+
+Table dropped.
+
+
+Table created.
+
+
+Package created.
+
+
+Package body created.
+
+ellapsed: .81                                                                   
+
+PL/SQL procedure successfully completed.
+
+SQL> sho user
+USER is "BIG_HR"
+SQL>  @globaltab.tst
+DOC>connect sys/sys as sysdba
+DOC>grant resource, connect to big_hr identified by big_hr;
+DOC>
+DOC>connect scott/tiger
+DOC>grant select on employees to big_hr;
+DOC>grant select on departments to big_hr;
+DOC>*/
+Connected.
+
+Table dropped.
+
+
+Table dropped.
+
+
+Table created.
+
+
+Index created.
+
+
+Table created.
+
+insert into departments ( select * from scott.departments )
+            *
+ERROR at line 1:
+ORA-00913: too many values 
+
+
+declare /* stamp out 2 million rows */
+*
+ERROR at line 1:
+ORA-06502: PL/SQL: numeric or value error 
+ORA-06512: at line 10 
+
+
+
+0 rows updated.
+
+
+  COUNT(*)                                                                      
+----------                                                                      
+         0                                                                      
+
+
+Commit complete.
+
+
+Procedure created.
+
+ellapsed: 0                                                                     
+
+PL/SQL procedure successfully completed.
+
+
+Type created.
+
+
+Package created.
+
+
+Package body created.
+
+0                                                                               
+ellapsed: 0                                                                     
+
+PL/SQL procedure successfully completed.
+
+
+Table dropped.
+
+
+Table created.
+
+
+Package created.
+
+
+Package body created.
+
+ellapsed: .05                                                                   
+
+PL/SQL procedure successfully completed.
+
+SQL>  @globaltab.tst
+DOC>connect sys/sys as sysdba
+DOC>grant resource, connect to big_hr identified by big_hr;
+DOC>
+DOC>connect scott/tiger
+DOC>grant select on employees to big_hr;
+DOC>grant select on departments to big_hr;
+DOC>*/
+Connected.
+
+Table dropped.
+
+
+Table dropped.
+
+
+Table created.
+
+
+Index created.
+
+
+Table created.
+
+  type departments_t is table of departments%rowtype;
+         *
+ERROR at line 2:
+ORA-03113: end-of-file on communication channel 
+
+
+update departments set department_id = rownum
+*
+ERROR at line 1:
+ORA-03114: not connected to ORACLE 
+
+
+select count(*) from departments /* 2,800,028 */
+*
+ERROR at line 1:
+ORA-03114: not connected to ORACLE 
+
+
+commit
+*
+ERROR at line 1:
+ORA-03114: not connected to ORACLE 
+
+
+create or replace procedure P ( p_salary in employees.salary%type ) is
+*
+ERROR at line 1:
+ORA-03114: not connected to ORACLE 
+
+
+ERROR:
+ORA-03114: not connected to ORACLE 
+
+
+declare
+*
+ERROR at line 1:
+ORA-03114: not connected to ORACLE 
+
+
+create or replace type department_ids_tab is
+*
+ERROR at line 1:
+ORA-03114: not connected to ORACLE 
+
+
+create or replace package Pkg_1 is
+*
+ERROR at line 1:
+ORA-03114: not connected to ORACLE 
+
+
+create or replace package body Pkg_1 is
+*
+ERROR at line 1:
+ORA-03114: not connected to ORACLE 
+
+
+ERROR:
+ORA-03114: not connected to ORACLE 
+
+
+declare
+*
+ERROR at line 1:
+ORA-03114: not connected to ORACLE 
+
+
+drop table t
+*
+ERROR at line 1:
+ORA-03114: not connected to ORACLE 
+
+
+create global temporary table t
+*
+ERROR at line 1:
+ORA-03114: not connected to ORACLE 
+
+
+create or replace package Pkg_2 is
+*
+ERROR at line 1:
+ORA-03114: not connected to ORACLE 
+
+
+create or replace package body Pkg_2 is
+*
+ERROR at line 1:
+ORA-03114: not connected to ORACLE 
+
+
+ERROR:
+ORA-03114: not connected to ORACLE 
+
+
+declare
+*
+ERROR at line 1:
+ORA-03114: not connected to ORACLE 
+
+
+SQL> connect big_hr/big_hr
+Connected.
+SQL> create table departments as select * from scott.departments;
+create table departments as select * from scott.departments
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object 
+
+
+SQL> select count(*) from departments;
+
+  COUNT(*)                                                                      
+----------                                                                      
+        27                                                                      
+
+SQL> declare /* stamp out 2 million rows */
+  2    type departments_t is table of departments%rowtype;
+  3    v_departments departments_t;
+  4  begin
+  5    select *
+  6      bulk collect into v_departments
+  7      from departments;
+  8  
+  9    for j in 1..100000 loop
+ 10      forall j in v_departments.First()..v_departments.Last()
+ 11        insert into departments values v_departments(j);
+ 12    end loop;
+ 13  end;
+ 14  /
+declare /* stamp out 2 million rows */
+*
+ERROR at line 1:
+ORA-03113: end-of-file on communication channel 
+
+
+SQL> exit

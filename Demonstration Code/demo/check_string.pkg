@@ -1,0 +1,195 @@
+CREATE OR REPLACE PACKAGE check_string
+--
+-- Overview: check_string checks the contents of a string for
+--           a variety of conditions, such as "Is it a number?"
+--
+-- Author: Steven Feuerstein, with a number of really nice ideas
+--         for implementation drawn from the solution submitted
+--         by Anton Scheffer.
+--
+-- February 2005
+--
+IS
+   -- Is the single character a digit (0 through 9)?
+   FUNCTION is_digit (character_in IN VARCHAR2)
+      RETURN BOOLEAN;
+
+   -- Is the string a valid number in Oracle? Allow user to pass an
+   -- optional numeric format string to handle a wide variety of
+   -- special cases.
+   FUNCTION is_number (
+      str_in              IN   VARCHAR2
+    , numeric_format_in   IN   VARCHAR2 DEFAULT NULL
+   )
+      RETURN BOOLEAN;
+
+   -- Is the string a valid Oracle identifier?
+   -- Start with letter, contains letters, numbers, $, # or _, max 30 characters.
+   -- Of course, if the string is enclosed by double quotes, the only rule
+   -- enforced is the max 30 characters!
+   FUNCTION is_identifier (str_in IN VARCHAR2)
+      RETURN BOOLEAN;
+
+   -- Is the single character a letter:
+   -- Definition of letter for purposes of this package: a character that
+   -- has an UPPER and lower presentation (that is, they are different).
+   FUNCTION is_letter (character_in IN VARCHAR2)
+      RETURN BOOLEAN;
+
+   -- Does the string  only letters from the current character set?
+   FUNCTION only_letters (str_in IN VARCHAR2)
+      RETURN BOOLEAN;
+
+   -- Does the string contain only letters and numbers?
+   FUNCTION is_alpha_numeric (
+      str_in              IN   VARCHAR2
+    , numeric_format_in   IN   VARCHAR2 DEFAULT NULL
+   )
+      RETURN BOOLEAN;
+END check_string;
+/
+
+CREATE OR REPLACE PACKAGE BODY check_string
+IS
+   FUNCTION is_digit (character_in IN VARCHAR2)
+      RETURN BOOLEAN
+   IS
+      -- Test single character only!
+      l_letter   CHAR (1);
+   BEGIN
+      l_letter := character_in;
+      RETURN INSTR ('012345679', l_letter) > 0;
+   EXCEPTION
+      WHEN VALUE_ERROR
+      THEN
+         DBMS_OUTPUT.put_line ('IS_DIGIT must be passed a single character!');
+         RAISE;
+   END is_digit;
+
+   FUNCTION is_number (
+      str_in              IN   VARCHAR2
+    , numeric_format_in   IN   VARCHAR2 DEFAULT NULL
+   )
+      RETURN BOOLEAN
+   IS
+      dummy   NUMBER;
+   BEGIN
+      IF str_in IS NULL
+      THEN
+         RETURN NULL;
+      END IF;
+
+      IF numeric_format_in IS NULL
+      THEN
+         dummy := TO_NUMBER (str_in);
+      ELSE
+         dummy := TO_NUMBER (str_in, numeric_format_in);
+      END IF;
+
+      RETURN TRUE;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         RETURN FALSE;
+   END is_number;
+
+   FUNCTION is_letter (character_in IN VARCHAR2)
+      RETURN BOOLEAN
+   IS
+      -- Letter: defined as a character that has an upper and lower representation.
+      -- Test single letter only!
+      l_letter   CHAR (1);
+   BEGIN
+      l_letter := character_in;
+      RETURN UPPER (character_in) <> LOWER (character_in);
+   EXCEPTION
+      WHEN VALUE_ERROR
+      THEN
+         DBMS_OUTPUT.put_line ('IS_LETTER must be passed a single character!');
+         RAISE;
+   END is_letter;
+
+   FUNCTION starts_with_letter (str_in IN VARCHAR2)
+      RETURN BOOLEAN
+   IS
+   BEGIN
+      RETURN is_letter (SUBSTR (str_in, 1, 1));
+   END starts_with_letter;
+
+   FUNCTION only_letters (str_in IN VARCHAR2)
+      RETURN BOOLEAN
+   IS
+      l_index           PLS_INTEGER;
+      l_length          PLS_INTEGER;
+      l_still_letters   BOOLEAN;
+   BEGIN
+      IF str_in IS NOT NULL
+      THEN
+         l_index := 1;
+         l_length := LENGTH (str_in);
+         l_still_letters := TRUE;
+
+         WHILE (l_still_letters AND l_index <= l_length)
+         LOOP
+            l_still_letters := is_letter (SUBSTR (str_in, l_index, 1));
+            l_index := l_index + 1;
+         END LOOP;
+      END IF;
+
+      RETURN l_still_letters;
+   END only_letters;
+
+   FUNCTION is_alpha_numeric (
+      str_in              IN   VARCHAR2
+    , numeric_format_in   IN   VARCHAR2 DEFAULT NULL
+   )
+      RETURN BOOLEAN
+   IS
+      contains_letter         BOOLEAN;
+      contains_number         BOOLEAN;
+      l_index                 PLS_INTEGER;
+      l_length                PLS_INTEGER;
+      l_still_alpha_numeric   BOOLEAN;
+   BEGIN
+      IF str_in IS NULL
+      THEN
+         l_still_alpha_numeric := NULL;
+      ELSIF is_number (str_in, numeric_format_in)
+      THEN
+         l_still_alpha_numeric := TRUE;
+      ELSE
+         l_index := 1;
+         l_length := LENGTH (str_in);
+         l_still_alpha_numeric := TRUE;
+
+         WHILE (l_still_alpha_numeric AND l_index <= l_length)
+         LOOP
+            l_still_alpha_numeric :=
+                  is_letter (SUBSTR (str_in, l_index, 1))
+               OR is_digit (SUBSTR (str_in, l_index, 1));
+            l_index := l_index + 1;
+         END LOOP;
+      END IF;
+
+      RETURN l_still_alpha_numeric;
+   END is_alpha_numeric;
+
+   FUNCTION is_identifier (str_in IN VARCHAR2)
+      RETURN BOOLEAN
+   IS
+   BEGIN
+      IF str_in IS NULL
+      THEN
+         RETURN NULL;
+      END IF;
+
+      EXECUTE IMMEDIATE 'declare ' || str_in || ' number; begin null; end;';
+
+      RETURN TRUE;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         RETURN FALSE;
+   END is_identifier;
+END check_string;
+/

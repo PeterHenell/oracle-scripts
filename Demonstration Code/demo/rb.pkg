@@ -1,0 +1,43 @@
+CREATE OR REPLACE PACKAGE rb
+/*
+|| Encapsulate savepoint and rollback activity to avoid 
+|| errors trying to rollback to non-existent	savepoints.
+*/
+IS
+   PROCEDURE set_sp (sp_in IN VARCHAR2);
+
+   PROCEDURE to_sp (sp_in IN VARCHAR2);
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY rb
+IS
+   c_list PLV.identifier := '$set savepoints$';
+
+   PROCEDURE set_sp (sp_in IN VARCHAR2)
+	IS
+	BEGIN
+	   DBMS_STANDARD.SAVEPOINT (sp_in);
+
+      IF PLVlst.getposition (c_list, sp_in) = 0
+		THEN
+		   PLVlst.appenditem (c_list, sp_in);
+		END IF;
+	END;
+
+   PROCEDURE to_sp (sp_in IN VARCHAR2)
+	IS
+	BEGIN
+      IF PLVlst.getposition (c_list, sp_in) = 0
+		THEN
+		   ROLLBACK;
+	   ELSE
+	      DBMS_STANDARD.ROLLBACK_SV (sp_in);
+		   PLVlst.deleteitem (c_list, sp_in);
+		END IF;
+	END;
+
+BEGIN
+   PLVlst.make (c_list);
+END;
+/

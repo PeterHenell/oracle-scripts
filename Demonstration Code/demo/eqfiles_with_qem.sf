@@ -1,0 +1,216 @@
+CREATE OR REPLACE FUNCTION files_are_equal (
+   file1_name_in IN VARCHAR2
+ , dir1_name_in IN VARCHAR2
+ , file2_name_in IN VARCHAR2
+ , dir2_name_in IN VARCHAR2 := NULL
+)
+   RETURN BOOLEAN
+IS
+   l_file1id         UTL_FILE.file_type;
+   l_file1line       utl_file_constants.max_linesize_t;
+   l_file1eof        BOOLEAN;
+   --
+   l_file2id         UTL_FILE.file_type;
+   l_file2line       utl_file_constants.max_linesize_t;
+   l_file2eof        BOOLEAN;
+   --
+   l_keep_checking   BOOLEAN                           DEFAULT TRUE;
+   l_identical       BOOLEAN                           DEFAULT FALSE;
+
+   /*
+   Very simple generic assertion program to increase the likelihood
+   that I will actually file1 to make sure assumptions are being followed.
+   */
+   PROCEDURE assert (condition_in IN BOOLEAN, msg_in IN VARCHAR2)
+   IS
+   BEGIN
+      IF NOT condition_in OR condition_in IS NULL
+      THEN
+         raise_application_error (plsql_limits.c_max_user_code, msg_in);
+      END IF;
+   END assert;
+
+   /*
+   Consolidate all initialization logic:
+     - Validate all assumptions regarding inputs.
+     - Open the files.
+   */
+   PROCEDURE initialize
+   IS
+   BEGIN
+      /*
+      Make sure inputs are valid.
+      */
+      assert (dir1_name_in IS NOT NULL, 'Directory cannot be NULL.');
+      assert (file1_name_in IS NOT NULL, 'File name cannot be NULL.');
+      assert (file2_name_in IS NOT NULL, 'File name cannot be NULL.');
+      /*
+      Open both files, read-only.
+      */
+      l_file1id :=
+         UTL_FILE.fopen (dir1_name_in
+                       , file1_name_in
+                       , utl_file_constants.read_only ()
+                       , utl_file_constants.max_linesize ()
+                        );
+      l_file2id :=
+         UTL_FILE.fopen (NVL (dir2_name_in, dir1_name_in)
+                       , file2_name_in
+                       , utl_file_constants.read_only ()
+                       , utl_file_constants.max_linesize ()
+                        );
+   END initialize;
+
+   PROCEDURE cleanup (sqlcode_in IN PLS_INTEGER
+            DEFAULT plsql_limits.c_no_error)
+   IS
+   BEGIN
+      /* Close any files that are still open. */
+      IF UTL_FILE.is_open (l_file1id)
+      THEN
+         UTL_FILE.fclose (l_file1id);
+      END IF;
+
+      IF UTL_FILE.is_open (l_file2id)
+      THEN
+         UTL_FILE.fclose (l_file2id);
+      END IF;
+
+      /* If I have an error, then log the information. But if the error 
+          is from an assertion failure, then bypass the logging.
+
+         I am using the Quest Error Manager freeware utility below.
+
+         www.oracleplsqlprogramming.com/downloads/qem.zip
+      */
+      IF sqlcode_in NOT IN
+                      (plsql_limits.c_no_error, plsql_limits.c_max_user_code)
+      THEN
+         q$error_manager.register_error
+            (error_name_in      => 'UNANTICIPATED-ERROR'
+           , text_in            => 'Unexpected error when attempting to compare two files for equality.'
+           , name1_in           => 'FILE1 DIR'
+           , value1_in          => dir1_name_in
+           , name2_in           => 'FILE2 DIR'
+           , value2_in          => dir2_name_in
+           , name3_in           => 'FILE1 NAME'
+           , value3_in          => file1_name_in
+           , name4_in           => 'FILE2 FILE'
+           , value4_in          => file2_name_in
+            );
+      END IF;
+   END cleanup;
+
+   /*
+   Avoid direct call to GET_LINE becausee it leads to poorly
+   structured code (application logic in the exception section).
+   Instead, trap the NO_DATA_FOUND exception and return a Boolean flag.
+   */
+   PROCEDURE get_next_line_from_file (
+      file_in IN UTL_FILE.file_type
+    , line_out OUT VARCHAR2
+    , eof_out OUT BOOLEAN
+   )
+   IS
+   BEGIN
+      UTL_FILE.get_line (file_in, line_out);
+      eof_out := FALSE;
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         line_out := NULL;
+         eof_out := TRUE;
+   END get_next_line_from_file;
+
+   PROCEDURE compare_lengths (identical_out OUT BOOLEAN)
+   IS
+      FUNCTION flength (dir_in IN VARCHAR2, file_in IN VARCHAR2)
+         RETURN PLS_INTEGER
+      IS
+         TYPE fgetattr_t IS RECORD (
+            fexists       BOOLEAN
+          , file_length   PLS_INTEGER
+          , block_size    PLS_INTEGER
+         );
+
+         fgetattr_rec   fgetattr_t;
+      BEGIN
+         UTL_FILE.fgetattr (LOCATION         => dir_in
+                          , filename         => file_in
+                          , fexists          => fgetattr_rec.fexists
+                          , file_length      => fgetattr_rec.file_length
+                          , block_size       => fgetattr_rec.block_size
+                           );
+         RETURN fgetattr_rec.file_length;
+      END flength;
+   BEGIN
+      identical_out :=
+         flength (dir1_name_in, file1_name_in) =
+                                        flength (dir2_name_in, file2_name_in);
+   END;
+
+   /*
+   Isolate the comparison logic into a single procedure.
+   Return flags indicating whether or not to continue
+   reading from the file and if the two are still ientica
+   */
+   PROCEDURE check_for_equality (
+      file1_line_in IN VARCHAR2
+    , file2_line_in IN VARCHAR2
+    , file1eof_in IN BOOLEAN
+    , file2eof_in IN BOOLEAN
+    , identical_out OUT BOOLEAN
+    , read_next_out OUT BOOLEAN
+   )
+   IS
+   BEGIN
+      IF file1eof_in AND file2eof_in
+      THEN
+         /* Made it to the end of both files simultaneously. That's good news! */
+         identical_out := TRUE;
+         read_next_out := FALSE;
+      ELSIF file1eof_in OR file2eof_in
+      THEN
+         /* Reached end of one before the other. Not identical! */
+         identical_out := FALSE;
+         read_next_out := FALSE;
+      ELSE
+         /*
+         Only continue IF the two lines are identical.
+         And if they are both null/empty, consider them to be equal.
+         */
+         identical_out :=
+               NVL (file1_line_in = file2_line_in, FALSE)
+            OR (file1_line_in IS NULL AND file2_line_in IS NULL);
+         read_next_out := identical_out;
+      END IF;
+   END check_for_equality;
+BEGIN
+   initialize;
+   compare_lengths (l_identical);
+
+   IF l_identical
+   THEN
+      WHILE (l_keep_checking)
+      LOOP
+         get_next_line_from_file (l_file1id, l_file1line, l_file1eof);
+         get_next_line_from_file (l_file2id, l_file2line, l_file2eof);
+         check_for_equality (l_file1line
+                           , l_file2line
+                           , l_file1eof
+                           , l_file2eof
+                           , l_identical
+                           , l_keep_checking
+                            );
+      END LOOP;
+   END IF;
+
+   cleanup;
+   RETURN l_identical;
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      cleanup (SQLCODE);
+      RAISE;
+END files_are_equal;
+/

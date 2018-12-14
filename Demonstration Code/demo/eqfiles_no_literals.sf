@@ -1,0 +1,92 @@
+CREATE OR REPLACE FUNCTION files_are_equal (
+   file1_name_in IN VARCHAR2
+ , dir1_name_in IN VARCHAR2
+ , file2_name_in IN VARCHAR2
+ , dir2_name_in IN VARCHAR2 := NULL
+)
+   RETURN BOOLEAN
+IS
+   l_file1id     UTL_FILE.file_type;
+   l_file1line   utl_file_constants.max_linesize_t;
+   l_file1eof    BOOLEAN;
+   --
+   l_file2id     UTL_FILE.file_type;
+   l_file2line   utl_file_constants.max_linesize_t;
+   l_file2eof    BOOLEAN;
+   --
+   l_identical   BOOLEAN                           DEFAULT TRUE;
+
+   PROCEDURE initialize
+   IS
+   BEGIN
+      l_file1id :=
+         UTL_FILE.fopen (dir1_name_in
+                       , file1_name_in
+                       , utl_file_constants.read_only ()
+                       , utl_file_constants.max_linesize ()
+                        );
+      l_file2id :=
+         UTL_FILE.fopen (NVL (dir2_name_in, dir1_name_in)
+                       , file2_name_in
+                       , utl_file_constants.read_only ()
+                       , utl_file_constants.max_linesize ()
+                        );
+      loop_killer.kill_after (100);
+   END initialize;
+
+   PROCEDURE cleanup
+   IS
+   BEGIN
+      UTL_FILE.fclose (l_file1id);
+      UTL_FILE.fclose (l_file2id);
+   END cleanup;
+
+   /*
+   Avoid direct call to GET_LINE becausee it leads to poorly
+   structured code (application logic in the exception section).
+   Instead, trap the NO_DATA_FOUND exception and return a Boolean flag.
+   */
+   PROCEDURE get_next_line_from_file (
+      file_in IN UTL_FILE.file_type
+    , line_out OUT VARCHAR2
+    , eof_out OUT BOOLEAN
+   )
+   IS
+   BEGIN
+      UTL_FILE.get_line (file_in, line_out);
+      eof_out := FALSE;
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         line_out := NULL;
+         eof_out := TRUE;
+   END get_next_line_from_file;
+
+   PROCEDURE check_for_equality (
+      line1_in IN VARCHAR2
+    , line2_in IN VARCHAR2
+    , identical_out OUT BOOLEAN
+   )
+   IS
+   BEGIN
+      identical_out := line1_in = line2_in;
+   END check_for_equality;
+BEGIN
+   initialize;
+
+   LOOP
+      get_next_line_from_file (l_file1id, l_file1line, l_file1eof);
+      get_next_line_from_file (l_file2id, l_file2line, l_file2eof);
+      check_for_equality (l_file1line, l_file2line, l_identical);
+      loop_killer.increment_or_kill;
+   END LOOP;
+
+   cleanup;
+   RETURN l_identical;
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      cleanup;
+      RETURN FALSE;
+END files_are_equal;
+/

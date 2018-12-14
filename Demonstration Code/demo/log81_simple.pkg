@@ -1,0 +1,75 @@
+DROP TABLE logtab
+/
+
+CREATE TABLE logtab
+(
+   code         INTEGER
+ , text         VARCHAR2 (4000)
+ , created_on   DATE
+ , created_by   VARCHAR2 (100)
+)
+/
+
+ALTER TABLE logtab
+  ADD CONSTRAINT pk_logtab PRIMARY KEY (code, created_on)
+  USING INDEX
+/
+
+BEGIN
+   INSERT INTO logtab
+       VALUES (0, 'No error', sysdate, user
+              );
+
+   COMMIT;
+END;
+/
+
+CREATE OR REPLACE PACKAGE logpkg
+IS
+   PROCEDURE putline (code_in IN INTEGER, text_in IN VARCHAR2);
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY logpkg
+IS
+   PROCEDURE report_failure
+   IS
+   BEGIN
+      DBMS_OUTPUT.put_line ('Unable to write to log table!');
+      DBMS_OUTPUT.put_line (DBMS_UTILITY.format_error_stack);
+   END report_failure;
+
+   PROCEDURE putline (code_in IN INTEGER, text_in IN VARCHAR2)
+   IS
+      PRAGMA AUTONOMOUS_TRANSACTION;
+   BEGIN
+      UPDATE logtab
+         SET created_on = SYSDATE
+       WHERE code = 0;
+
+      INSERT INTO logtab
+          VALUES (code_in
+                , text_in
+                , SYSDATE
+                , USER
+                 );
+
+      COMMIT;
+   EXCEPTION
+      WHEN DUP_VAL_ON_INDEX
+      THEN
+         report_failure;
+      WHEN OTHERS
+      THEN
+         report_failure;
+         ROLLBACK;
+         RAISE;
+   END putline;
+END;
+/
+
+BEGIN
+   logpkg.putline (1, 'abc');
+   logpkg.putline (1, 'abc');
+END;
+/

@@ -1,0 +1,118 @@
+CREATE OR REPLACE FUNCTION eqtable (
+   check_this_in      IN   VARCHAR2
+  ,against_this_in    IN   VARCHAR2
+  ,check_where_in     IN   VARCHAR2 := NULL
+  ,against_where_in   IN   VARCHAR2 := NULL
+)
+   RETURN BOOLEAN
+IS
+   c_not_placeholder   CONSTANT VARCHAR2 (10) := '#$NOT$#';
+   retval                       BOOLEAN;
+
+   CURSOR info_cur (sch_in IN VARCHAR2, tab_in IN VARCHAR2)
+   IS
+      SELECT   t.column_name
+          FROM all_tab_columns t
+         WHERE t.owner = sch_in AND t.table_name = tab_in
+      ORDER BY column_id;
+
+   FUNCTION collist (tab IN VARCHAR2)
+      RETURN VARCHAR2
+   IS
+      l_schema   VARCHAR2 (100);
+      l_table    VARCHAR2 (100);
+      l_dot      PLS_INTEGER      := INSTR (tab, '.');
+      retval     VARCHAR2 (32767);
+   BEGIN
+      IF l_dot = 0
+      THEN
+         l_schema := USER;
+         l_table := UPPER (tab);
+      ELSE
+         l_schema := UPPER (SUBSTR (tab, 1, l_dot - 1));
+         l_table := UPPER (SUBSTR (tab, l_dot + 1));
+      END IF;
+
+      FOR rec IN info_cur (l_schema, l_table)
+      LOOP
+         retval := retval || ',' || rec.column_name;
+      END LOOP;
+
+      RETURN LTRIM (retval, ',');
+   END collist;
+
+   FUNCTION replace_not_placeholder (stg_in IN VARCHAR2, success_in IN BOOLEAN)
+      RETURN VARCHAR2
+   IS
+   BEGIN
+      IF success_in
+      THEN
+         RETURN REPLACE (stg_in, c_not_placeholder, NULL);
+      ELSE
+         RETURN REPLACE (stg_in, c_not_placeholder, ' not ');
+      END IF;
+   END replace_not_placeholder;
+
+   FUNCTION ieqminus (
+      query1_in       IN   VARCHAR2
+     ,query2_in       IN   VARCHAR2
+     ,minus_desc_in   IN   VARCHAR2
+   )
+      RETURN BOOLEAN
+   IS
+      ival      PLS_INTEGER;
+      v_block   VARCHAR2 (32767)
+         :=    'DECLARE
+         CURSOR cur IS 
+               SELECT 1
+               FROM DUAL
+               WHERE EXISTS (('
+            || query1_in
+            || ' MINUS '
+            || query2_in
+            || ')
+        UNION
+        ('
+            || query2_in
+            || ' MINUS '
+            || query1_in
+            || '));
+          rec cur%ROWTYPE;
+       BEGIN     
+          OPEN cur;
+          FETCH cur INTO rec;
+          IF cur%FOUND 
+		  THEN 
+		     :retval := 1;
+          ELSE 
+		     :retval := 0;
+          END IF;
+          CLOSE cur;
+       END;';
+   BEGIN
+      EXECUTE IMMEDIATE v_block
+                  USING OUT ival;
+
+      RETURN ival = 0;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         RETURN FALSE;
+   END ieqminus;
+BEGIN
+   RETURN ieqminus (   'SELECT T1.*, COUNT(*) FROM '
+                    || check_this_in
+                    || ' T1  WHERE '
+                    || NVL (check_where_in, '1=1')
+                    || ' GROUP BY '
+                    || collist (check_this_in)
+                   ,    'SELECT T2.*, COUNT(*) FROM '
+                     || against_this_in
+                     || ' T2  WHERE '
+                     || NVL (against_where_in, '1=1')
+                     || ' GROUP BY '
+                     || collist (against_this_in)
+                   ,'Table Equality'
+                   );
+END eqtable;
+/

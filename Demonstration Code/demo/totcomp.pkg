@@ -1,0 +1,95 @@
+CREATE OR REPLACE PACKAGE comp
+IS
+   FUNCTION total 
+      (sal_in IN NUMBER, 
+       comm_in IN NUMBER := NULL)
+      RETURN NUMBER;
+      
+   PRAGMA RESTRICT_REFERENCES (
+      total, WNDS, WNPS, RNDS, RNPS);
+END;
+/
+CREATE OR REPLACE PACKAGE BODY comp
+IS
+   FUNCTION total 
+      (sal_in IN NUMBER, 
+       comm_in IN NUMBER := NULL)
+      RETURN NUMBER
+   IS
+   BEGIN
+      RETURN (sal_in + NVL (comm_in, 0));
+   END;
+END comp;
+/
+
+SELECT ename, comp.total (sal, comm) total
+  FROM emp
+ WHERE comp.total (sal, comm) > 0; 
+
+CREATE OR REPLACE PACKAGE comp
+/* Recreate the package with an overloading and only one pragma. */
+IS
+   FUNCTION total 
+      (sal_in IN NUMBER, 
+       comm_in IN NUMBER := NULL)
+      RETURN NUMBER;
+      
+   FUNCTION total 
+      (emp_in IN emp.empno%TYPE)
+      RETURN NUMBER;
+      
+   PRAGMA RESTRICT_REFERENCES (
+      total, WNDS, WNPS, RNDS, RNPS);
+END;
+/
+CREATE OR REPLACE PACKAGE BODY comp
+IS
+   FUNCTION total 
+      (sal_in IN NUMBER, 
+       comm_in IN NUMBER := NULL)
+      RETURN NUMBER
+   IS
+   BEGIN
+      RETURN (sal_in + NVL (comm_in, 0));
+   END;
+
+   FUNCTION total 
+      (emp_in IN emp.empno%TYPE)
+      RETURN NUMBER
+   IS
+   BEGIN
+      /* Just a dummy function in the example. */
+      RETURN 10000;
+   END;
+
+END comp;
+/
+
+SELECT ename, comp.total (sal, comm) total
+  FROM emp
+ WHERE comp.total (sal, comm) > 0; 
+
+CREATE OR REPLACE PACKAGE comp
+/* Recreate the overloaded package with two pragmas. */
+IS
+   FUNCTION total 
+      (sal_in IN NUMBER, 
+       comm_in IN NUMBER := NULL)
+      RETURN NUMBER;
+      
+   PRAGMA RESTRICT_REFERENCES (
+      total, WNDS, WNPS, RNDS, RNPS);
+
+   FUNCTION total 
+      (emp_in IN emp.empno%TYPE)
+      RETURN NUMBER;
+      
+   PRAGMA RESTRICT_REFERENCES (
+      total, WNDS, WNPS, RNDS, RNPS);
+END;
+/
+
+SELECT ename, comp.total (sal, comm) total
+  FROM emp
+ WHERE comp.total (sal, comm) > 0; 
+

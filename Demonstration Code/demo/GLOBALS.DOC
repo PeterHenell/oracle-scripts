@@ -1,0 +1,741 @@
+{\rtf1\ansi\ansicpg1252\uc1 \deff0\deflang1033\deflangfe1033{\fonttbl{\f0\froman\fcharset0\fprq2{\*\panose 02020603050405020304}Times New Roman;}{\f1\fswiss\fcharset0\fprq2{\*\panose 020b0604020202020204}Arial;}{\f2\fmodern\fcharset0\fprq1{\*\panose 02070309020205020404}Courier New;}{\f38\froman\fcharset238\fprq2 Times New Roman CE;}{\f39\froman\fcharset204\fprq2 Times New Roman Cyr;}{\f41\froman\fcharset161\fprq2 Times New Roman Greek;}{\f42\froman\fcharset162\fprq2 Times New Roman Tur;}{\f43\froman\fcharset186\fprq2 Times New Roman Baltic;}{\f44\fswiss\fcharset238\fprq2 Arial CE;}{\f45\fswiss\fcharset204\fprq2 Arial Cyr;}{\f47\fswiss\fcharset161\fprq2 Arial Greek;}{\f48\fswiss\fcharset162\fprq2 Arial Tur;}{\f49\fswiss\fcharset186\fprq2 Arial Baltic;}{\f50\fmodern\fcharset238\fprq1 Courier New CE;}{\f51\fmodern\fcharset204\fprq1 Courier New Cyr;}{\f53\fmodern\fcharset161\fprq1 Courier New Greek;}{\f54\fmodern\fcharset162\fprq1 Courier New Tur;}{\f55\fmodern\fcharset186\fprq1 Courier New Baltic;}}{\colortbl;\red0\green0\blue0;\red0\green0\blue255;\red0\green255\blue255;\red0\green255\blue0;\red255\green0\blue255;\red255\green0\blue0;\red255\green255\blue0;\red255\green255\blue255;\red0\green0\blue128;\red0\green128\blue128;\red0\green128\blue0;\red128\green0\blue128;\red128\green0\blue0;\red128\green128\blue0;\red128\green128\blue128;\red192\green192\blue192;}{\stylesheet{\nowidctlpar\widctlpar\adjustright \fs20\cgrid \snext0 Normal;}{\s1\sb240\sa60\keepn\nowidctlpar\widctlpar\adjustright \b\f1\fs28\kerning28\cgrid \sbasedon0 \snext0 heading 1;}{\s2\sb120\sa120\keepn\nowidctlpar\widctlpar\adjustright \b\f1\cgrid \sbasedon0 \snext0 heading 2;}{\s3\li360\sa120\keepn\nowidctlpar\widctlpar\adjustright \b\cgrid \sbasedon0 \snext0 heading 3;}{\s4\li360\sa120\nowidctlpar\widctlpar\adjustright \ul\cgrid \sbasedon0 \snext36 heading 4;}{\*\cs10 \additive Default Paragraph Font;}{\s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid \sbasedon0 \snext15 _body text;}{\s16\nowidctlpar\widctlpar\tx360\adjustright \b\f1\fs48\cgrid \sbasedon15 \snext15 _headline;}{\s17\nowidctlpar\widctlpar\tx360\adjustright \b\f1\fs18\cgrid \sbasedon15 \snext15 _intro;}{\s18\nowidctlpar\widctlpar\tx360\adjustright \i\fs20\cgrid \sbasedon15 \snext15 _byline;}{\s19\nowidctlpar\widctlpar\tx360\adjustright \b\f1\fs20\cgrid \sbasedon15 \snext15 _subhead 1;}{\s20\nowidctlpar\widctlpar\tx360\adjustright \b\i\f1\fs20\cgrid \sbasedon19 \snext15 _subhead 2;}{\s21\nowidctlpar\widctlpar\tx360\adjustright \i\f1\fs20\cgrid \sbasedon15 \snext15 _figure caption;}{\s22\nowidctlpar\widctlpar\tx360\adjustright \i\f1\fs20\cgrid \sbasedon15 \snext15 _table caption;}{\s23\nowidctlpar\widctlpar\tx360\adjustright \i\f1\fs20\cgrid \sbasedon15 \snext15 _listing caption;}{\s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid \sbasedon15 \snext24 _code;}{\s25\nowidctlpar\widctlpar\tx360\adjustright \i\fs18\cgrid \sbasedon15 \snext15 _bio;}{\s26\nowidctlpar\widctlpar\tx360\adjustright \f1\fs16\cgrid \sbasedon15 \snext15 _table text;}{\s27\nowidctlpar\widctlpar\tx360\adjustright \b\f1\fs18\cgrid \sbasedon26 \snext15 _table column head;}{\s28\nowidctlpar\widctlpar\tx360\adjustright \f1\fs18\cgrid \sbasedon15 \snext15 _sidebar text;}{\s29\nowidctlpar\widctlpar\tx360\adjustright \b\f1\fs36\cgrid \sbasedon15 \snext15 _sidebar headline;}{\s30\nowidctlpar\widctlpar\tx360\adjustright \b\f1\fs36\cgrid \sbasedon15 \snext15 _tip headline;}{\s31\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid \sbasedon15 \snext15 _tip text;}{\s32\nowidctlpar\widctlpar\tx360\adjustright \i\fs18\cgrid \sbasedon15 \snext15 _tip byline;}{\s33\nowidctlpar\widctlpar\tx360\adjustright \b\fs20\cgrid \sbasedon15 \snext33 _question;}{\s34\nowidctlpar\widctlpar\tx360\adjustright \f2\fs16\cgrid \sbasedon15 \snext15 _product world news;}{\s35\nowidctlpar\widctlpar\adjustright \fs20\cgrid \sbasedon0 \snext35 _;}{\s36\li720\sa120\nowidctlpar\widctlpar\adjustright \cgrid \sbasedon0 \snext36 Normal Indent;}{\s37\sa120\nowidctlpar\widctlpar\tqc\tx4320\tqr\tx8640\adjustright \cgrid \sbasedon0 \snext37 footer;}{\s38\nowidctlpar\widctlpar\tqc\tx4320\tqr\tx8640\adjustright \fs20\cgrid \sbasedon0 \snext38 header;}}{\info{\title Global Handling in Oracle Forms}{\author Steven Feuerstein}{\operator Steven Feuerstein}{\creatim\yr1996\mo2\dy6\hr10\min58}{\revtim\yr1998\mo5\dy13\hr23\min2}{\version43}{\edmins210}{\nofpages15}{\nofwords5697}{\nofchars32473}{\*\company Micron Electronics, Inc.}{\nofcharsws39879}{\vern71}}\margr1440\margb1080 \widowctrl\ftnbj\aenddoc\lytprtmet\formshade\viewkind4\viewscale105\pgbrdrhead\pgbrdrfoot \fet0{\*\template C:\\MSOFFICE\\WINWORD\\TEMPLATE\\PINNWSLT.DOT}\sectd \linex0\endnhere\sectdefaultcl {\footer \pard\plain \s37\qc\sa120\nowidctlpar\widctlpar\tx3240\tqc\tx8010\tqr\tx8640\adjustright \cgrid {\fs12 
+\par }\pard \s37\qc\sa120\nowidctlpar\widctlpar\brdrt\brdrs\brdrw15\brsp20 \tx3240\tqc\tx8010\tqr\tx8640\adjustright {Page }{\field{\*\fldinst {page }}{\fldrslt {\lang1024 11}}}{
+\par }}{\*\pnseclvl1\pnucrm\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl2\pnucltr\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl3\pndec\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl4\pnlcltr\pnstart1\pnindent720\pnhang{\pntxta )}}{\*\pnseclvl5\pndec\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl6\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl7\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl8\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl9\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}\pard\plain \s16\nowidctlpar\widctlpar\tx360\adjustright \b\f1\fs48\cgrid {Global Handling in Oracle Forms
+\par }\pard\plain \s18\nowidctlpar\widctlpar\tx360\adjustright \i\fs20\cgrid {by Steven Feuerstein, Copyright 1995, All rights reserved.
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par Note: this article first appeared in Oracle Developer, published by Pinnacle Publishing. 
+\par 
+\par }\pard\plain \s17\nowidctlpar\widctlpar\tx360\adjustright \b\f1\fs18\cgrid {Introduction
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {Do you plan to convert to Oracle Forms Version 5 when it is released with Oracle Developer/2000 Version 2? It promises to be one heck of a tool. Among all the other great features, perhaps one of the most crucial will also be overlooked or largely unappreciated by thousands of GUI designers: the upgrade to Release 2.3 of PL/SQL. With Oracle Developer/2000 Version 2, you will be able to write PL/SQL programs on either the client or server side and then move them from one to the other as is appropriate. You will also be able to take full advantage of PL/SQL Version 2 features, such as packages, PL/SQL tables and cursor variables.
+\par 
+\par Depending on the way you are writing your applications in Oracle Forms 4.5, however, you may find it very difficult, if not impossible, to upgrade your current forms to fully utilize all those great new features. In the most general terms, if you are writing PL/SQL code which \ldblquote hard-codes\rdblquote  aspects of Forms technology which will be obsoleted, you will be in trouble. 
+\par 
+\par What precisely does }{\i that}{ mean? Rather than stick to general terms, I will move to the specific to make my point in this article. My advice is simple enough: 
+\par 
+\par }\pard\plain \s30\nowidctlpar\widctlpar\tx360\adjustright \b\f1\fs36\cgrid {If you do plan to migrate to Oracle FormsBuilder Version 5,  you should never, or hardly ever, directly assign values to or obtain values from an Oracle Forms GLOBAL variable.
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {In other words, if you write code like this:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {:GLOBAL.employee_id := :emp.empno;
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {or
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {IF :GLOBAL.balance < 0
+\par THEN
+\par    MESSAGE (\lquote You\rquote \rquote re broke!\rquote );
+\par END IF;
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {you are making a }{\i big}{ mistake. It will make your conversion to Oracle Developer/2000 much more difficult and leave your application full of holes. So now you know.  Unfortunately, e}{\i verybody}{ writes code like the lines I showed you. If all I did was give you this advice, you would have reason to be sore at me. So I will also provide you with a way to follow my advice and improve the quality of your code. 
+\par 
+\par What\rquote s the problem with directly accessing GLOBAL variables and why would it affect your upgrade to Oracle Forms Version 5? To answer those questions, I will explore in this article the concept and implementation of \ldblquote global data\rdblquote  in Oracle Forms. This exploration will expose the shortcomings of the GLOBAL variables.  I will then offer you a package to use in place of direct references to GLOBAL variables which will go a long way towards getting you ready to \ldblquote move up\rdblquote  to Oracle Developer/2000 Version 2 (not that you should expect to see it any earlier than the end of 1996).
+\par 
+\par }\pard\plain \s19\nowidctlpar\widctlpar\tx360\adjustright \b\f1\fs20\cgrid {What is a Global?
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par }\pard\plain \s35\nowidctlpar\widctlpar\adjustright \fs20\cgrid {An element of program data is "global" if its structure and associated values persist across different modules in an application. I can, in other words, create a global variable, assign it a value in program A and then reference it in program B without explicitly passing that variable as a parameter from A to B. Global data is a very powerful feature in a language, but it can also be an obstacle in the way of proper modularization of your application. There is no doubt, however, that when you build applications with Oracle tools, you need some mechanism for global variables.
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {Oracle-based applications are not written in a single, procedural language. Instead, your code is a blend of procedural constructs (stored procedures, for example) and non-procedural modules like an Oracle Forms FMB file. In the wonderful new world of GUI and Oracle Developer/2000, a form could call other forms, a graph, a report, or even another OLE2-compliant server, such as Microsoft Excel. Each of these development environments is different \emdash  some radically so \emdash  and each has its own data structures. It is not always straightforward to pass data between these different environments. Sometimes you simply must have global variables to accomplish your objective.
+\par 
+\par }\pard\plain \s20\nowidctlpar\widctlpar\tx360\adjustright \b\i\f1\fs20\cgrid {Why are Globals Needed?
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par Complex applications must be broken down into components or modules in order to make them flexible and maintainable. You then must have a way to pass information between these different modules. This can happen through any of the following structures:
+\par 
+\par }{\field\fldedit{\*\fldinst {symbol 183 \\f "Symbol" \\s 10 \\h}}{\fldrslt }}{   Parameters which pass data through the actual call to the module. This is the most structured approach, but is not always practical from the standpoint of the volume and structure of data which must be passed. 
+\par 
+\par }{\field\fldedit{\*\fldinst {symbol 183 \\f "Symbol" \\s 10 \\h}}{\fldrslt }}{   A database repository. Clearly an option with Oracle, the data in the DBMS is available to all connected programs and is therefore quite global. To make the data accessible from the database, however, you must issue SQL DML statements to insert or update the appropriate tables. 
+\par }\pard \s15\nowidctlpar\widctlpar\tx360\adjustright {
+\par }\pard \s15\nowidctlpar\widctlpar\tx360\adjustright {\field\fldedit{\*\fldinst {symbol 183 \\f "Symbol" \\s 10 \\h}}{\fldrslt }}{   A memory-based global area accessible to all modules. A "common area" is a normal component of many programming languages. These structures are }{\i included}{ into programs, which can then all access the common data. 
+\par 
+\par In Oracle Forms, an multiple-module application means a set of forms which interact with each other. You will very rarely build an application with a single, monster form. So as you navigate to the different forms, you will often want to move data from one form to another. How can you do this in Oracle Forms?
+\par 
+\par }{\b Parameters:}{ Forms have parameters, but they are "in" parameters only; you can pass information from one form to another via a parameter list, but you cannot }{\i return}{ information. 
+\par 
+\par }{\b Database:}{ Forms can access the Oracle database, of course, but this version of global data is not always appropriate to manipulating session information which does not have a natural place in the database. 
+\par 
+\par }{\b Oracle Forms GLOBAL Variables: }{Oracle Forms provides a "global area" for all forms in the current session. This area consists of a set of individual strings, called GLOBAL variables. You can from any form in the current session both read from and write to these globals. This structure is specific to Oracle Forms. 
+\par 
+\par }{\b Stored PL/SQL Package Variables: }{Variables declared in packages stored in the database also act as globals within an Oracle session. Such data structures and their values are accessible to all PL/SQL programs, executing both in the client and server-side components of the application, in the current session.
+\par 
+\par If you need to have read/write access to a global, memory-based area in your forms applications, then you will need to use either GLOBAL variables or stored package variables. Let's explore each of these structures more closely.
+\par 
+\par }\pard\plain \s19\nowidctlpar\widctlpar\tx360\adjustright \b\f1\fs20\cgrid {Oracle Forms GLOBAL Variables
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par In the past the only form of global data available to an Oracle developer was the SQL*Forms \emdash  and now Oracle Forms \emdash  GLOBAL variable (I will denote in this chapter an Oracle Forms global variable by using the upper-case "GLOBAL"). A GLOBAL variable is accessible across forms and also menus. In other words, in form A, I can create a GLOBAL with an assignment statement as follows:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {:GLOBAL.company_id := :company.company_id;
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {I can then call form B and reference this GLOBAL to extract the company ID number and use it:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {:employee.company_id := :GLOBAL.company_id;
+\par 
+\par }\pard\plain \s20\nowidctlpar\widctlpar\tx360\adjustright \b\i\f1\fs20\cgrid {Erasing GLOBALs
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par The GLOBAL variable comes into existence when a value is assigned to it. You erase a GLOBAL (releasing the associated memory) with the ERASE built-in:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {ERASE ('GLOBAL.company_id');
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {Notice that you must specify the }{\i name}{ of the GLOBAL.The case you use is not significant.
+\par 
+\par }\pard\plain \s20\nowidctlpar\widctlpar\tx360\adjustright \b\i\f1\fs20\cgrid {Assigning a Default Value
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par If you reference a GLOBAL before you have assigned it a value, Oracle Forms will raise an error. You can make sure that your GLOBAL has a value by using the DEFAULT_VALUE built-in, as follows:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {DEFAULT_VALUE ('0', 'GLOBAL.company_id');
+\par IF :GLOBAL.company_id != '0'
+\par THEN
+\par    calc_sales (:GLOBAL.company_id);
+\par END IF;
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {The DEFAULT_VALUE built-in assigns a value to the named GLOBAL }{\i only if}{ the variable does not yet exist. If the GLOBAL variable was already defined and has a value, DEFAULT_VALUE has no effect on the variable.
+\par }\pard \s15\nowidctlpar\widctlpar\tx360\adjustright {
+\par }\pard\plain \s20\nowidctlpar\widctlpar\tx360\adjustright \b\i\f1\fs20\cgrid {Referencing GLOBALs in PL/SQL Libraries
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par The GLOBAL variable is a kind of }{\i bind variable}{ in an Oracle Forms application, as is indicated by the ":" which prefaces the name of the variable when you want to reference the variable's value.
+\par 
+\par PL/SQL libraries, which are defined external to any form module, may not directly reference any bind variables, including items, SYSTEM variables and GLOBAL variables. If you want to work with GLOBALs in a PL/SQL library, you must do so via indirect references.
+\par 
+\par Oracle Forms provides two built-ins for indirect referencing:
+\par 
+\par }\trowd \trgaph108\trleft-108\trkeep \clvertalt\cltxlrtb \cellx1932\clvertalt\cltxlrtb \cellx7884\pard\plain \s26\nowidctlpar\widctlpar\intbl\tx360\adjustright \f1\fs16\cgrid {COPY\cell }\pard \s26\nowidctlpar\widctlpar\intbl\tx360\adjustright {Procedure which changes the value of the bind variable.\cell }\pard\plain \nowidctlpar\widctlpar\intbl\adjustright \fs20\cgrid {\row }\trowd \trgaph108\trleft-108\trkeep \clvertalt\cltxlrtb \cellx1932\clvertalt\cltxlrtb \cellx7884\pard\plain \s26\nowidctlpar\widctlpar\intbl\tx360\adjustright \f1\fs16\cgrid {NAME_IN\cell Function which returns the value associated with the bind variable.\cell }\pard\plain \nowidctlpar\widctlpar\intbl\adjustright \fs20\cgrid {\row }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par COPY copies the value of an character expression to an Oracle Forms bind variable. The specification for COPY is:
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {
+\par PROCEDURE COPY 
+\par    (value_in IN VARCHAR2, 
+\par     variable_in IN VARCHAR2);
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {where value_in is the string value and variable_in is the name of the bind variable which will receive the value. Notice that COPY will not accept numeric or date values. You must use the appropriate conversion function, as shown below:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {COPY (TO_CHAR(SYSDATE),
+\par      'header.curr_date');
+\par 
+\par COPY (TO_NUMBER (total_sales), 
+\par      'GLOBAL.sales_amount');
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {The NAME_IN function returns the value currently associated with a bind variable. Its specification is:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {FUNCTION NAME_IN
+\par    (variable_in IN VARCHAR2) 
+\par RETURN VARCHAR2;
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {where variable_in is the name of the bind variable which contains the value.
+\par 
+\par So within a PL/SQL library, if you want to use the value of a GLOBAL variable, you must get that value with NAME_IN as the following code:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {company_status := 
+\par    NAME_IN ('GLOBAL.company_status');
+\par }\pard \s24\nowidctlpar\widctlpar\tx180\adjustright {
+\par }\pard \s24\nowidctlpar\widctlpar\tx180\adjustright {IF company_status = 'C'
+\par THEN
+\par    ...
+\par ELSIF company_status = 'O'
+\par THEN
+\par    ...
+\par END IF;
+\par 
+\par }\pard\plain \s20\nowidctlpar\widctlpar\tx360\adjustright \b\i\f1\fs20\cgrid {Drawbacks to GLOBAL Variables
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par There are a number of drawbacks to the Oracle Forms GLOBAL variable, including:
+\par 
+\par }{\b 1. The GLOBAL only stores character information and at a fixed length of 255.}{ You can use up lots of unnecessary memory using GLOBAL variables. Often Oracle Forms will perform implicit conversions for you, so you don't have to bother with the character format. There are times, however, especially when you pass a GLOBAL as a parameter into a PL/SQL module, when you must perform an explicit conversion. Developers should not have to concern themselves with the internal implementation details of a data structure like that.
+\par }{\b 
+\par }\pard \s15\nowidctlpar\widctlpar\tx360\adjustright {\b 2. No other tool besides Oracle Forms can reference these GLOBALs.}{ Oracle Graphics and Oracle Reports do not recognize the GLOBAL syntax. PL/SQL Version 2 and therefore stored procedures and triggers do not have access to the memory-based GLOBAL stack. Non-Oracle tools such as Microsoft Access and Powersoft Powerbuilder also are completely ignorant of these GLOBAL variables.
+\par }\pard \s15\nowidctlpar\widctlpar\tx360\adjustright {
+\par }{\b 3. Every GLOBAL variable has to have a name, as in "GLOBAL.current_date". }{That is reasonable enough when you are working with a small number of distinctly-named pieces of data. There are times, however, when the requirement to name the data is completely artificial. What am I supposed to do when I want to save an }{\i array}{ or }{\i list}{ of global data?
+\par 
+\par Suppose, for example, I have a set of twenty-four dollar amounts for profit and loss for each month of the year. I can either pack my string GLOBALs with multiple values as follows:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {PROCEDURE pack_years_data
+\par IS
+\par BEGIN
+\par    packed_string := 
+\par       TO_CHAR (:yearglance.month1_profit) || '|' 
+\par       TO_CHAR (:yearglance.month1_loss);
+\par    ...
+\par    packed_string := 
+\par       packed_string || '|' || 
+\par       TO_CHAR (:yearglance.month12_profit) || '|' 
+\par       TO_CHAR (:yearglance.month12_loss);
+\par 
+\par    :GLOBAL.year_data := packed_string;
+\par END;
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {or I can use variable referencing with COPY and NAME_IN to place the data in separate GLOBAL variables as in:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {FOR month_num IN 1 .. 12
+\par LOOP
+\par    COPY (TO_CHAR (month1_profit) || '|' ||    TO_CHAR (month1_loss),
+\par          'GLOBAL.month' || TO_CHAR (month_num));
+\par END LOOP;
+\par    
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {In either case, I have to go to great lengths to perform what should be a straightforward task.
+\par }\pard \s15\nowidctlpar\widctlpar\tx360\adjustright {
+\par }\pard \s15\nowidctlpar\widctlpar\tx360\adjustright {\b 4. You cannot make direct references to GLOBALs in PL/SQL libraries.}{ Instead, you must rely on COPY and NAME_IN. This restriction results in more convoluted code which is harder to maintain. It also introduces additional processing overhead in your program. Such overhead was prohibitive in Oracle Forms 4.0.12, but the current release of the tool manages the bind variable memory more effectively, so you are not punished severely by using NAME_IN.
+\par 
+\par The bottom line is that the Oracle Forms GLOBAL variable is a less-than-perfect implementation of global data. Let's now examine the alternative of PL/SQL-based global data structures.
+\par 
+\par }\pard\plain \s19\nowidctlpar\widctlpar\tx360\adjustright \b\f1\fs20\cgrid {Stored PL/SQL Package Variables
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par With PL/SQL Version 2 (available only in PL/SQL programs stored in the database), the package structure offers new possibilites for global data. When you declare a variable in the specification of a package, then that variable becomes, for all intents and purposes, a }{\i global variable}{ within a given user session. It can be accessed by any PL/SQL program, regardless of where the variable was first referenced and assigned a value, as long as that program is run under the same session (note: you can make use of the DBMS_PIPE package to make data available across different Oracle sessions).
+\par 
+\par Since PL/SQL provides the underlying procedural logic for all Oracle-based development (from stored procedures to batch scripts to reports to forms), a PL/SQL-based global data mechanism could be used by just about any application which runs against the Oracle RDBMS. Oracle Forms clearly fits this bill.
+\par 
+\par You implement PL/SQL-based global data with }{\i package data}{. Package data is any data structure declared in a package body or specification. Unlike GLOBAL variables, PL/SQL globals can be any data structure you can declare in a package specification, including the following:
+\par 
+\par Scalar variables, such as a number or Boolean
+\par Composite structures, such as records and PL/SQL tables
+\par Constants (variables whose values cannot be changed)
+\par Cursor variables (as of PL/SQL Releases 2.2 and 2.3)
+\par 
+\par PL/SQL Version 2 provides the capability to create and manipulate global data, but it does not provide any general mechanism to manage these globals. Every time you wish to use a global variable, you must define it in the specification of a package. If in the process of building your programs you realize you need another global data, you must go back to one package or another and add it explicitly by name. If you wish to store a large number of values, you will want to create and manipulate a PL/SQL table. Again, you cannot decide to create such a structure dynamically, at real-time. You have to have all of this figured out in advance. 
+\par 
+\par }\pard\plain \s3\li360\sa120\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \b\cgrid {Architecture of PL/SQL Globals
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {The first time you reference a package element, the entire package (compiled) is loaded into the Shared Global Area of the Oracle database instance on the server. That code is then shared by all sessions which have EXECUTE authority on the package.
+\par 
+\par The data which is declared by the package elements is also instantiated in memory, but it is }{\i not}{ shared across all sessions. Instead, each Oracle session is assigned its own private PL/SQL area, which contains a copy of the package data (see Figure 1). This private PL/SQL area is maintained in the SGA for as long as your session is running. The values assigned to your packaged data structures also remain available in the SGA throughout your session. In other words, they persist for the duration.
+\par 
+\par }{{\pict\wmetafile8\picw16536\pich17171\picwgoal9375\pichgoal9735 \picscalex76\picscaley76 \bin6336  	  Y   ;        &  ÿÿÿÿ     àø®ú†ä	
+   & 
+ ÿÿÿÿ        & $ ÿÿÿÿ    TNPP Microsoft PowerPoint   &  TNPP     f 
+   & 
+ ÿÿÿÿ        &  TNPP             ®úàø   6¦;   ÷         ÿ  ÿ  ‘‘‘ úı  ü( ÿÿÿ     €    €  €€    € € €  €€ ÀÀÀ ÀÜÀ ¦Êğ ÿûğ   ¤ €€€ ÿ    ÿ  ÿÿ    ÿ ÿ ÿ  ÿÿ ÿÿÿ    4     5    &  ÿÿÿÿ     àø°úˆ¸	   &  ÿÿÿÿ     àø`XşØ   ü   ÿ      -    ú     ÿÿÿ    -    ÙYş`àø
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     €û°úØ   ü  úı      -    ğ    Ù°ú€û
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     ü0ıØÿØÿ   ü  ‘‘‘     -    ğ    ú          - 	   ¨ ¨ ØÿØÿ0ıü       
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     ¨ Àı¨H   ü  ‘‘‘     -    ğ    -    ú          -    ğ 	     H¨Àı¨        
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     Nüqıæÿºÿ   ûpÿ      ¼       Book Antiqua    -    .    
+       	          2
+şˆü
+   Shared SQLX X H 8 H X $ X x X        ûpÿ      ¼       Book Antiqua    -    ğ    .    
+       	          2
+½şˆü   Parsed  X H 8 @ H X $        ûpÿ      ¼       Book Antiqua    -    ğ    .    
+       	          2
+jÿˆü   Statements  X 0 H 0 H € H X 0 @ $     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     Ú aş†ıÿ   ûpÿ      ¼       Book Antiqua    -    ğ    .    
+       	          2
+ ÿ   Shared PL/SQL X X H 8 H X $ X X * X x X        ûpÿ      ¼       Book Antiqua    -    ğ    .    
+       	          2
+­ÿ   Compiled Code h P € X 0 0 H X $ h P X H $     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     Æüû"ı   û@ÿ      ¼       Book Antiqua    -    ğ    .    
+       	       (   2
+Ğû ı   Shared Global Area of u v ` J ` v 0   ? k v ` ? 0 – K ` ` 0 j K 0        û@ÿ      ¼       Book Antiqua    -    ğ    .    
+       	          2
+¶ü ı   RDBMS Instance‹   € À u 0 K u U @ ` u V `     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     Èûp ş¸	   ü          -    ğ    -    é	Ñş øû          ü  ü(     -    ğ    ú          -    ğ    ¸	 şpÈû       
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     ÊûQªş@	   ûpÿ      ¼       Book Antiqua    -    ğ    .    
+       	          2
+ğü	   Session 1 X H @ @ 0 P X $ H     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     ¬p„¸	   ü          -    ğ    -    é	µ Ü          ü  ü(     -    ğ    ú          -    ğ    ¸	„p¬       
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     ÒQ²@	   ûpÿ      ¼       Book Antiqua    -    ğ    .    
+       	          2
+ğ	   Session 2 X H @ @ 0 P X $ H     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ      ü@ı¸   -    ü          -    ğ    ğ    û      ¼    "System    -    ğ        hHşˆ`û   ú          -    Ğ@ü    
+`ı   -    -    ğ    'ÿÿ   ü          - 
+   $  ı±ıÁü)
+   $  ü?üÓßüÇ
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     Rû¥¼ı^   ü  ‘‘‘     -    ğ    _½ı¥Rû   û˜ÿ      ¼       Book Antiqua    -    .    
+       	          2
+ Íû   Session @ 4 . . " : @        û˜ÿ      ¼       Book Antiqua    -    ğ    .    
+       	          2
+Œû	   Package A @ 4 . ? 4 : 4  Q        û˜ÿ      ¼       Book Antiqua    -    ğ    .    
+       	          2
+ëû   Data 1W 4 " 4  4     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     °0 ¸è   ü          -    ğ    ¹é  à    
+`ı   ü    ÿ     -    ğ    ú          -    è¸0 °    
+`ı
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     î ~ì   ûÿ      ¼       Book Antiqua    -    ğ    .    
+       	ÿÿÿ       2
+ (	   Package A D 8 2 E 8 > 8  W        ûÿ      ¼       Book Antiqua    -    ğ    .    
+       	ÿÿÿ       2
+¦(   CodeQ > E 8     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     ğı°¸   -    -    ğ    ğ    -    ğ        h°!ş   ú          -    °û0   °Ğù   -    -    ğ    'ÿÿ   ü          - 
+   $ ñı±eşQ!ş!
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     `àhˆ   -    -    ğ        8¨à    ú          -    @ü`    `   -    -    ğ    'ÿÿ   ü          - 
+   $ `Šú6ú
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     ùRûÊ   ûpÿ      ¼       Book Antiqua    -    .    
+       	ü(       2
+ @ù   Private X 8 0 P H 0 H        ûpÿ      ¼       Book Antiqua    -    ğ    .    
+       	ü(       2
+Í@ù   Globalx 0 P X H 0        ûpÿ      ¼       Book Antiqua    -    ğ    .    
+       	ü(       2
+z@ù   Areap 8 H H     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     ˆ   ü   ÿ      -    ğ    	‰
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     ‚Õì   ü  ‘‘‘     -    ğ    íÕ‚   û˜ÿ      ¼       Book Antiqua    -    ğ    .    
+       	          2
+Pı   Session @ 4 . . " : @        û˜ÿ      ¼       Book Antiqua    -    ğ    .    
+       	          2
+Í¼	   Package A @ 4 . ? 4 : 4  Q        û˜ÿ      ¼       Book Antiqua    -    ğ    .    
+       	          2
+J   Data 2W 4 " 4  4     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     6±‚ú   ûpÿ      ¼       Book Antiqua    -    ğ    .    
+       	ü(       2
+Pp   Private X 8 0 P H 0 H        ûpÿ      ¼       Book Antiqua    -    ğ    .    
+       	ü(       2
+ıp   Globalx 0 P X H 0        ûpÿ      ¼       Book Antiqua    -    ğ    .    
+       	ü(       2
+ªp   Areap 8 H H     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     à x¸   -    -    ğ    -    ğ        h¸è    ú          -        À	P   -    -    ğ    'ÿÿ   ü          - 
+   $ à±-4İ
+   $ pŸ#s3
+   & 
+ ÿÿÿÿ     
+   & 
+ ÿÿÿÿ        &  TNPP            
+   & 
+ ÿÿÿÿ        -    -    ğ                    }}{
+\par 
+\par Figure 1. Private PL/SQL areas in Shared Memory
+\par 
+\par Contrast this behavior with the variables instantiated in the declaration section of a stand-alone module. The scope of those variables is restricted to the module. When the module terminates, the memory and values associated with those variables are released. They are no more.
+\par 
+\par }\pard\plain \s20\nowidctlpar\widctlpar\tx360\adjustright \b\i\f1\fs20\cgrid {Global Within a Single Oracle session
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par As a result of the SGA-based architecture, package data structures act as }{\i globals}{ within the PL/SQL environment. Remember, however, that they are globals only within a single Oracle session or connection. Package data is }{\i not}{ shared across sessions. If you need to share data between different Oracle sessions, you must use the DBMS_PIPE package (of course, you can also always save the data to \ldblquote temporary\rdblquote  tables in the database).
+\par 
+\par You need to be careful about assuming that different parts of your application }{\i do}{ maintain a single Oracle connection. There are times when a tool may establish a new connection to the database to perform an action. If this occurs, the data you have stored in a package in the first connection will }{\i not}{ be available.
+\par }\pard \s15\nowidctlpar\widctlpar\tx360\adjustright {
+\par Consider the scenario in Figure 2. An Oracle Forms application has saved values to data structures in a package. When the form calls a stored procedure, this stored procedure can access the same package-based variables and values as the form, since they share a single Oracle connection.
+\par 
+\par The form then uses the RUN_PRODUCT built-in to kick-off a report using Oracle Reports. By default, Oracle Reports uses a second connection to the database (same user name and password) to run the report. So even if this report accesses the same package and its data structures, the values in those data structures will not match those used by the form. It is a different Oracle connection and a new instantiation of the data structures.
+\par 
+\par 
+\par }{{\pict\wmetafile8\picw20055\pich11668\picwgoal11371\pichgoal6616 \picscalex68\picscaley68 \bin6944  	     ®        &  ÿÿÿÿ     0÷@üô–
+   & 
+ ÿÿÿÿ        & $ ÿÿÿÿ    TNPP Microsoft PowerPoint   &  TNPP     P 
+   & 
+ ÿÿÿÿ        &  TNPP             @ü0÷   V
+Ä;   ÷         €  ÿ  € € úı  ü( ÿÿÿ     €    €  €€    € € €  €€ ÀÀÀ ÀÜÀ ¦Êğ ÿûğ   ¤ €€€ ÿ    ÿ  ÿÿ    ÿ ÿ ÿ  ÿÿ ÿÿÿ    4     5    &  ÿÿÿÿ     0÷püØ˜
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     ÷@üˆL   ü  úı      -    ú     ÿÿÿ    -    ú           -    Lˆ@ü÷       
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     @ıÿè°    ü  ÿÿÿ     -    ğ    -    ú          -    ğ    ° èÿ@ı       
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ      ø\Hüh   ü  ÿÿÿ     -    ğ    -    ú          -    ğ    hHü\ ø       
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     ı-ÿe£    û€ÿ      ¼       "Arial ·¾   -    .    
+       	          2
+¾ÿ—ı   Stored ProcedureU + N 2 G N $ U 2 N H G N N 2 G        û€ÿ      ¼       "Arial     -    ğ    .    
+       	          2
+X ÷ş   PROCU ] c ]     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     CúÕüØÄı   ûpÿ      ¼       "Arial ·¾   -    ğ    .    
+       	       :   2
+tı}ú"   Shared Global Area of Oracle RDBMS` X P 8 P X ( p ( X X P ( ( h 8 P P ( X 0 ( p 8 P Q ( P ( h h h x `     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     ¡şúÿHÿ¼    &  ÿÿÿÿ     Å÷Üÿ,ûT   ü    €     -    ğ    -    ú    ü(   -    ğ ®   $U $û²"ûhûOû0ûûûé ùúÔ íú» Üú Ìú… ºún «ú^ ™úL Œú? xú1 gú$ Tú Dú .ú ú÷ÿşùïÿéùéÿÑùãÿ¸ùŞÿ˜ùÜÿ|ùŞÿeùáÿMùäÿ3ùëÿùòÿ	ùúÿğø Óø ¼ø' ©ø4 •øF †øV tøj `øƒ Pøš ?øµ &øì øøJøqø¤Å÷¤NøLÙø¢›ø¢Ÿøp§øJ²ø#Ìøì ÜøÒ îøº ù¥ ù‘ *ù€ @ùs Yùd vùV ‘ùM ©ùH ÈùC æùC ûùD úG +úM DúU \ú^ súk •ú ¬ú” Äú­ ÙúÆ åúÙ óúğ ıúûû'û=ûQûm
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     !øÈˆû@   -    ú    ü(   -    ğ ®   $U !øb#ø¬&øÅ-øä2øü:øCø+Lø@XøYiøwyø‹ø¦šø¶¬øÈ¹øÕÍøãŞøğñøüùù/ùGù%\ù+tù1ù6­ù8Éù6àù3øù0ú)(ú"<úUúrúş‰úíœúà°úÎ¿ú¾Ñúªåú‘õúzû_û(/ûû:ûÊ@û£Dûp€ûp÷úÈlúrªúr¦ú¤úÊ“úñyú(iúBWúZBúo.úƒú”ú¡ìù°Ïù¾´ùÇœùÌ}ùÑ_ùÑJùĞ4ùÍùÇù¿éø¶Òø©°ø“™ø€øgløN`ø;Rø$Hø@øş9øí3ø×/øÃ)ø§
+   & 
+ ÿÿÿÿ     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     @÷¬È´   -    ü          -    ğ    ğ    û      ¼    "System    -    ğ        4È, @÷   ú      ÿ    -    ¬Àå   ¬@   -    -    ğ    'ÿÿ
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     ¬ úÿH¶    &  ÿÿÿÿ     Üÿ1@   ü    €     -    ú    ü(   - ®   $U )£'[$C%÷ 
+á Ì õ´ æ— ×€ Æi ¸Z ¨H ›< ‰. y" g X D -öÿîÿèÿîãÿÖŞÿ¸ÜÿŞÿ‰áÿräÿZëÿFñÿ3ùÿ  ë$ Ù1 ÇB ¹R ¨e •} ‡” w® _ã QF>@d=••…8“Ì”Ğc×>âúã 	Ê ³ -Ÿ @‹ R{ fn }_ ˜R ±I ÈE å@ @ A (C AI XQ oZ „f ¤| ¹ Ï¦ ã¿ ïÑ ûç û 2E!`
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     \¸ˆ   -    ú    ü(   -    ğ ®   $U \M^•a­gËlâsù{„$<ŸY®p¿‡Í–İ¨ê´üÂÎÚ-ãAïXún—¯Íçü+?ÿR÷jë„ÜšÌ¬¿¾®Ìİ‹ğsş\B&4á?²EŒH[€[ ¸]¹\µ®²£Ø‹|&k=XQEe3u‚‘íÔ§½« °„°q¯]­D§-Ÿ–ŠátÌb¶J¢1–Š	€õyärÓm¾i«d
+   & 
+ ÿÿÿÿ     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     †ı	
+ø   ûpÿ      ¼       Book Antiqua    -    .    
+       	          2
+¨Àı   Client  Sideh 0 0 H X 0 $ $ X 0 X H     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     Fı}Ú l   ûpÿ      ¼       Book Antiqua    -    ğ    .    
+       	          2
+€ı   Server  SideX H 8 P H 8 $ $ X 0 X H     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     SøÁ5ü7   û€ÿ      ¼       "Arial ·¾   -    ğ    .    
+       	          2
+Rø   Oracle Formsd 1 H G # H # N N 2 r G        û€ÿ      ¼       "Arial 4×   -    ğ    .    
+       	          2
+ìø   Application \ O N # $ G G + $ N N     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     @øıÈú¨ÿ   ü  ÿÿÿ     -    ğ    -    ú          -    ğ    ¨ÿÈúı@ø   ¬@
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     6øşÆúQÿ   ûÿ      ¼       Book Antiqua    -    ğ    .    
+       	          2
+…şpø	   Package A D 8 2 E 8 > 8  W        ûÿ      ¼       Book Antiqua    -    ğ    .    
+       	          2
+ÿ ù   Data] 8 & 8     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ      ¼şÈÀÿ   ü  € €     -    ğ    -    ú          -    ğ 8   $ P¼şÀæşPÿPûşpûş_şşTÿMÿKÿK%ÿK¸ÿ ¸ÿ %ÿ ÿÿşş÷şïşéş#âş0Üş=ØşLÔş_ÑşpÑşPÑş
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     ±úğşˆü    -    ú          -    ğ 8   $ %ûğş±úÿ%ûKÿ%û4ÿü4ÿü7ÿ*ü=ÿ0üFÿ3üSÿ3üaÿ3ü  €ü  €üaÿ€üKÿ}üBÿzü7ÿuü0ÿnü(ÿgü!ÿ[üÿNüÿAüÿ1ü
+ÿüÿüÿ%ûÿ
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     iû¼şHıÀÿ   -    ú          -    ğ 8   $ @ıyÿñü¸ÿ£üyÿÊüyÿÊüûşÅüòşºüëş«üçş”üæş|üæşiûæşiû¼ş|ü¼ş¢ü¼ş³ü¾şÅü¿şÒüÂşßüÆşëüÊşøüĞşı×şıŞşıçşıñşıûşıyÿ
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     W5ÿ,    -    ú          -    ğ 8   $ Wèÿ$ åèÿÁèÿÁqÿÆhÿĞbÿİ^ÿò]ÿ]ÿ ]ÿ 5ÿ5ÿæ5ÿÖ7ÿÆ8ÿ»;ÿ®>ÿ¤Bÿ˜HÿOÿ†Vÿ^ÿ{gÿzqÿzèÿ
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     À\h   ü  ÿÿÿ     -    ğ    -    ú          -    ğ    h\À   ¬@
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     ÓÁõ7   û€ÿ      ¼       "Arial ·¾   -    ğ    .    
+       	          2
+R   Oracle Reportsd 1 H G # H # ] G N N 2 + G        û€ÿ      ¼       "Arial nt   -    ğ    .    
+       	          2
+ì   Application \ O N # $ G G + $ N N     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ      ü ¨   -    -    ğ    ğ    -    ğ        (   ü   ú           -     @ö    `	   -    -    ğ    'ÿÿ   ü          - 
+   $   AgAØ
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     Æü‰Îx   ûpÿ      ¼       Book Antiqua    -    .    
+       	          2
+( ı   Via RUN_PRODUCT p 0 H $ h p x H X h x x p h `     
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     @ÀıÈØÿ   ü  ÿÿÿ     -    ğ    ú          -    ØÿÈÀı@    `	
+   & 
+ ÿÿÿÿ        &  ÿÿÿÿ     63şÆÿ   ûÿ      ¼       Book Antiqua    -    ğ    .    
+       	          2
+µşp	   Package A D 8 2 E 8 > 8  W        ûÿ      ¼       Book Antiqua    -    ğ    .    
+       	          2
+;ÿ    Data] 8 & 8     
+   & 
+ ÿÿÿÿ        &  TNPP            
+   & 
+ ÿÿÿÿ        -    -    ğ    ğ    -    ğ          }}{
+\par 
+\par }\pard \s15\nowidctlpar\widctlpar\tx360\adjustright {Figure 2. Two Oracle connections between Oracle Forms and Oracle Reports
+\par }\pard \s15\nowidctlpar\widctlpar\tx360\adjustright {
+\par }\pard\plain \s3\li360\sa120\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \b\cgrid {Private and Public Global Data
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {A package is composed of a specification and body. The specification declares those package elements that can be referenced from outside the package. These are the public elements of the package. The body contains the implementation of publicly-declared programs and cursors, as well as any other programs and data structures which are only defined inside the body. 
+\par 
+\par If a package element only makes its appearance in the body of the package, then it is a private element. For example, in the following package, the hire_date is a public variable and the fire_date is a private variable.
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {PACKAGE downsize
+\par IS
+\par    v_hire_date DATE;
+\par END;
+\par 
+\par PACKAGE BODY downsize
+\par IS
+\par    v_fire_date DATE;
+\par END;
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {Since v_hire_date is defined in the package specification, then I can make directly reference that variable in my own code, as follows:
+\par 
+\par 1. Read the value of the hire date variable.
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {last_hired := downsize.v_hire_date;
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {2. Change the value of the hire date variable to ten days in the future.
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {downsize.v_hire_date := SYSDATE + 10;
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {If I try to access v_fire_date in the same way, however, your code will not compile. It is hidden behind the public boundary of the package. 
+\par 
+\par In both cases, though, these variables are }{\i globals}{, just different kinds of globals: public and private. The v_hire_date variable is a }{\i public}{ global. This means that any program outside of the package can access the data structure. You can set v_hire_date to whatever you want and any of your programs can include a direct reference to that variable in its code. 
+\par 
+\par The v_fire_date is, on the hand, a }{\i private}{ global. Its value is maintained in your private global area since it is in a package, but the only programs that can reference it are those defined }{\i within}{ the package itself -- either in the body or the specification. Any attempt to compile a reference to v_fire_date outside of the package will fail.
+\par 
+\par What\rquote s the difference, public and private? Public global data is the proverbial "loose cannon" of programming. This kind of data sure is very convenient. Declare a few variables in a package specification and they are available from/to any module. If you need to get a piece of information, just grab it from the global.  Reliance on global data structures, however, leads to unstructured code that is full of side-effects. 
+\par 
+\par Now that we\rquote ve looked at Oracle Forms globals and PL/SQL globals, let\rquote s move to an examination of the realities of working with global data.
+\par 
+\par }\pard\plain \s19\nowidctlpar\widctlpar\tx360\adjustright \b\f1\fs20\cgrid {Challenges to Working with Global Data
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par Regardless of the particular implementation you use to store your global data, you will face a number of challenges when dealing with globals: 
+\par 
+\par 1. Maintaining Control 
+\par 
+\par Both Oracle Forms GLOBAL variables and public package variables (declared directly in the specification) are "fair game" for any program that wants to modify those structures. 
+\par }\pard \s15\nowidctlpar\widctlpar\tx360\adjustright {
+\par }\pard \s15\nowidctlpar\widctlpar\tx360\adjustright {Take the previous example of v_hire_date. Suppose that one of your business rules is that nobody can be hired in the future. That\rquote s fairly reasonable. But if you declare v_hire_date in the package specification, there is absolutely no way that you can stop me from setting the v_hire_date variable to a date ten or a thousand years in the future. 
+\par 
+\par When you declare a data structure in the package specification, you lose control over that data structure\rquote s value. Since any program write to it, you can never trust its value. Instead, you must trust developers to \ldblquote do the right thing\rdblquote  when working with that variable. Now, I am as trusting as the next programmer, but anarchy really has little place in the world of software development.
+\par 
+\par The ramifications of this lack of control are especially intense for GLOBAL variables in Oracle Forms, since the names of these data structures are established at }{\i run-time}{ and cannot be validated when the code is compiled. There are no controls placed on either the names you use for the globals or the way you use those globals. Form A could create a global named \ldblquote GLOBAL.emp_id\rdblquote  and then call form B. Form B might also use a global named \ldblquote GLOBAL.emp_id\rdblquote , but use it for an entirely different purpose than form A. If form B changes that global\rquote s value, however, it is also changed for form A when control is returned to that form. 
+\par 
+\par You could even have the opposite kind of problem: mis-spelled global names. Suppose form A sets a value for :GLOBAL.emp_id and then calls form B. Form B should extract this value and use it to initialize a block. But the programmer for form B has mistakenly coded this line:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {:emp.empno := :GLOBAL.empno;
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {This assignment could cause an error if that global variable has not been previously assigned an error (in which case and most infuriatingly, the runtime error message will }{\i not}{ tell you }{\i which }{global variable was improperly referenced). Or it could simply assign the wrong value to the empno item in the emp block. Either way you\rquote ve got a problem that is very hard to analyze and fix.
+\par 
+\par GLOBAL variables in Oracle Forms hold tremendous potential to really screw you up. I worked recently with a very large, very complex application developed in Oracle Developer/2000. It was a \ldblquote what if\rdblquote  application in which changes were made to scenarios and then reports were printed from those variations. The application relied heavily on Oracle Forms GLOBALs. In fact, over 400 different GLOBAL variables were used to control computations and navigational flow. Unfortunately, the application team had not instituted any controls on how programs read and write these GLOBALS. It was clear to everyone that they had essentially lost control of their application. Debugging was an absolute nightmare.
+\par 
+\par 2. Maintaining Flexibility
+\par 
+\par When you allow programmers to make direct references to global data, you lose the flexibility you need to enhance your application to take advantage of new features. Very specifically, you limit your ability to change the data structures used to implement your global data. 
+\par 
+\par Let's look at an example of how things can change. Suppose that last year I implemented an in-memory profit-and-loss statement as a string variable filled with numbers padded to a length of 10. Suppose further that the total profit entry in the statement is the 14th number in the string. Then if I declared this string in my package specification, programmers who needed access to the statement would write a line of code like this:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {total_profit_loc := 14;
+\par total_profit := SUBSTR (pl.stmt, (total_profit_loc-1)*10 + 1, 10);
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {Then along comes PL/SQL Release 2.3 with Version 2 of Oracle Developer/2000 and I can use PL/SQL tables of records to store my many P & L statements. With PL/SQL tables, my code would be streamlined down to this:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {total_profit := p_l_table (14);
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {Yet now my hands are tied. I am dying to change my data structures, but by doing so I will have to change every single program which accessed directly the filled string, pl.stmt. What\rquote s the solution? 
+\par 
+\par You can regain control of your package data and also ease your maintenance and enhancement frustrations by building a programmatic interface around your data. This interface is also referred to as "get and set\rdblquote  programs and "access routines", since they usually get and set the values of data and control access to those data structures.
+\par 
+\par In the above example, if I had instead declared the stmt string in the body of my pl package, I could have provided functions to retrieve the different elements of the statement as follows:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {total_profit := 
+\par }\pard \s24\nowidctlpar\widctlpar\tx180\adjustright {   pl.retrieve ('total_profit');
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {I would then be free to change the underlying data structure from filled string to PL/SQL table. As long as the interface to the pl.retrieve function did not change, none of the programs which relied on the old data would have to change.
+\par 
+\par My programmatic interface would have protected both my data structure and all the programs which relied on it.
+\par }\pard\plain \s19\nowidctlpar\widctlpar\tx360\adjustright \b\f1\fs20\cgrid {
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {Again, the situation with Oracle Forms global variables offers an extreme of this situation. Those of us who have been working with Oracle Forms since the good old days of SQL*Forms 2.3 are quite familiar with GLOBAL variables and their restrictions. We don\rquote t think twice about assigning dates and numbers to those globals. Of course, the reality is that such a global is really a string. So Oracle Forms is doing implicit conversions for us, our values are restricted to 255 bytes, and a full 255 bytes of memory is utilized regardless of the actual value. As soon as something better comes along, we are all eager to use that implementation.
+\par 
+\par But will we be able to? When we have PL/SQL Release 2.3 and true packaged data structures, how will we convert our direct GLOBAL variables references to calls to packaged functions and procedures? I am sure that some third-party vendor or another will be ready to sell us a utility that will do the trick. That is, unfortunately, not always an option.
+\par 
+\par }\pard \s15\nowidctlpar\widctlpar\tx360\adjustright {No, the stark reality is that the more we directly reference GLOBAL variables in our forms, the less flexibility we will have to upgrade our Oracle Developer/2000 applications to Version 2 and all of its wonderful new features.
+\par }\pard \s15\nowidctlpar\widctlpar\tx360\adjustright {
+\par What is the solution? Stop directly referencing GLOBAL variables (and globals of }{\i any}{ kind) now! Instead, use packages to insist on a most structured approach to managing global data.
+\par 
+\par }\pard\plain \s19\nowidctlpar\widctlpar\tx360\adjustright \b\f1\fs20\cgrid {Structured Use of Globals
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par In order to exert control over access to your globals and also maintain flexibility about the way you implement those globals, you will want to build a layer of code around those globals. The best Pl/SQL construct with which to accomplish this is the package. This globals package would establish the rules for accessing globals and also hide the particulars of the implementation you use at any given time to store and manage the global data. 
+\par 
+\par I will show you in this article one example of an implementation of such a globals package. Before I do that, though, let\rquote s just come up with a wish list of the features such a package would provide. You can always decided later that some of the features are not practical -- at least for the first pass. Once you have this wish list, though, you can always come back to it and complete your implementation later.
+\par 
+\par Here are the kind of features I would want to see in a package to manage global data for Oracle Forms:
+\par 
+\par }{\field\fldedit{\*\fldinst {symbol 183 \\f "Symbol" \\s 10 \\h}}{\fldrslt }}{   Do not allow any direct access to the global for either read or write. Instead, all access takes place through "get and set" routines.
+\par 
+\par }{\field\fldedit{\*\fldinst {symbol 183 \\f "Symbol" \\s 10 \\h}}{\fldrslt }}{   Track the }{\i state}{ of the global, including: Not Set, Changed, Current (value not changed since last access). You will often need to know if the global has changed value since you called another module. You can do this by keeping track of the old value and coding a comparison, but that is clumsy and, with numeric values, problematic.
+\par 
+\par }{\field\fldedit{\*\fldinst {symbol 183 \\f "Symbol" \\s 10 \\h}}{\fldrslt }}{   Support the full suite of PL/SQL datatypes, including Booleans, records and so forth. You should be able to store numbers, dates and so forth in their native format.
+\par 
+\par }{\field\fldedit{\*\fldinst {symbol 183 \\f "Symbol" \\s 10 \\h}}{\fldrslt }}{   Recognize and work }{\i types}{ of global variables, such as constants, list of values, ranges (for dates and numbers). You may want to create a global which cannot be modified, or which has certain rules which are applied to it. The more you can bundle the rules for such globals behind a layer of code or \ldblquote API\rdblquote  (application programmatic interface), the more easily you can enforce the rules.
+\par 
+\par }{\field\fldedit{\*\fldinst {symbol 183 \\f "Symbol" \\s 10 \\h}}{\fldrslt }}{   Allow for user-defined handling of exceptions. Let the programmer decide if an invalid access (global not defined, value out of range, trying to change constant, etc.) should raise an exception, display a message, etc.
+\par 
+\par This is a fine and expansive set of features. Are they all practical to implement? Perhaps. In many situations you will find that the best first step is to produce a package with more limited scope, then put it to use and see how it \ldblquote plays\rdblquote . This initial experience can both improve the current implementation and also have a major impact on the direction you take for your enhancements.
+\par 
+\par The rest of this article offers an implementation of a package for global management in Oracle Forms. The package is called interform (see the multform.pll library file for the code) because it is used to manage all aspects of inter-form communication, such as calling another form, opening a form, and transferring data between forms. The version of interform included with the article focuses only on the global data management.
+\par }\pard\plain \s19\nowidctlpar\widctlpar\tx360\adjustright \b\f1\fs20\cgrid {
+\par The Interform Package
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par The interform package both manages navigation between forms (hence the package name) and also changes values of GLOBAL variables. This package does not support the full set of features (the \ldblquote wish list\rdblquote ) for global data management I listed earlier. Rather it allows you to:
+\par 
+\par }{\field\fldedit{\*\fldinst {symbol 183 \\f "Symbol" \\s 10 \\h}}{\fldrslt }}{   Call other forms in the application through the callform module. This enhances the native CALL_FORM built-in by performing standard pre- and post- form navigation steps }{\i around}{ the CALL_FORM.
+\par 
+\par }{\field\fldedit{\*\fldinst {symbol 183 \\f "Symbol" \\s 10 \\h}}{\fldrslt }}{   Keep track of whether the value of a global has been changed in a given form. 
+\par 
+\par The specification and body interform are shown in the following sections. Here are some examples of how to use the package:
+\par 
+\par 1. Set the value of a global named "net_present_value" to 10,000. This will also "mark" that global as changed.
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {interform.change ('net_present_value', 10000);
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {2. Reset the status of the same "npv" global so that it is }{\i not}{ marked as changed.
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {interform.reset ('net_present_value');
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {3. Mark a global as changed. In this case, I really don't have a global }{\i value}{ I need to maintain, just a flag that indicates "change" has taken place.
+\par }\pard \s15\nowidctlpar\widctlpar\tx360\adjustright {
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {interform.change ('total_sales_modified');
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {4. Retrieve the value of the employee ID key from the global. I retrieve the value immediately after returning from a called form, in which a different employee might have been selected. Notice that I only assign the new ID if it has been changed.
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {interform.reset(\lquote emp_ID\rquote );
+\par 
+\par interform.callform (\lquote select_emp\rquote );
+\par 
+\par IF interform.changed (\lquote emp_ID\rquote )
+\par THEN
+\par    selected_id := interform.value ('emp_ID');
+\par END IF;
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par Notice that in each of the above examples, the keyword \ldblquote GLOBAL\rdblquote  does not appear even once. Nor does the \ldblquote :\rdblquote  character that indicates a host variable specific to Oracle Forms. Instead I just pass the name of the data structure in which I am interested and let the interform package handle the details (such as how and where the data is stored). 
+\par 
+\par By separating the references to globals from their implementation, I have given myself the freedom at some later point to change how I implement those globals. Of course, right now the implementation }{\i is}{ based on those same GLOBAL variables. The code behind interform is straightforward enough. Consider the change procedure. Actually, change is overloaded four different ways:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {PROCEDURE change 
+\par    (gname_in IN VARCHAR2);
+\par PROCEDURE change 
+\par    (gname_in IN VARCHAR2, value_in IN VARCHAR2);
+\par PROCEDURE change 
+\par    (gname_in IN VARCHAR2, value_in IN NUMBER);
+\par PROCEDURE change
+\par    (gname_in IN VARCHAR2, value_in IN DATE);
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par In the first version, change doesn\rquote t even take a value to which you want the global changed. Instead, it simply marks the global as \ldblquote changed\rdblquote . You would use this version of change if your global is simply being used as a Boolean flag: TRUE or FALSE, did my global change?
+\par 
+\par The final three overloadings of change each take a different type of data. In this way, the interform packge works with \ldblquote native\rdblquote  datatypes, not just with strings.
+\par 
+\par The implementation of change is short and sweet. The flag-setting version simply uses COPY to set the value of the GLOBAL variable used to track changes to a given, named GLOBAL:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {PROCEDURE change (gname_in IN VARCHAR2)
+\par }\pard \s24\nowidctlpar\widctlpar\tx180\adjustright {IS
+\par BEGIN
+\par    COPY ('CHANGED', c_flag_prefix || gname_in);
+\par END;
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par where c_flag_prefix is the standard prefix used to identify a changed-flag global. The c_flag_prefix is set to \ldblquote GLOBAL.glbchg_\rdblquote . So if you called interform.change as follows:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {interform.change (\lquote bonus_assigned\rquote ); 
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {then the interform package would execute the following assignment:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {COPY ('CHANGED', 
+\par }\pard \s24\nowidctlpar\widctlpar\tx180\adjustright {   \lquote GLOBAL.glbchg_bonus_assigned\rquote );
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {If you call one of the change procedures to actually set a value, the implementation looks like this:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {PROCEDURE change
+\par    (gname_in IN VARCHAR2, value_in IN NUMBER)
+\par IS
+\par BEGIN
+\par    COPY 
+\par      (TO_CHAR (value_in),
+\par       c_prefix || gname_in);
+\par    change (gname_in);
+\par END;
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par In other words, I set the value of the global as you requested and then mark it as changed. The c_prefix constant is equal to \ldblquote GLOBAL.\rdblquote , since that is the current syntax in Oracle Forms.
+\par 
+\par It doesn\rquote t get much more complicated than that in any of the modules of interform (see the listings for the full code). It is a very simple package that performs a very basic operation: it provides a buffer, a layer of code, between Oracle Forms globals and your application. Once you have this layer in place, however, any number of wonderful things become possible.
+\par 
+\par }\pard\plain \s19\nowidctlpar\widctlpar\tx360\adjustright \b\f1\fs20\cgrid {Tracing Changes to Globals with Interform
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par What if, for example, you want to track all the changes that are made to a given variable: how often it is referenced, how often changed, to what intermediate values it is changed, etc. If you are directly referencing the GLOBAL variable, there is absolutely no way to do this, even with the fine debugger from Oracle Procedure Builder. If, on the other hand, you are using interform, you could add a single line of code to the change procedure:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {PROCEDURE change 
+\par    (gname_in IN VARCHAR2, value_in IN NUMBER)
+\par IS
+\par BEGIN
+\par    COPY (TO_CHAR (value_in), c_prefix || gname_in);
+\par    change (gname_in);
+\par    MESSAGE 
+\par      (\lquote Global \lquote  || gname_in || \lquote  changed to \lquote  || value (gname_in));
+\par END;
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par Suddenly, whenever any global is changed via interform calls, you have a trace on your screen. Of course, you would usually want to only show the values of those globals in which you are interested. So you would probably build a list of global names and a package to maintain that list and a way to turn on and off the trace so you only see the information when you want or need it. You would, in short, end up with something like this:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {PROCEDURE show_global 
+\par    (gname_in IN VARCHAR2)
+\par IS
+\par    glist VARCHAR2(255) := NAME_IN (\lquote GLOBAL.glb_list\rquote );
+\par    delimited_global VARCHAR2(255) := \lquote |\rquote  || gname_in || \lquote |\rquote ;
+\par BEGIN
+\par    IF showing_globals AND
+\par       INSTR (glist, delimited_global) > 0
+\par    THEN
+\par       MESSAGE (...);
+\par }\pard \s24\nowidctlpar\widctlpar\tx180\adjustright {   END IF;
+\par }\pard \s24\nowidctlpar\widctlpar\tx180\adjustright {END;
+\par 
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {and then you would call show_global inside the call to change. There are all sorts of possibilities and levels of sophistication of traces you can build. The main point here is that the possibility exists only because you have created a }{\i hook}{ for yourself by using the package.
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {     
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {[A tuning note for interform: In the version of interform provided to you on the companion disk and shown in this article, I use two Oracle Forms GLOBAL variables for each global name you pass to the package (one for your data and one for my changed flag). You can cut down on the memory used by interform by reserving the first character of any global variable managed by interform as the changed flag. With this approach, for example, the changed function would look like this:
+\par 
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {FUNCTION changed 
+\par    (gname_in IN VARCHAR2) RETURN BOOLEAN
+\par IS
+\par    val VARCHAR2(255);
+\par BEGIN
+\par    DEFAULT_VALUE 
+\par      ('C', c_flag_prefix || gname_in);
+\par    val := 
+\par      SUBSTR (NAME_IN 
+\par         (c_flag_prefix || gname_in), 1, 1);
+\par    RETURN (val = 'C');
+\par END;
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid { 
+\par There are, of course, many other possible enhancements. I encourage my readers to make the changes necessary to turn interform into the most useful package for your environment.]
+\par 
+\par }\pard\plain \s19\nowidctlpar\widctlpar\tx360\adjustright \b\f1\fs20\cgrid {Preparing for the Future
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par This article focuses on global data structures and how you can both protect yourself from current limitations and also prepare yourself to upgrade more smoothly to new versions. These techniques apply to much more than global data. The more you build packages and provide yourself with a layer of code between your applications and base functionality, the more likely it is that you can stay abreast with new technology. Perhaps more importantly, your code will be more easily developed, debugged and maintained.
+\par 
+\par }\pard\plain \s23\nowidctlpar\widctlpar\tx360\adjustright \i\f1\fs20\cgrid {Listing 1. The Interform Package Specification
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {PACKAGE interform
+\par IS
+\par    PROCEDURE change (gname_in IN VARCHAR2);
+\par 
+\par    PROCEDURE change (gname_in IN VARCHAR2, value_in IN VARCHAR2);
+\par 
+\par    PROCEDURE change (gname_in IN VARCHAR2, value_in IN NUMBER);
+\par 
+\par    PROCEDURE change (gname_in IN VARCHAR2, value_in IN DATE);
+\par 
+\par    PROCEDURE reset (gname_in IN VARCHAR2);
+\par 
+\par    FUNCTION changed (gname_in IN VARCHAR2) RETURN BOOLEAN;
+\par 
+\par    FUNCTION value (gname_in IN VARCHAR2) RETURN VARCHAR2;
+\par }\pard \s24\nowidctlpar\widctlpar\tx180\adjustright {END;
+\par }\pard \s24\nowidctlpar\widctlpar\tx180\adjustright {
+\par }\pard\plain \s23\nowidctlpar\widctlpar\tx360\adjustright \i\f1\fs20\cgrid {Listing 2. The Interform Package Body
+\par }\pard\plain \s15\nowidctlpar\widctlpar\tx360\adjustright \fs20\cgrid {
+\par }\pard\plain \s24\nowidctlpar\widctlpar\tx180\adjustright \b\f2\fs16\cgrid {PACKAGE BODY interform
+\par IS
+\par    c_flag_prefix CONSTANT VARCHAR2(10) := 'GLOBAL.glbchg_';
+\par    c_prefix CONSTANT VARCHAR2(10) := 'GLOBAL.';
+\par 
+\par    PROCEDURE change (gname_in IN VARCHAR2)
+\par    IS
+\par    BEGIN
+\par       COPY ('CHANGED', c_flag_prefix || gname_in);
+\par    END;
+\par 
+\par    PROCEDURE change (gname_in IN VARCHAR2, value_in IN VARCHAR2)
+\par    IS
+\par    BEGIN
+\par       COPY (value_in, c_prefix || gname_in);
+\par       change (gname_in);
+\par    END;
+\par 
+\par    PROCEDURE change (gname_in IN VARCHAR2, value_in IN NUMBER)
+\par    IS
+\par    BEGIN
+\par       COPY (TO_CHAR (value_in), c_prefix || gname_in);
+\par       change (gname_in);
+\par    END;
+\par 
+\par    PROCEDURE change (gname_in IN VARCHAR2, value_in IN DATE)
+\par    IS
+\par    BEGIN
+\par       COPY (TO_CHAR (value_in), c_prefix || gname_in);
+\par       change (gname_in);
+\par    END;
+\par 
+\par    PROCEDURE reset (gname_in IN VARCHAR2)
+\par    IS
+\par    BEGIN
+\par       COPY ('UNCHANGED', c_flag_prefix || gname_in);
+\par    END;
+\par 
+\par    FUNCTION changed (gname_in IN VARCHAR2) RETURN BOOLEAN
+\par    IS
+\par    BEGIN
+\par }\pard \s24\nowidctlpar\widctlpar\tx180\adjustright {      DEFAULT_VALUE ('CHANGED', c_flag_prefix || gname_in);
+\par }\pard \s24\nowidctlpar\widctlpar\tx180\adjustright {      RETURN NAME_IN (c_flag_prefix || gname_in) = 'CHANGED';
+\par    END;
+\par 
+\par    FUNCTION value (gname_in IN VARCHAR2) RETURN VARCHAR2
+\par    IS
+\par    BEGIN
+\par       DEFAULT_VALUE (NULL, c_prefix || gname_in);
+\par       RETURN NAME_IN (c_prefix || gname_in);
+\par    END;
+\par }\pard \s24\sb120\sa120\keepn\nowidctlpar\widctlpar\tx180\adjustright {END;
+\par }}

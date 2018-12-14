@@ -1,0 +1,97 @@
+CREATE OR REPLACE FUNCTION collections_equal (
+   -- Replace with your own type here, as needed.
+   collection1_in      IN   DBMS_SQL.varchar2s
+  ,collection2_in      IN   DBMS_SQL.varchar2s
+  ,match_indexes_in    IN   BOOLEAN DEFAULT TRUE
+  ,both_null_true_in   IN   BOOLEAN DEFAULT TRUE
+)
+   RETURN BOOLEAN
+/*
+   Program name: collections_equal
+
+   Original author: Steven Feuerstein, www.Qnxo.com
+
+   Qnxo Script ID: {856D4805-AF52-4CBE-88C4-339D267BB18F}
+
+   You are granted permission to use this code if it was generated
+   by a licensed user of Qnxo.
+
+   Overview:
+
+   Return true if the the contents of the two collections are the same.
+
+   Parameters:
+
+      collection1_in - first collection for comparison
+
+      collection2_in - second collection for comparison
+
+      match_indexes_in - if TRUE, then the row numbers in the two
+                         collections must also match.
+
+      both_null_true_in - if TRUE, then if values in corresponding rows
+                          of both collections are NULL, treat this as equality.
+
+   Dependencies/Restrictions:
+
+   Exceptions raised:
+
+   Modification History:
+
+   >> Generated on July      31, 2005 21:37:18 in schema QNXO_REPOSITORY
+*/
+IS
+   -- Replace with your own type here, as needed.
+   l_index1              BINARY_INTEGER := collection1_in.FIRST;
+   l_index2              BINARY_INTEGER := collection2_in.FIRST;
+   l_collections_equal   BOOLEAN        DEFAULT TRUE;
+BEGIN
+   -- Are both collections empty?
+   IF l_index1 IS NULL AND l_index2 IS NULL
+   THEN
+      l_collections_equal := NVL (both_null_true_in, FALSE);
+   -- Is only one empty?
+   ELSIF    (l_index1 IS NULL AND l_index2 IS NOT NULL)
+         OR (l_index1 IS NOT NULL AND l_index2 IS NULL)
+   THEN
+      l_collections_equal := FALSE;
+   ELSE
+      -- Start the row by row comparisons.
+      WHILE (    l_index1 IS NOT NULL
+             AND l_index2 IS NOT NULL
+             AND l_collections_equal
+            )
+      LOOP
+         -- Do the values match?
+         l_collections_equal :=
+            NVL (   collection1_in (l_index1) = collection2_in (l_index2)
+                 OR (    both_null_true_in
+                     AND collection1_in (l_index1) IS NULL
+                     AND collection2_in (l_index2) IS NULL
+                    )
+                ,FALSE
+                );
+
+         -- Do the indexes match (if that is requested)?
+         IF l_collections_equal AND match_indexes_in
+         THEN
+            l_collections_equal := NVL (l_index1 = l_index2, FALSE);
+         END IF;
+
+         -- If still equal, go to next element in each collection
+         -- and make sure they both still have a value.
+         IF l_collections_equal
+         THEN
+            l_index1 := collection1_in.NEXT (l_index1);
+            l_index2 := collection2_in.NEXT (l_index2);
+            l_collections_equal :=
+                  (l_index1 IS NOT NULL AND l_index2 IS NOT NULL
+                  )
+               OR (l_index1 IS NULL AND l_index2 IS NULL);
+         END IF;
+      END LOOP;
+   END IF;
+
+   RETURN l_collections_equal;
+END collections_equal;
+/

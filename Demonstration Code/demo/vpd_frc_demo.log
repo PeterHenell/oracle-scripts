@@ -1,0 +1,122 @@
+Connected.
+
+Table dropped.
+
+
+Table created.
+
+
+Trigger created.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Function created.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+Connected.
+
+PL/SQL procedure successfully completed.
+
+Connected.
+
+PL/SQL procedure successfully completed.
+
+Connected.
+
+        ID                                                                      
+----------                                                                      
+TEXT                                                                            
+--------------------------------------------------------------------------------
+CREATED_BY                                                                      
+------------------------------                                                  
+         3                                                                      
+User2 data row 1                                                                
+USER2                                                                           
+                                                                                
+
+
+        ID                                                                      
+----------                                                                      
+TEXT                                                                            
+--------------------------------------------------------------------------------
+CREATED_BY                                                                      
+------------------------------                                                  
+         3                                                                      
+User2 data row 1                                                                
+USER2                                                                           
+                                                                                
+
+Retrieving text for ID 3                                                        
+User2 data row 1                                                                
+User2 data row 1                                                                
+
+PL/SQL procedure successfully completed.
+
+Connected.
+User2 data row 1                                                                
+
+PL/SQL procedure successfully completed.
+
+Connected.
+
+Package created.
+
+
+Package body created.
+
+
+PL/SQL procedure successfully completed.
+
+Connected.
+
+no rows selected
+
+
+no rows selected
+
+BEGIN
+*
+ERROR at line 1:
+ORA-01403: no data found 
+ORA-06512: at "APPOWNER.TEXT_FOR_ID", line 9 
+ORA-06512: at line 8 
+
+
+Connected.
+
+        ID                                                                      
+----------                                                                      
+TEXT                                                                            
+--------------------------------------------------------------------------------
+CREATED_BY                                                                      
+------------------------------                                                  
+         3                                                                      
+User2 data row 1                                                                
+USER2                                                                           
+                                                                                
+
+
+        ID                                                                      
+----------                                                                      
+TEXT                                                                            
+--------------------------------------------------------------------------------
+CREATED_BY                                                                      
+------------------------------                                                  
+         3                                                                      
+User2 data row 1                                                                
+USER2                                                                           
+                                                                                
+
+
+PL/SQL procedure successfully completed.
+

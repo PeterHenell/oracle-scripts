@@ -1,0 +1,6 @@
+connect sys/change_on_install
+@c:\orawin95\rdbms80\admin\dbmspool.sql
+@c:\orawin95\rdbms80\admin\prvtpool.plb
+grant execute on dbms_shared_pool to public;
+create public synonym dbms_shared_pool for sys.dbms_shared_pool;
+connect scott/tiger

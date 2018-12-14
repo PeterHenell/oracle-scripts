@@ -1,0 +1,15 @@
+CREATE OR REPLACE FUNCTION totcomp
+   (sal_in IN PLS_INTEGER,
+    comm_in IN NUMBER := NULL)
+   RETURN NUMBER
+IS
+BEGIN
+   RETURN (sal_in + NVL (comm_in, 0));
+END;
+/
+
+SELECT ename, totcomp (sal, comm) total
+FROM emp
+WHERE totcomp (sal, comm) > 4000
+ ORDER BY totcomp (sal, comm);
+

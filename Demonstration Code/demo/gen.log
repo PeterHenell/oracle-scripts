@@ -1,0 +1,40 @@
+SQL> exec plggen.dbg(1)
+
+PL/SQL procedure successfully completed.
+
+SQL> exec plggen.fortab ('te', 'employee')
+PLGgen.fortab te-employee---FALSEFALSE                                                                                  
+SET DB objects info TABLE-te-employee-                                                                                  
+Init Driver te                                                                                                          
+Set Object info to SCOTT.EMPLOYEE                                                                                       
+Object info currently set to .                                                                                          
+Resetting object information                                                                                            
+Analyze table EMPLOYEE                                                                                                  
+Obtaining constraint information                                                                                        
+Obtaining index information                                                                                             
+Obtaining foreign key information                                                                                       
+Transfer column information at row 1                                                                                    
+Transfer column information at row 2                                                                                    
+Transfer column information at row 3                                                                                    
+Transfer column information at row 4                                                                                    
+Transfer column information at row 5                                                                                    
+Transfer column information at row 6                                                                                    
+Transfer column information at row 7                                                                                    
+Transfer column information at row 8                                                                                    
+Transfer column information at row 9                                                                                    
+Transfer column information at row 10                                                                                   
+Transfer column information at row 11                                                                                   
+Transfer column information at row 12                                                                                   
+Transfer column information at row 13                                                                                   
+Transfer column information at row 14                                                                                   
+Transfer column information at row 15                                                                                   
+Transfer column information at row 16                                                                                   
+You must specify a generation directory with PLGdoir.setgendir.                                                         
+Generation Error!                                                                                                       
+   CGML-200000                                                                                                          
+   Error: You must specify a generation directory with PLGdoir.setgendir.                                               
+   Context:                                                                                                             
+
+PL/SQL procedure successfully completed.
+
+SQL> spool off

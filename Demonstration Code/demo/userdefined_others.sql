@@ -1,0 +1,9 @@
+DECLARE
+   others   EXCEPTION;
+BEGIN
+   RAISE others;
+EXCEPTION
+   WHEN OTHERS 
+   THEN
+      DBMS_OUTPUT.put_line (SQLCODE);
+END;

@@ -1,0 +1,17 @@
+PL/Generator
+TE package for employee
+
+TIME_COUNT      UNIT                 TEXT                                                                               
+--------------- -------------------- ------------------------------------------------------------                       
+   304858-21760 PLG.PLGDOIR          2661-         CLOSE alias_cur;                                                     
+   244576-10880 PLG.PLGDOIR          2659-         FETCH alias_cur INTO alias_rec;                                      
+   132498-10881 PLG.PLGDOIR          77-      SELECT objid, owner, objname, info, doc                                   
+    91790-4771  PLG.PLGGEN           3424-      v_nth PLS_INTEGER := 1;                                                 
+    70045-27043 PLG.PLGGEN           1014-      THEN                                                                    
+    69153-79781 PLG.PLGADMIN         447-            decrypted_text := decrypted_text ||                                
+    58988-4010  PLG.PLGDOIR          450-         SELECT just_like                                                      
+    50566-3     PLG.PLGGEN           241-      THEN                                                                     
+    50404-45983 PLG.PLGSTR           50-            RETURN (SUBSTR (string_in, v_start, v_numchar                       
+                                     s));                                                                               
+                                                                                                                        
+    41622-1     PLG.PLGGEN           2625-                                                                              

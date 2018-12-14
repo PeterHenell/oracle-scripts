@@ -1,0 +1,349 @@
+CREATE OR REPLACE PACKAGE str2list
+-- Copyright 2000 Steven Feuerstein 
+--                steven@stevenfeuerstein.com
+--
+-- Assumes Oracle10gR1 in call to DBMS_UTILITY.FORMAT_ERROR_BACKTRACE
+-- Assumes Oracle10gR2 in that it calls DBMS_OUTPUT.PUT_LINE even for long strings.
+IS
+   PROCEDURE parse (
+      str             IN   VARCHAR2
+     ,delim           IN   VARCHAR2
+     ,pkg             IN   VARCHAR2
+     ,coll            IN   VARCHAR2
+     ,datatype        IN   VARCHAR2 := 'VARCHAR2(32767)'
+     ,extend_needed        BOOLEAN := FALSE
+   );
+
+   PROCEDURE parse (
+      str          IN   VARCHAR2
+     ,delim        IN   VARCHAR2
+     ,pkg          IN   VARCHAR2
+     ,appendproc   IN   VARCHAR2
+     ,/* pkg.appendproc (oneval); */
+      deleteproc   IN   VARCHAR2
+     ,/* pkg.deleteproc (onerow); or pkg.deleteproc; */
+      datatype     IN   VARCHAR2
+   );
+
+   PROCEDURE showlist (pkg IN VARCHAR2, coll IN VARCHAR2);
+
+   PROCEDURE showlist (
+      pkg            IN   VARCHAR2
+     ,firstrowproc   IN   VARCHAR2
+     ,nextrowproc    IN   VARCHAR2
+     ,getvalfunc     IN   VARCHAR2
+     ,showproc       IN   VARCHAR2 := 'pl'
+     ,datatype       IN   VARCHAR2 := 'VARCHAR2(32767)'
+   );
+
+   PROCEDURE trc;
+
+   PROCEDURE notrc;
+
+   FUNCTION tracing
+      RETURN BOOLEAN;
+END str2list;
+/
+
+CREATE OR REPLACE PACKAGE BODY str2list
+IS
+   g_trc   BOOLEAN := FALSE;
+
+   PROCEDURE pl (
+      str         IN   VARCHAR2
+     ,len         IN   INTEGER := 80
+     ,expand_in   IN   BOOLEAN := TRUE
+   )
+   IS
+      v_len   PLS_INTEGER     := LEAST (len, 255);
+      v_str   VARCHAR2 (2000);
+   BEGIN
+      IF LENGTH (str) > v_len
+      THEN
+         v_str := SUBSTR (str, 1, v_len);
+         DBMS_OUTPUT.put_line (v_str);
+         pl (SUBSTR (str, len + 1), v_len, expand_in);
+      ELSE
+         v_str := str;
+         DBMS_OUTPUT.put_line (v_str);
+      END IF;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         IF expand_in
+         THEN
+            DBMS_OUTPUT.ENABLE (1000000);
+            DBMS_OUTPUT.put_line (v_str);
+         ELSE
+            RAISE;
+         END IF;
+   END;
+
+   PROCEDURE trc
+   IS
+   BEGIN
+      g_trc := TRUE;
+   END;
+
+   PROCEDURE notrc
+   IS
+   BEGIN
+      g_trc := FALSE;
+   END;
+
+   FUNCTION tracing
+      RETURN BOOLEAN
+   IS
+   BEGIN
+      RETURN g_trc;
+   END;
+
+   PROCEDURE disperr (str IN VARCHAR2)
+   IS
+   BEGIN
+      DBMS_OUTPUT.PUT_LINE ('Compilation/Execution Error:');
+      DBMS_OUTPUT.PUT_LINE (DBMS_UTILITY.FORMAT_ERROR_STACK);
+      DBMS_OUTPUT.PUT_LINE ('In:');
+      DBMS_OUTPUT.PUT_LINE (str);
+      DBMS_OUTPUT.PUT_LINE ('Backtrack Error Stack:');
+      DBMS_OUTPUT.PUT_LINE (DBMS_UTILITY.FORMAT_ERROR_BACKTRACE);
+      DBMS_OUTPUT.PUT_LINE ('Call Stack:');
+      DBMS_OUTPUT.PUT_LINE (DBMS_UTILITY.FORMAT_CALL_STACK);
+   END;
+
+   PROCEDURE parse (
+      str             IN   VARCHAR2
+     ,delim           IN   VARCHAR2
+     ,pkg             IN   VARCHAR2
+     ,coll            IN   VARCHAR2
+     ,datatype        IN   VARCHAR2 := 'VARCHAR2(32767)'
+     ,extend_needed        BOOLEAN := FALSE
+   )
+   IS
+      collname        VARCHAR2 (100)   := pkg || '.' || coll;
+      dynblock        VARCHAR2 (32767);
+      extstring       VARCHAR2 (100);
+      nextrowstring   VARCHAR2 (100);
+   BEGIN
+      IF extend_needed
+      THEN
+         -- Nested table or VARRAY
+         extstring := collname || '.EXTEND;';
+         nextrowstring := collname || '.LAST';
+      ELSE
+         -- Index-by collection
+         extstring := NULL;
+         nextrowstring := collname || '.COUNT + 1';
+      END IF;
+
+      dynblock :=
+             'DECLARE 
+            v_loc PLS_INTEGER;
+            v_startloc PLS_INTEGER := 1;
+            v_item '
+          || datatype
+          || ';
+          BEGIN '
+          || collname
+          || '.DELETE;
+             IF :str IS NOT NULL 
+             THEN 
+                LOOP
+                   v_loc := INSTR (:str, :delim, v_startloc);
+                   IF v_loc = v_startloc
+                   THEN
+                      v_item := NULL;
+                   ELSIF v_loc = 0
+                   THEN
+                      v_item := SUBSTR (:str, v_startloc);
+                   ELSE
+                      v_item := SUBSTR (:str, v_startloc, v_loc - v_startloc);
+                   END IF;'
+          || extstring
+          || collname
+          || '('
+          || nextrowstring
+          || ') 
+                      := v_item;
+                      
+                   IF v_loc = 0
+                   THEN
+                      EXIT;
+                   ELSE 
+                      v_startloc := v_loc + 1;
+                   END IF;
+                END LOOP;
+             END IF;
+          END;';
+
+      IF tracing
+      THEN
+         pl ('STR2LIST: DIRECT ASSIGNMENT:');
+         pl (dynblock);
+      END IF;
+
+      EXECUTE IMMEDIATE dynblock
+         USING          str, delim;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         disperr (dynblock);
+         RAISE; -- TVP 5/2001
+   END;
+
+   PROCEDURE parse (
+      str          IN   VARCHAR2
+     ,delim        IN   VARCHAR2
+     ,pkg          IN   VARCHAR2
+     ,appendproc   IN   VARCHAR2
+     ,deleteproc   IN   VARCHAR2
+     ,datatype     IN   VARCHAR2
+   )
+   IS
+      dynblock   VARCHAR2 (32767);
+   BEGIN
+      dynblock :=
+             'DECLARE 
+            v_loc PLS_INTEGER;
+            v_startloc PLS_INTEGER := 1;
+            v_item '
+          || datatype
+          || ';
+          BEGIN 
+             '
+          || pkg
+          || '.'
+          || deleteproc
+          || ';
+             IF :str IS NOT NULL 
+             THEN 
+                LOOP
+                   v_loc := INSTR (:str, :delim, v_startloc);
+                   IF v_loc = v_startloc
+                   THEN
+                      v_item := NULL;
+                   ELSIF v_loc = 0
+                   THEN
+                      v_item := SUBSTR (:str, v_startloc);
+                   ELSE
+                      v_item := SUBSTR (:str, v_startloc, v_loc - v_startloc);
+                   END IF;'
+          || pkg
+          || '.'
+          || appendproc
+          || '( v_item);
+                   IF v_loc = 0
+                   THEN
+                      EXIT;
+                   ELSE 
+                      v_startloc := v_loc + 1;
+                   END IF;
+                END LOOP;
+             END IF;
+          END;';
+
+      IF tracing
+      THEN
+         pl ('STR2LIST: API ASSIGNMENT:');
+         pl (dynblock);
+      END IF;
+
+      EXECUTE IMMEDIATE dynblock
+         USING          str, delim;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         disperr (dynblock);
+         RAISE;
+   END;
+
+   PROCEDURE showlist (pkg IN VARCHAR2, coll IN VARCHAR2)
+   IS
+      collname   VARCHAR2 (100)   := pkg || '.' || coll;
+      dynblock   VARCHAR2 (32767);
+   BEGIN
+      dynblock :=
+             'DECLARE 
+            indx PLS_INTEGER := '
+          || collname
+          || '.FIRST;
+            v_startloc PLS_INTEGER := 1;
+            v_item VARCHAR2(32767);
+          BEGIN 
+             LOOP
+                EXIT WHEN indx IS NULL;
+                DBMS_OUTPUT.PUT_LINE ('
+          || collname
+          || '(indx));
+                indx := '
+          || collname
+          || '.NEXT (indx);
+             END LOOP;
+          END;';
+
+      IF tracing
+      THEN
+         DBMS_OUTPUT.PUT_LINE  ('STR2LIST: SHOW LIST - DIRECT:');
+         DBMS_OUTPUT.PUT_LINE  (dynblock);
+      END IF;
+
+      EXECUTE IMMEDIATE dynblock;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         disperr (dynblock);
+   END;
+
+   PROCEDURE showlist (
+      pkg            IN   VARCHAR2
+     ,firstrowproc   IN   VARCHAR2
+     ,nextrowproc    IN   VARCHAR2
+     ,getvalfunc     IN   VARCHAR2
+     ,showproc       IN   VARCHAR2 := 'pl'
+     ,datatype       IN   VARCHAR2 := 'VARCHAR2(32767)'
+   )
+   IS
+      dynblock   VARCHAR2 (32767);
+   BEGIN
+      dynblock :=
+             'DECLARE 
+            indx PLS_INTEGER := '
+          || pkg
+          || '.'
+          || firstrowproc
+          || ';
+            v_startloc PLS_INTEGER := 1;
+            v_item '
+          || datatype
+          || ';
+          BEGIN 
+             LOOP
+                EXIT WHEN indx IS NULL;'
+          || showproc
+          || ' ('
+          || pkg
+          || '.'
+          || getvalfunc
+          || '(indx));
+                indx := '
+          || pkg
+          || '.'
+          || nextrowproc
+          || '(indx);
+             END LOOP;
+          END;';
+
+      IF tracing
+      THEN
+         pl ('STR2LIST: SHOW LIST - API:');
+         pl (dynblock);
+      END IF;
+
+      EXECUTE IMMEDIATE dynblock;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         disperr (dynblock);
+   END;
+END str2list;
+/

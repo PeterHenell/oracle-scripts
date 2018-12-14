@@ -1,0 +1,164 @@
+CREATE OR REPLACE PACKAGE afc_exception
+/*
+||   File: afcexc.sql
+|| Author: Steven Feuerstein
+||   Date: 9/95
+||
+|| Package to provide generic exception handling and error logging
+|| for AFC concurrency process.
+*/
+IS
+   /* Types of exception handling to perform. */
+
+   upcs_update_failure EXCEPTION;
+   c_errno_update_upcs CONSTANT INTEGER := -20000;
+   c_errmsg_update_upcs CONSTANT VARCHAR2(100) := 
+      'Unable to Update UPCS with new value.';
+
+   lexicon_insert_failure EXCEPTION;
+   c_errno_insert_lexicon CONSTANT INTEGER := -20001;
+   c_errmsg_insert_lexicon CONSTANT VARCHAR2(100) := 
+      'Unable to Insert Lexicon with new attribute.';
+
+   grammar_insert_failure EXCEPTION;
+   c_errno_insert_grammar CONSTANT INTEGER := -20002;
+   c_errmsg_insert_grammar CONSTANT VARCHAR2(100) := 
+      'Unable to Insert Grammar with new value.'; 
+
+   no_reg_center EXCEPTION;
+   c_errno_no_reg_center CONSTANT INTEGER := -20003;
+   c_errmsg_no_reg_center CONSTANT VARCHAR2(100) := 
+      'Regional Center has not been set, but is required.'; 
+
+   no_data_modified EXCEPTION;
+   c_errno_no_data_modified CONSTANT INTEGER := -20004;
+   c_errmsg_no_data_modified CONSTANT VARCHAR2(100) := 
+      'DML statement did not insert update or delete any rows.';
+
+   /* locations for exception handling. */
+
+   c_set_reg_center CONSTANT plvexc.context_type%TYPE := 'SRC';
+
+   c_synch_link_deletes CONSTANT plvexc.context_type%TYPE := 'SLD';
+   c_synch_link_inserts CONSTANT plvexc.context_type%TYPE := 'SLI';
+   c_synch_link_updates CONSTANT plvexc.context_type%TYPE := 'SLU';
+
+   c_synch_upcs_deletes CONSTANT plvexc.context_type%TYPE := 'SUD';
+   c_synch_upcs_inserts CONSTANT plvexc.context_type%TYPE := 'SUI';
+   c_synch_upcs_updates CONSTANT plvexc.context_type%TYPE := 'SUU';
+
+   c_log_link_deletes CONSTANT plvexc.context_type%TYPE := 'LLD';
+   c_log_link_inserts CONSTANT plvexc.context_type%TYPE := 'LLI';
+   c_log_link_updates CONSTANT plvexc.context_type%TYPE := 'LLU';
+
+   c_log_upcs_deletes CONSTANT plvexc.context_type%TYPE := 'LUD';
+   c_log_upcs_inserts CONSTANT plvexc.context_type%TYPE := 'LUI';
+   c_log_upcs_updates CONSTANT plvexc.context_type%TYPE := 'LUU';
+
+   c_cleanup_log_link CONSTANT plvexc.context_type%TYPE := 'CL';
+   c_cleanup_log_upcs CONSTANT plvexc.context_type%TYPE := 'CU';
+
+   c_after_link_insert CONSTANT plvexc.context_type%TYPE := 'ALI';
+   c_after_link_update CONSTANT plvexc.context_type%TYPE := 'ALU';
+
+   c_create_category CONSTANT plvexc.context_type%TYPE := 'CC';
+   c_expand_categories CONSTANT plvexc.context_type%TYPE := 'EC';
+
+   c_refresh_table CONSTANT plvexc.context_type%TYPE := 'RT';
+
+   PROCEDURE handle
+      (context_in IN plvexc.context_type%TYPE,
+       err_code_in IN INTEGER,
+       handle_action_in IN VARCHAR2);
+
+   PROCEDURE handle
+      (context_in IN plvexc.context_type%TYPE,
+       err_code_in IN INTEGER,
+       handle_action_in IN VARCHAR2,
+       string_in IN VARCHAR2);
+
+   PROCEDURE handle
+      (context_in IN plvexc.context_type%TYPE,
+       err_code_in IN INTEGER,
+       handle_action_in IN VARCHAR2,
+       upc_in IN upcs.upc%TYPE,
+       desc_in IN upcs.description%TYPE);
+
+   PROCEDURE handle
+      (context_in IN plvexc.context_type%TYPE,
+       err_code_in IN INTEGER,
+       handle_action_in IN VARCHAR2,
+       upc_in IN link.upc%TYPE,
+       attribute_in IN link.attribute%TYPE,
+       value_in IN link.value%TYPE);
+
+   PROCEDURE validate_rows_affected;
+
+END afc_exception;
+/
+show errors
+CREATE OR REPLACE PACKAGE BODY afc_exception
+IS
+   /*------------------ Public Modules ------------------*/
+
+   PROCEDURE handle
+      (context_in IN plvexc.context_type%TYPE,
+       err_code_in IN INTEGER,
+       handle_action_in IN VARCHAR2)
+   IS
+   BEGIN
+      plvexc.handle
+         (context_in, err_code_in, handle_action_in);
+   END;
+
+   PROCEDURE handle
+      (context_in IN plvexc.context_type%TYPE,
+       err_code_in IN INTEGER,
+       handle_action_in IN VARCHAR2,
+       string_in IN VARCHAR2)
+   IS
+   BEGIN
+      plvexc.handle
+         (context_in, err_code_in, handle_action_in, string_in);
+   END;
+
+   PROCEDURE handle
+      (context_in IN plvexc.context_type%TYPE,
+       err_code_in IN INTEGER,
+       handle_action_in IN VARCHAR2,
+       upc_in IN upcs.upc%TYPE,
+       desc_in IN upcs.description%TYPE)
+   IS
+   BEGIN
+      plvexc.handle
+         (context_in, err_code_in, handle_action_in,
+          'UPC=' || upc_in || ' DESC=' || desc_in);
+   END;
+
+   PROCEDURE handle
+      (context_in IN plvexc.context_type%TYPE,
+       err_code_in IN INTEGER,
+       handle_action_in IN VARCHAR2,
+       upc_in IN link.upc%TYPE,
+       attribute_in IN link.attribute%TYPE,
+       value_in IN link.value%TYPE)
+   IS
+   BEGIN
+      plvexc.handle
+         (context_in, err_code_in, handle_action_in,
+          'UPC=' || upc_in || 
+          ' ATTRIBUTE=' || attribute_in || 
+          ' VALUE=' || value_in);
+   END;
+
+   PROCEDURE validate_rows_affected IS
+   BEGIN
+      IF SQL%ROWCOUNT = 0
+      THEN
+         RAISE no_data_modified;
+      END IF;
+   END;
+
+END afc_exception;
+/
+show errors

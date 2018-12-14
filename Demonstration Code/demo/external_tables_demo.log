@@ -1,0 +1,22 @@
+Connected.
+
+PL/SQL procedure successfully completed.
+
+Connected.
+
+Table created.
+
+
+DEPARTMENT_ID DEPARTMENT_NAME      DEPARTMENT_LOCATION                          
+------------- -------------------- -------------------------                    
+            1 Human Resources      Chicago                                      
+            2 Information Services New York                                     
+
+Human Resources                                                                 
+
+PL/SQL procedure successfully completed.
+
+Connected.
+
+User dropped.
+

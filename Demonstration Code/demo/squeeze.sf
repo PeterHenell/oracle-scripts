@@ -1,0 +1,33 @@
+CREATE OR REPLACE FUNCTION squeeze (p1 IN VARCHAR2)
+   RETURN VARCHAR2
+IS
+   u      VARCHAR2 (4000);
+   cc     CHAR;
+   LN     NUMBER;
+   flag   NUMBER;
+BEGIN
+   flag := 0;
+   LN := LENGTH (p1);
+
+   FOR i IN 1 .. LN
+   LOOP
+      cc := SUBSTR (p1, i, 1);
+
+      IF (ASCII (cc) != 32)
+      THEN
+         IF (flag = 1)
+         THEN
+            u := u || ' ' || cc;
+            flag := 0;
+         ELSE
+            u := u || cc;
+         END IF;
+      ELSE
+         flag := 1;
+      END IF;
+   END LOOP;
+
+   u := TRIM (u);
+   RETURN (u);
+END;
+/

@@ -1,0 +1,481 @@
+ Topic: 
+     *ORDER BY with a CONNECT BY? (1 of 5), Read 131 times 
+ Conf: 
+     Calling PL/SQL Functions in SQL 
+ From: 
+     Barry Etter (better@unifitech.com) 
+ Date: 
+     Wednesday, November 03, 1999 09:24 AM 
+
+
+Hi guys,
+Sorry, but this is a SQL question instead of PL/SQL.
+I simply want to control the sorting of a very simple CONNECT BY query. For example (using
+the SCOTT/TIGER table, EMP):
+
+SELECT LPAD(' ',(LEVEL-1)*4,' ')||ENAME
+FROM EMP
+CONNECT BY MGR=PRIOR EMPNO
+START WITH MGR = 7839
+
+returns:
+
+JONES
+    SCOTT
+        ADAMS
+    FORD
+        SMITH
+BLAKE
+    ALLEN
+    WARD
+    MARTIN
+    TURNER
+    JAMES
+CLARK
+    MILLER
+
+Now, I want to sort based on ENAME, but leave the indentated names with their respective
+manager. Like:
+
+BLAKE
+    ALLEN
+    JAMES
+    MARTIN
+    TURNER
+    WARD
+CLARK
+    MILLER
+JONES
+    FORD
+        SMITH
+    SCOTT
+        ADAMS
+
+Notice how JONES was move to the bottom and all the names within BLAKE where sorted as
+well.
+
+It this possible? If so how?
+Thanks.
+
+Barry Etter
+Unifi Technology Group, LLC.
+
+ TOP | Post | Reply | Reply/Quote | Email Reply | Delete | Edit 
+ Previous | Next | Previous Topic | Next Topic 
+
+ Topic: 
+     ORDER BY with a CONNECT BY? (2 of 5), Read 81 times 
+ Conf: 
+     Calling PL/SQL Functions in SQL 
+ From: 
+     Krasen Paskalev (krasen.paskalev@semantec.bg) 
+ Date: 
+     Wednesday, November 03, 1999 01:15 PM 
+
+
+Hi Barry,
+
+There are some ways to force the optimizer to use certain indexes and though the result set
+will be sorted, but they are very unstable and unsure.
+Well, there is another way. It uses an additional function. The general idea is to sort based on
+the concatenated names upwards in the hierarchy.
+Here is the code (sorry I didn't use the standard SCOTT schema, but this one is almost the
+same - only the names of the objects are slightly different):
+The code of the function:
+CREATE OR REPLACE FUNCTION emp_order 
+(v_employee_id employee.employee_id%TYPE
+,v_level NUMBER) RETURN VARCHAR2
+IS
+l_s VARCHAR2(4000);
+BEGIN
+FOR c IN
+(SELECT LAST_NAME
+FROM EMPLOYEE
+CONNECT BY PRIOR MANAGER_ID = EMPLOYEE_ID
+START WITH EMPLOYEE_ID = v_employee_id
+ORDER BY LEVEL)
+LOOP
+l_s := c.last_name || ',' || l_s;
+END LOOP;
+RETURN l_s;
+END;
+
+The code of the statement (I added the result the function returns in the result set):
+SELECT LPAD(' ',(LEVEL-1)*4,' ')||LAST_NAME, emp_order(employee_id, LEVEL)
+FROM EMPLOYEE
+CONNECT BY MANAGER_ID=PRIOR EMPLOYEE_ID
+START WITH MANAGER_ID = 7839
+ORDER BY emp_order(employee_id, LEVEL)
+
+Hope this helps!
+Krasen
+
+ TOP | Post | Reply | Reply/Quote | Email Reply | Delete | Edit 
+ Previous | Next | Previous Topic | Next Topic 
+
+ Topic: 
+     ORDER BY with a CONNECT BY? (3 of 5), Read 78 times 
+ Conf: 
+     Calling PL/SQL Functions in SQL 
+ From: 
+     Solomon Yakobson (syakobson@erols.com) 
+ Date: 
+     Wednesday, November 03, 1999 04:18 PM 
+
+
+There is a method you can use to get hierarchical query results sorted on each level. I will use
+Oracle's famous emp table. 
+
+SQL> SELECT LPAD(' ',2*(LEVEL-1)) || ename 
+org_chart, 
+2 empno, mgr, job 
+3 FROM emp 
+4 START WITH job = 'PRESIDENT' 
+5 CONNECT BY PRIOR empno = mgr; 
+
+ORG_CHART EMPNO MGR JOB 
+-------------------- --------- --------- --------- 
+KING 7839 PRESIDENT 
+JONES 7566 7839 MANAGER 
+SCOTT 7788 7566 ANALYST 
+ADAMS 7876 7788 CLERK 
+FORD 7902 7566 ANALYST 
+SMITH 7369 7902 CLERK 
+BLAKE 7698 7839 MANAGER 
+ALLEN 7499 7698 SALESMAN 
+WARD 7521 7698 SALESMAN 
+MARTIN 7654 7698 SALESMAN 
+TURNER 7844 7698 SALESMAN 
+JAMES 7900 7698 CLERK 
+CLARK 7782 7839 MANAGER 
+MILLER 7934 7782 CLERK 
+
+We want results ordered by ENAME on each level. Solution is based on the fact the above
+query searches for all rows where column MGR has same value as current EMPNO. Therefore,
+hierarchical query would use an index on MGR column if one would exist. If we will create an
+index on two columns MGR and ENAME, we will have an ordered list of manager EMPNOs and for
+each manager's EMPNO in that list we will have an ordered list of ENAMEs working for that
+manager. As you can see, all we need is correct index: 
+
+SQL> CREATE INDEX emp_mgr_ename ON emp(mgr,ename); 
+
+Index created. 
+
+SQL> SELECT LPAD(' ',2*(LEVEL-1)) || ename 
+org_chart, 
+2 empno, mgr, job 
+3 FROM emp 
+4 START WITH job = 'PRESIDENT' 
+5 CONNECT BY PRIOR empno = mgr; 
+
+ORG_CHART EMPNO MGR JOB 
+-------------------- --------- --------- --------- 
+KING 7839 PRESIDENT 
+BLAKE 7698 7839 MANAGER 
+ALLEN 7499 7698 SALESMAN 
+JAMES 7900 7698 CLERK 
+MARTIN 7654 7698 SALESMAN 
+TURNER 7844 7698 SALESMAN 
+WARD 7521 7698 SALESMAN 
+CLARK 7782 7839 MANAGER 
+MILLER 7934 7782 CLERK 
+JONES 7566 7839 MANAGER 
+FORD 7902 7566 ANALYST 
+SMITH 7369 7902 CLERK 
+SCOTT 7788 7566 ANALYST 
+ADAMS 7876 7788 CLERK 
+
+If you want descending order, use INDEX_DESC hint: 
+
+SQL> SELECT /*+ INDEX_DESC(emp,emp_mgr_ename) */ 
+2 LPAD(' ',2*(LEVEL-1)) || ename org_chart, 
+3 empno, mgr, job 
+4 FROM emp 
+5 START WITH job = 'PRESIDENT' 
+6 CONNECT BY PRIOR empno = mgr; 
+
+ORG_CHART EMPNO MGR JOB 
+-------------------- --------- --------- --------- 
+KING 7839 PRESIDENT 
+JONES 7566 7839 MANAGER 
+SCOTT 7788 7566 ANALYST 
+ADAMS 7876 7788 CLERK 
+FORD 7902 7566 ANALYST 
+SMITH 7369 7902 CLERK 
+CLARK 7782 7839 MANAGER 
+MILLER 7934 7782 CLERK 
+BLAKE 7698 7839 MANAGER 
+WARD 7521 7698 SALESMAN 
+TURNER 7844 7698 SALESMAN 
+MARTIN 7654 7698 SALESMAN 
+JAMES 7900 7698 CLERK 
+ALLEN 7499 7698 SALESMAN 
+
+Solomon Yakobson. 
+
+ TOP | Post | Reply | Reply/Quote | Email Reply | Delete | Edit 
+ Previous | Next | Previous Topic | Next Topic 
+
+ Topic: 
+     ORDER BY with a CONNECT BY? (4 of 5), Read 62 times 
+ Conf: 
+     Calling PL/SQL Functions in SQL 
+ From: 
+     Mark Fredericks (fredericksm@prosoft-eng.com) 
+ Date: 
+     Friday, November 05, 1999 02:14 PM 
+
+
+I have been dealing with hierarchical data for a number of years while supporting a complex
+"parts list" application. I've had to both use and overcome the limitations of the Oracle
+CONNECT BY query. The main limitations are the restrictions on connect by use with joins to
+multiple tables, and the difficulties with achieving "in-level ordering". The join limitation can be
+overcome somewhat with user function look up of data from other tables in the query. The
+in-level ordering can sometimes be overcome with indexes or work around data retrieval
+approaches. 
+
+I agree with Krasen that the use of indexes to achieve in level ordering from a connect by
+query is less than ideal. This method has the following limitations. The order is controlled by
+the presence of a correctly indexed column or column set. This is a side effect of the presence
+of an index and the retrieval methods of the database. The order produced is not specifiable
+by the SQL query. In general the index is not under the control of the user issuing a query. Use
+of an index provides only one single set of ordering columns. For example if emp(mgr, ename) is
+indexed, then an attempt to order by (within level) sal or hire_date will not be possible without
+dropping one index and creating a new different index. Also it is advisable to remove other
+indexes that might be selected by the optimizer when doing the CONNECT BY. In the emp
+example, drop any index on emp(mgr) when adding index on emp(mgr,ename). Ordering by this
+method does not allow a more complex and flexible ordering by expressions and functions that
+is possible in the general SQL order by clause. (I am not sure how 8i's
+Function/Expression-based Indexes will improve the situation.) 
+
+In criticizing index influenced in-level ordering use in general, it does provide a quick method of
+achieving one predefined in-level ordering per table. I am glad that Solomon provided a good
+example. This method does work if you only need one ordering (or two with descending order)
+and the ordering requirements can be supported by indexing available columns (and possibly
+with simple expressions in 8i). 
+
+If you require more complex in-level ordering than can be provided by index influence, then the
+data has to be retrieved by non-SQL SELECT means using other work arounds. Each of these
+other means has it's own set of limitations. I have tried and continue to use a number of them
+in specific cases. All are much less flexible and more complex than strait SQL.
+
+Krasen's method of providing a ordering function is interesting. The function provides a
+concatenated list of the parent records sort field. It solves the problem in this case but also
+has its own unique limitations. The method involves querying for all the parent records for each
+record retrieved. The repeated querying for parents for each record will have negative
+performance impacts. The method is somewhat level limited by the length of the parent's
+names and by the SQL varchar2 data type length - but this is probably not a significant
+limitation in most cases. Each table and different sort order requires its own procedure, a
+limitation shared by the other methods discussed here. It may also be difficult to implement
+some other complex orderings by mixed data type columns and expressions. 
+
+In PL/SQL, a recursive procedure can be used to retrieve the hierarchy with any desired
+in-level order. The procedure uses a cursor for one level at a time with the required ordering.
+Each record retrieved by the procedure causes the procedure to call itself again to - to find
+and retrieve any lower records. Output can be produced by out mode PL/SQL table parameter,
+by UTL_FILE, by dbms_output or to an Oracle table or temp table. This method uses the same
+code for all levels and avoids any level limitations but other problems remain. A separate
+procedure is required for each table and ordering. A separate procedure or hard coded
+modifications and recompiles are necessary to change the ordering. Flexibility is far short of the
+standard SQL connect by query.
+
+A derived sort order can also be pre-stored in the table. I do this in parts lists where changes
+are somewhat infrequent and one predefined but complex in-level ordering is required. I have
+table triggers that execute on DML events which effect in-level ordering. The triggers call
+stored procedures that determine the sort order and explicitly store an integer from 1 to n in a
+column added for this purpose. The connect by pseudo column LEVEL is also stored in the table
+to support indented listings. This method involves updating ALL the records in a part list each
+time that one record changes in a way that effects ordering. Obviously only one fixed sort is
+stored. The sort and level columns can be used for easy indented hierarchical ordering of the
+complete parts list later. This is important when I have to export data for off-line simplified
+processing by non-oracle databases that do not have CONNECT BY.
+
+In reports, each level can be queried with its own query that has the desired ordering. This
+requires a master-detail-detail-detail… for all anticipated levels. Problems and limitations of this
+method are significant. This approach hard codes the maximum extracted hierarchy level in the
+report. This method requires a duplicate query, group layout etc. at each level. This method is
+difficult to develop and maintain, as everything must be duplicated to each level's query, group
+and layout. Custom reports are required for each query to different tables. Different sorts
+might be accommodated by lexical parameters to provide a common, changeable or dynamic
+sort clause for each level query. 
+
+In general I recommend the following, presented in order of greatly increasing difficulty:
+
+1. If an index can be added that will achieve the (single) ordering required, then use the index
+influenced CONNECT BY method. It is not explicit but it works and it is easy to implement. 
+
+2. If indexes are not available and performance is acceptable then try Karsen's function
+approach.
+
+3. If the data has low volatility, and you are good with packages and table triggers, you might
+possibly consider storing the sort order in the table.
+
+The other methods are probably more effort then they are worth unless your requirements
+force you to these extreme measures.
+
+Mark
+
+
+ TOP | Post | Reply | Reply/Quote | Email Reply | Delete | Edit 
+ Previous | Next | Previous Topic | Next Topic 
+
+ Topic: 
+     ORDER BY with a CONNECT BY? (5 of 5), Read 59 times 
+ Conf: 
+     Calling PL/SQL Functions in SQL 
+ From: 
+     Solomon Yakobson (syakobson@erols.com) 
+ Date: 
+     Monday, November 08, 1999 01:46 PM 
+
+
+Mark,
+the solution I provided is quite stable. I used it
+many times. I agree, index solution is implementation
+based and if index is deleted or optimizer decides
+not to use it, query will stop working as expected.
+Therefore index solution requires additional index
+management. If same hierarchy needs to be ordered by
+different columns you would have to create bunch of
+different indexes and having multiple indexes could
+result in performance issues (I mean inserts/updates/deletes).
+There is another solution. I believe I posted it
+a year or so ago. It is, essentially, the same solution
+Krasen came up with, but does not have that overhead of
+"querying for all the parent records for each record
+retrieved". Such querying is completely unnecessary
+since Oracle already selects rows in hierarchical
+order. All we need is a PL/SQL table to store order
+by expression for each current level. Unfortunately, I could
+not find the posting, so I recreated PL/SQL package from
+scratch:
+
+CREATE OR REPLACE
+ PACKAGE Hierarchy
+  IS
+        TYPE BranchTableType IS TABLE OF VARCHAR2(4000)
+          INDEX BY BINARY_INTEGER;
+        BranchTable BranchTableType;
+        FUNCTION Branch(vLevel          IN NUMBER,
+                        vValue          IN VARCHAR2,
+                        vDelimiter      IN VARCHAR2 DEFAULT CHR(0))
+                        RETURN VARCHAR2;
+        PRAGMA RESTRICT_REFERENCES(Branch,WNDS);
+END Hierarchy;
+/
+CREATE OR REPLACE
+ PACKAGE BODY Hierarchy
+  IS
+        ReturnValue VARCHAR2(4000);
+  FUNCTION Branch(vLevel        IN NUMBER,
+                  vValue        IN VARCHAR2,
+                  vDelimiter    IN VARCHAR2 DEFAULT CHR(0))
+                  RETURN VARCHAR2
+   IS
+   BEGIN
+        BranchTable(vLevel) := vValue;
+        ReturnValue := vValue;
+        FOR I IN REVERSE 1..vLevel - 1 LOOP
+          ReturnValue := BranchTable(I)|| vDelimiter || ReturnValue;
+        END LOOP;
+        RETURN ReturnValue;
+  END Branch;
+END Hierarchy;
+/
+
+Now, if we want to order emp table ny employee name, we use:
+
+SQL> SELECT LPAD(' ',2*(LEVEL-1)) || ename org_chart,
+  2   Hierarchy.Branch(level,ename) branch,
+  3   job
+  4    FROM  empX
+  5    START WITH job = 'PRESIDENT'
+  6    CONNECT BY PRIOR empno = mgr
+  7*   ORDER BY branch
+SQL> /
+
+ORG_CHART            BRANCH                                   JOB
+-------------------- ---------------------------------------- ---------
+KING                 KING                                     PRESIDENT
+  BLAKE              KING BLAKE                               MANAGER
+    ALLEN            KING BLAKE ALLEN                         SALESMAN
+    JAMES            KING BLAKE JAMES                         CLERK
+    MARTIN           KING BLAKE MARTIN                        SALESMAN
+    TURNER           KING BLAKE TURNER                        SALESMAN
+    WARD             KING BLAKE WARD                          SALESMAN
+  CLARK              KING CLARK                               MANAGER
+    MILLER           KING CLARK MILLER                        CLERK
+  JONES              KING JONES                               MANAGER
+    FORD             KING JONES FORD                          ANALYST
+      SMITH          KING JONES FORD SMITH                    CLERK
+    SCOTT            KING JONES SCOTT                         ANALYST
+      ADAMS          KING JONES SCOTT ADAMS                   CLERK
+
+14 rows selected.
+
+
+Note, that function Hierarchy.Branch modifies package
+state since PL/SQL table BranchTable is global and
+can not be used in ORDER BY clause. We need to "trick"
+Oracle by moving order by expression into select list
+and ordering my that select list column. This way order
+by expression is calculated at select list creation time
+rather than at order by time. Otherwise we would get:
+
+SQL> SELECT LPAD(' ',2*(LEVEL-1)) || ename org_chart,
+  2     job
+  3    FROM  empX
+  4    START WITH job = 'PRESIDENT'
+  5    CONNECT BY PRIOR empno = mgr
+  6*   ORDER BY Hierarchy.Branch(level,ename)
+SQL> /
+  ORDER BY Hierarchy.Branch(level,ename)
+           *
+ERROR at line 6:
+ORA-06573: Function BRANCH modifies package state, cannot be used here
+
+We can hide column brach by setting it to NOPRINT.
+One more thing. The above solution (same as Krasen's solution), in general,
+will not work. Assume we have two Blakes working for King and each of Blakes has Allen working
+for him. Then:
+
+SQL> SELECT LPAD(' ',2*(LEVEL-1)) || ename org_chart,
+  2   Hierarchy.Branch(level,ename) branch,
+  3   job
+  4    FROM  empX
+  5    START WITH job = 'PRESIDENT'
+  6    CONNECT BY PRIOR empno = mgr
+  7    ORDER BY branch
+  8  /
+
+ORG_CHART            BRANCH                                   JOB
+-------------------- ---------------------------------------- ---------
+KING                 KING                                     PRESIDENT
+  BLAKE              KING BLAKE                               MANAGER
+  BLAKE              KING BLAKE                               MANAGER
+    ALLEN            KING BLAKE ALLEN                         SALESMAN
+    ALLEN            KING BLAKE ALLEN                         SALESMAN
+    JAMES            KING BLAKE JAMES                         CLERK
+    MARTIN           KING BLAKE MARTIN                        SALESMAN
+    TURNER           KING BLAKE TURNER                        SALESMAN
+    WARD             KING BLAKE WARD                          SALESMAN
+  CLARK              KING CLARK                               MANAGER
+    MILLER           KING CLARK MILLER                        CLERK
+  JONES              KING JONES                               MANAGER
+    FORD             KING JONES FORD                          ANALYST
+      SMITH          KING JONES FORD SMITH                    CLERK
+    SCOTT            KING JONES SCOTT                         ANALYST
+      ADAMS          KING JONES SCOTT ADAMS                   CLERK
+
+16 rows selected.
+
+SQL> 
+
+As you can see, we are trading index dependency for
+data dependency. And, as you pointed out, concatenation of
+parent values is limited to 4000 bytes and might be not
+enough if hierarchy is very deep and/or parent values
+are too long.
+
+Solomon Yakobson.
+

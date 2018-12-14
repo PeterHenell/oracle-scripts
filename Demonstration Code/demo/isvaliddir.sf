@@ -1,0 +1,27 @@
+CREATE OR REPLACE FUNCTION isvaliddir (dir_in IN VARCHAR2)
+   RETURN BOOLEAN
+/* Formatted by PL/Formatter v3.1.2.1 on 2000/08/30 09:25 */
+-- SELECT priv on v$parameter is required!
+IS
+   v_value v$parameter.VALUE%TYPE;
+BEGIN
+   SELECT VALUE
+     INTO v_value
+     FROM v$parameter
+    WHERE name = 'utl_file_dir'
+      AND (   UPPER (VALUE) LIKE
+                 UPPER (dir_in)
+           OR VALUE = '*'); -- Any directory is OK!
+   RETURN TRUE;
+EXCEPTION
+   WHEN NO_DATA_FOUND
+   THEN
+      RETURN FALSE;
+   WHEN TOO_MANY_ROWS
+   THEN
+      DBMS_OUTPUT.put_line (
+         'Multiple directories fit criteria. Please narrow.'
+      );
+      RETURN TRUE;
+END;
+/

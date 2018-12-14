@@ -1,0 +1,20 @@
+CREATE OR REPLACE FUNCTION tab_hasunique (tab IN VARCHAR2)
+   RETURN BOOLEAN
+IS
+   inds PLVinds.ind_tabtype;
+   indcols PLVinds.indcol_tabtype;
+   indnum PLS_INTEGER;
+   firstind PLS_INTEGER;
+   hasunique BOOLEAN := FALSE;
+BEGIN
+   PLVinds.fortab (tab, inds, indcols);
+   indnum := inds.LAST;
+   firstind := inds.FIRST;
+   WHILE NOT hasunique AND indnum > 0
+   LOOP
+      hasunique := PLVinds.isunique (inds, indnum);
+      indnum := inds.PRIOR (indnum);
+   END LOOP;
+   RETURN hasunique;
+END;
+/

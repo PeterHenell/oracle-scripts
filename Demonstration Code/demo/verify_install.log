@@ -1,0 +1,8 @@
+SQL> exec sw_qnxo.verify_install;
+Script Tree Discrepancies: 
+No data found for control hdr-grp-leaf =            
+{5270016A-ABB3-44B9-8662-C7DD74B0039E}--{654792A4-AAB1-4D2E-955A-E558F7076ADD}  
+
+PL/SQL procedure successfully completed.
+
+SQL> spool off

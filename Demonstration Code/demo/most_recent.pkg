@@ -1,0 +1,121 @@
+CREATE OR REPLACE PACKAGE callstack
+IS
+/*
+   Overview: Extract the last program in the call stack
+             (the entry at the top of the stack) and return
+              either a record of all the individual elements
+              from the call stack, or simply the program name and type.
+
+   Author: Steven Feuerstein, steven@stevenfeuerstein.com
+
+   Here are examples of the string returned by DBMS_UTILITY.FORMAT_CALL_STACK:
+
+   ----- PL/SQL Call Stack -----
+     object      line  object
+     handle    number  name
+   6A46A1AC        10  package body QNXO_DEMO.PKG
+   67C68C68         4  procedure QNXO_DEMO.PROC2
+   69AADC94         4  procedure QNXO_DEMO.PROC3
+   689C9FA8         2  anonymous block
+
+   A very short stack: single anonymous block.
+
+   ----- PL/SQL Call Stack -----
+     object      line  object
+     handle    number  name
+   6A39D12C         2  anonymous block
+
+   Here are the rules I used to parse the contents of this string:
+
+   1. The top of the stack is found on the fourth line of the string
+      (as defined by CHR(10) delimiters).
+
+   2. The object handle is found in the first 8 characters in the line.
+
+   3. The line number is found in the next 10 characters in the line.
+
+   4. The program type and name follows the line number after two spaces.
+
+   Note: If Oracle changes the format of this string then this program
+         will have to be modified.
+*/
+   TYPE cs_line_rt IS RECORD (
+      full_text             VARCHAR2 (200)
+     ,object_handle         VARCHAR2 (8)
+     ,line_number           PLS_INTEGER
+     ,program_description   VARCHAR2 (200)
+   );
+
+   -- Return a record with the last entry in the stack parsed.
+   FUNCTION most_recent_entry (stack_in IN VARCHAR2)
+      RETURN cs_line_rt;
+
+   -- Return just the last entry's type and name.
+   FUNCTION most_recent_program (stack_in IN VARCHAR2)
+      RETURN VARCHAR2;
+END callstack;
+/
+
+CREATE OR REPLACE PACKAGE BODY callstack
+IS
+   c_first_line           CONSTANT VARCHAR2 (100)
+                                        := '----- PL/SQL Call Stack -----';
+   c_new_line             CONSTANT CHAR (1)       := CHR (10);
+   c_obj_handle_length    CONSTANT PLS_INTEGER    := 8;
+   c_line_number_length   CONSTANT PLS_INTEGER    := 10;
+   c_before_type_name     CONSTANT PLS_INTEGER    := 2;
+
+   FUNCTION most_recent_entry (stack_in IN VARCHAR2)
+      RETURN cs_line_rt
+   IS
+      l_start   PLS_INTEGER;
+      l_end     PLS_INTEGER;
+      l_line    cs_line_rt;
+   BEGIN
+      -- If it doesn't look like a formatted call stack, return NULL.
+      IF stack_in LIKE c_first_line || '%'
+      THEN
+         -- Get the fourth line in the stack.
+         l_start := INSTR (stack_in, c_new_line, 1, 3) + 1;
+         l_end := INSTR (stack_in, c_new_line, 1, 4);
+         -- If the stack is just an anonymous block, there is no fourth CHR(10).
+         l_line.full_text :=
+            CASE
+               WHEN l_end = 0
+                  THEN SUBSTR (stack_in, l_start)
+               ELSE SUBSTR (stack_in, l_start, l_end - l_start)
+            END;
+         -- Extract the object handle.
+         l_line.object_handle :=
+                         SUBSTR (l_line.full_text, 1, c_obj_handle_length);
+         -- Extract the line number.
+         l_line.line_number :=
+            TO_NUMBER (SUBSTR (l_line.full_text
+                              , c_obj_handle_length + 1
+                              ,c_line_number_length
+                              )
+                      );
+         -- Extract the program type and name, a.k.a., the program_description.
+         l_line.program_description :=
+            SUBSTR (l_line.full_text
+                   ,   c_obj_handle_length
+                     + c_line_number_length
+                     + c_before_type_name
+                     + 1
+                   );
+      END IF;
+
+      RETURN l_line;
+   END most_recent_entry;
+
+   FUNCTION most_recent_program (stack_in IN VARCHAR2)
+      RETURN VARCHAR2
+   IS
+      l_line   cs_line_rt;
+   BEGIN
+      -- Get the full record and return only the program description.
+      l_line := most_recent_entry (stack_in);
+      RETURN l_line.program_description;
+   END most_recent_program;
+END callstack;
+/

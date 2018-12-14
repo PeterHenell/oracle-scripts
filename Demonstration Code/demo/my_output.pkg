@@ -1,0 +1,55 @@
+CREATE OR REPLACE PACKAGE my_output
+IS
+   PROCEDURE put_line (value_in IN VARCHAR2);
+
+   PROCEDURE put_line (value_in IN BOOLEAN);
+
+   PROCEDURE put_line (
+      value_in   IN DATE,
+      mask_in    IN VARCHAR2 DEFAULT 'YYYY-MM-DD HH24:MI:SS');
+END my_output;
+/
+
+CREATE OR REPLACE PACKAGE BODY my_output
+IS
+   PROCEDURE put_line (value_in IN VARCHAR2)
+   IS
+   BEGIN
+      DBMS_OUTPUT.put_line (value_in);
+   END;
+
+   PROCEDURE put_line (value_in IN BOOLEAN)
+   IS
+   BEGIN
+      put_line (
+         CASE value_in
+            WHEN TRUE THEN 'TRUE'
+            WHEN FALSE THEN 'FALSE'
+            ELSE 'NULL'
+         END);
+   END;
+
+   PROCEDURE put_line (
+      value_in   IN DATE,
+      mask_in    IN VARCHAR2 DEFAULT 'YYYY-MM-DD HH24:MI:SS')
+   IS
+   BEGIN
+      IF mask_in IS NULL
+      THEN
+         put_line (TO_CHAR (value_in));
+      ELSE
+         put_line (TO_CHAR (value_in, mask_in));
+      END IF;
+   END;
+END my_output;
+/
+
+BEGIN
+   my_output.put_line ('abc');
+   my_output.put_line (123);
+   my_output.put_line (SYSDATE);
+   my_output.put_line (SYSDATE, NULL);
+   my_output.put_line (SYSDATE, 'YYYY-Q');
+   my_output.put_line (TRUE);
+END;
+/

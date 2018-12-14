@@ -1,0 +1,116 @@
+CREATE OR REPLACE PACKAGE emplu1
+IS
+   FUNCTION onerow ( employee_id_in IN employee.employee_id%TYPE )
+      RETURN employee%ROWTYPE;
+END;
+/
+
+CREATE OR REPLACE PACKAGE emplu2
+IS
+   FUNCTION onerow ( employee_id_in IN employee.employee_id%TYPE )
+      RETURN employee%ROWTYPE;
+
+   FUNCTION onerow_incremental ( employee_id_in IN employee.employee_id%TYPE )
+      RETURN employee%ROWTYPE;
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY emplu1
+IS
+   FUNCTION onerow ( employee_id_in IN employee.employee_id%TYPE )
+      RETURN employee%ROWTYPE
+   IS
+      onerow_rec employee%ROWTYPE;
+   BEGIN
+      SELECT *
+        INTO onerow_rec
+        FROM employee
+       WHERE employee_id = employee_id_in;
+
+      RETURN onerow_rec;
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         RETURN NULL;
+      WHEN TOO_MANY_ROWS
+      THEN
+         --log_error;
+         RAISE;
+      WHEN OTHERS
+      THEN
+         --log_error;
+         RAISE;
+   END;
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY emplu2
+IS
+   TYPE employee_tt IS TABLE OF employee%ROWTYPE
+      INDEX BY PLS_INTEGER;
+
+   loadtab employee_tt;
+
+   -- Assumes entire table is already loaded into the collection.
+   FUNCTION onerow ( employee_id_in IN employee.employee_id%TYPE )
+      RETURN employee%ROWTYPE
+   IS
+   BEGIN
+      RETURN loadtab ( employee_id_in );
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         RETURN emplu1.onerow ( employee_id_in );
+   END onerow;
+
+   -- Loads the cache as each row is queried/needed.
+   -- Minimizes need to query row a second time in session.
+   FUNCTION onerow_incremental ( employee_id_in IN employee.employee_id%TYPE )
+      RETURN employee%ROWTYPE
+   IS
+      CURSOR comp_cur
+      IS
+         SELECT *
+           FROM employee
+          WHERE employee_id = employee_id_in;
+
+      retval employee%ROWTYPE;
+   BEGIN
+      IF loadtab.EXISTS ( employee_id_in )
+      THEN
+         retval := loadtab ( employee_id_in );
+      ELSE
+         OPEN comp_cur;
+
+         FETCH comp_cur
+          INTO retval;
+
+         CLOSE comp_cur;
+
+         IF retval.employee_id IS NOT NULL
+         THEN
+            loadtab ( employee_id_in ) := retval;
+         END IF;
+      END IF;
+
+      RETURN retval;
+   END onerow_incremental;
+BEGIN
+   SELECT *
+     BULK COLLECT INTO seq_loadtab
+	 FROM employee;
+	 
+   l_row := seq_loadtab.FIRST;
+   while (l_row is not null) 
+   LOOP
+      -- Amsterdam Sept 2005
+      IF loadtab.EXISTS ( rec.employee_id )
+      THEN
+         --log_too_many_rows_error;
+         RAISE TOO_MANY_ROWS;
+      ELSE
+         loadtab ( rec.employee_id ) := rec;
+      END IF;
+   END LOOP;
+END emplu2;
+/

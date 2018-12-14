@@ -1,0 +1,547 @@
+SQL> SET FEEDBACK ON
+SQL> CONNECT SYSTEM/MANAGER
+Connected.
+SQL> GRANT CONNECT, RESOURCE TO hq IDENTIFIED BY hq;
+
+Grant succeeded.
+
+SQL> GRANT CREATE PUBLIC SYNONYM TO hq;
+
+Grant succeeded.
+
+SQL> GRANT DROP PUBLIC SYNONYM TO hq;
+
+Grant succeeded.
+
+SQL> GRANT CONNECT, RESOURCE TO chicago IDENTIFIED BY chicago;
+
+Grant succeeded.
+
+SQL> GRANT CONNECT, RESOURCE TO newyork IDENTIFIED BY newyork;
+
+Grant succeeded.
+
+SQL> ALTER USER hq DEFAULT TABLESPACE users TEMPORARY TABLESPACE temp;
+
+User altered.
+
+SQL> ALTER USER chicago DEFAULT TABLESPACE users TEMPORARY TABLESPACE temp;
+
+User altered.
+
+SQL> ALTER USER newyork DEFAULT TABLESPACE users TEMPORARY TABLESPACE temp;
+
+User altered.
+
+SQL> DROP TABLE chicago.stolen_life;
+
+Table dropped.
+
+SQL> DROP TABLE newyork.stolen_life;
+
+Table dropped.
+
+SQL> DROP TABLE hq.stolen_life;
+
+Table dropped.
+
+SQL> 
+SQL> /* Build the stolen lives table for Chicago. */
+SQL> CONNECT chicago/chicago
+Connected.
+SQL> 
+SQL> CREATE OR REPLACE PROCEDURE pl (
+  2  	str IN VARCHAR2, len IN INTEGER := 80, expand_in in BOOLEAN := TRUE)
+  3  	/* Last Chicago seminar 5/2000 */
+  4  IS
+  5  	v_len PLS_INTEGER := LEAST (len, 255);
+  6  	v_str VARCHAR2(2000);
+  7  BEGIN
+  8  	IF LENGTH (str) > v_len
+  9  	THEN
+ 10  	   v_str := SUBSTR (str, 1, v_len);
+ 11  	   DBMS_OUTPUT.PUT_LINE (v_str);
+ 12  	   pl (substr (str, len + 1), v_len, expand_in);
+ 13  	ELSE
+ 14  	   v_str := str;
+ 15  	   DBMS_OUTPUT.PUT_LINE (v_str);
+ 16  	END IF;
+ 17  EXCEPTION
+ 18  	WHEN OTHERS
+ 19  	THEN
+ 20  	   IF expand_in THEN
+ 21  	      DBMS_OUTPUT.ENABLE (1000000);
+ 22  	   ELSE
+ 23  	      RAISE;
+ 24  	   END IF;
+ 25  	   DBMS_OUTPUT.PUT_LINE (v_str);
+ 26  END;
+ 27  /
+
+Procedure created.
+
+SQL> 
+SQL> DROP TABLE stolen_life;
+DROP TABLE stolen_life
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist
+
+
+SQL> 
+SQL> CREATE TABLE stolen_life (
+  2  	dod DATE,
+  3  	ethnicity VARCHAR2(100),
+  4  	victim VARCHAR2(100),
+  5  	age NUMBER,
+  6  	description VARCHAR2(2000),
+  7  	moreinfoat VARCHAR(200) DEFAULT
+  8  	   'http://www.unstoppable.com/22/english/stolenlivesPROJECT'
+  9  	);
+
+Table created.
+
+SQL> 
+SQL> INSERT INTO stolen_life (dod, ethnicity, victim, age, description) VALUES (
+  2  	'13-JAN-97', 'African-American', 'Bernard Solomon', 19,
+  3  	'After years of police harassment, Solomon was told by police that they would kill him. A few days later he was arrested. He was found hung in his cell at the 2259 S. Damen police station. Although police claim he hung himself with his shirt, when his body was examined by family members, he was found still wearing his shirt on one arm.');
+
+1 row created.
+
+SQL> 
+SQL> INSERT INTO stolen_life (dod, ethnicity, victim, age, description) VALUES (
+  2  	'23-OCT-96', 'Puerto Rican', 'Angel Castro, Jr.', 15,
+  3  	'After being beaten, abused with racial epithets and told by police that he would be killed if he did not move, Angel Castro’s family moved. Angel returned to the neighborhood for a friend’s birthday party. After leaving the party, a police car rammed him as he rode his bike. As Angel tried to get on his knees, the police shot and killed him');
+
+1 row created.
+
+SQL> 
+SQL> INSERT INTO stolen_life (dod, ethnicity, victim, age, description) VALUES (
+  2  	'09-APR-96', 'African-American', 'Eric Smith', 22,
+  3  	'Smith''s mom pulled her car off to the side of the expressway in order to better communicate with her son, a deaf mute. His grandmother was also in the car. Upset, Eric ran off into traffic and was grazed by a passing car. Two cops from Forest View, a Chicago suburb, pulled up. They trained a gun to Eric''s head and brought him to the side of the road. Eric''s attempts to sign were not understood. The cops beat Eric with metal batons and then shot him six times-including with hollow point bullets. The final bullet was delivered while Eric lay on his back. Following the shooting, Eric''s mother and grandmother were handcuffed and taken to the police station.');
+
+1 row created.
+
+SQL> 
+SQL> /* Build the stolen lives table for New York */
+SQL> CONNECT newyork/newyork
+Connected.
+SQL> 
+SQL> CREATE OR REPLACE PROCEDURE pl (
+  2  	str IN VARCHAR2, len IN INTEGER := 80, expand_in in BOOLEAN := TRUE)
+  3  	/* Last Chicago seminar 5/2000 */
+  4  IS
+  5  	v_len PLS_INTEGER := LEAST (len, 255);
+  6  	v_str VARCHAR2(2000);
+  7  BEGIN
+  8  	IF LENGTH (str) > v_len
+  9  	THEN
+ 10  	   v_str := SUBSTR (str, 1, v_len);
+ 11  	   DBMS_OUTPUT.PUT_LINE (v_str);
+ 12  	   pl (substr (str, len + 1), v_len, expand_in);
+ 13  	ELSE
+ 14  	   v_str := str;
+ 15  	   DBMS_OUTPUT.PUT_LINE (v_str);
+ 16  	END IF;
+ 17  EXCEPTION
+ 18  	WHEN OTHERS
+ 19  	THEN
+ 20  	   IF expand_in THEN
+ 21  	      DBMS_OUTPUT.ENABLE (1000000);
+ 22  	   ELSE
+ 23  	      RAISE;
+ 24  	   END IF;
+ 25  	   DBMS_OUTPUT.PUT_LINE (v_str);
+ 26  END;
+ 27  /
+
+Procedure created.
+
+SQL> DROP TABLE stolen_life;
+DROP TABLE stolen_life
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist
+
+
+SQL> 
+SQL> CREATE TABLE stolen_life (
+  2  	dod DATE,
+  3  	ethnicity VARCHAR2(100),
+  4  	victim VARCHAR2(100),
+  5  	age NUMBER,
+  6  	description VARCHAR2(2000)
+  7  	);
+
+Table created.
+
+SQL> 
+SQL> INSERT INTO stolen_life (dod, ethnicity, victim, age, description) VALUES (
+  2  	'04-FEB-99', 'West African', 'Amadou Diallo', 22,
+  3  	'Shot 19 times by four police officers outside his Bronx apartment. Diallo was a devout Muslim working 12 hour days selling CDs and tapes to earn money to finish his bachelor''s degree. He was unarmed.');
+
+1 row created.
+
+SQL> 
+SQL> INSERT INTO stolen_life (dod, ethnicity, victim, age, description) VALUES (
+  2  	'04-AUG-98', 'Puerto Rican', 'Freddie Rivera', 17,
+  3  	'Shot in the chest with dum-dum bullets and killed by an unidentified cop. The cop did not identify himself or yell Freeze!, Police!, Put your hands in the air!, or any such thing. His family described him as a bright kid, always looking forward to the future, who was about to start college in September.');
+
+1 row created.
+
+SQL> 
+SQL> INSERT INTO stolen_life (dod, ethnicity, victim, age, description) VALUES (
+  2  	'24-APR-97', 'Latina', 'Sherly Colon', 33,
+  3  	'Sherly was pushed off the roof of the Clinton Houses, a housing project in East Harlem, by the police. She landed in a playground outside the building; witnesses said the police threw a sheet over her body and then removed handcuffs from behind her back; the cops claim they were removing her bracelets. Police claim she committed suicide by jumping, but neighbors and her mother do not believe this. There were several protest marches from the Clinton Houses to the 23rd Precinct in the week after Sherly was killed. She left behind two children, ages 5 and 14. Sherly was a community leader, well-known, well-liked, and respcted in the community.');
+
+1 row created.
+
+SQL> 
+SQL> INSERT INTO stolen_life (dod, ethnicity, victim, age, description) VALUES (
+  2  	'31-JUL-98', 'NOT KNOWN', 'Christopher T. Johnson', 29,
+  3  	'Suffolk County Police Officers Robert A. McGee, Jr., and Samuel Barretto spotted Chistopher, who was wanted on charges of driving without a license (a misdemeanor), on Provost Avenue. The cops stepped out of their car and tried to arrest him at 9:43pm; Chris fled into the woods, and the officers chased after him, according to the police. He was sprayed with pepper Mace while being arrested, handcuffed, and brought out of the woods. He died as he was being transported to Brookhaven Memorial Hospital for treatment for the pepper Mace. Chris was an automobile mechanic, a married man with three children ranging in age from 15 months to 13 years. His family said he had no history of repiratory or other medical problems. His lawyer said, Mr. Johnson was not a rapist or a murderer, or anything of that nature. His only crime was using his car to get back and forth to work and getting food for his family. The police are investigating. The family said they would probably seek an independent autopsy.');
+
+1 row created.
+
+SQL> 
+SQL> CONNECT hq/hq
+Connected.
+SQL> 
+SQL> CREATE OR REPLACE PROCEDURE pl (
+  2  	str IN VARCHAR2, len IN INTEGER := 80, expand_in in BOOLEAN := TRUE)
+  3  	/* Last Chicago seminar 5/2000 */
+  4  IS
+  5  	v_len PLS_INTEGER := LEAST (len, 255);
+  6  	v_str VARCHAR2(2000);
+  7  BEGIN
+  8  	IF LENGTH (str) > v_len
+  9  	THEN
+ 10  	   v_str := SUBSTR (str, 1, v_len);
+ 11  	   DBMS_OUTPUT.PUT_LINE (v_str);
+ 12  	   pl (substr (str, len + 1), v_len, expand_in);
+ 13  	ELSE
+ 14  	   v_str := str;
+ 15  	   DBMS_OUTPUT.PUT_LINE (v_str);
+ 16  	END IF;
+ 17  EXCEPTION
+ 18  	WHEN OTHERS
+ 19  	THEN
+ 20  	   IF expand_in THEN
+ 21  	      DBMS_OUTPUT.ENABLE (1000000);
+ 22  	   ELSE
+ 23  	      RAISE;
+ 24  	   END IF;
+ 25  	   DBMS_OUTPUT.PUT_LINE (v_str);
+ 26  END;
+ 27  /
+
+Procedure created.
+
+SQL> 
+SQL> /* Create a "dummy" stolen lives table so that the analysis
+DOC>   program will compile */
+SQL> 
+SQL> DROP TABLE stolen_life;
+DROP TABLE stolen_life
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist
+
+
+SQL> 
+SQL> CREATE TABLE stolen_life (
+  2  	dod DATE,
+  3  	ethnicity VARCHAR2(100),
+  4  	victim VARCHAR2(100),
+  5  	age NUMBER,
+  6  	description VARCHAR2(2000)
+  7  	);
+
+Table created.
+
+SQL> 
+SQL> INSERT INTO stolen_life (dod, ethnicity, victim, age, description) VALUES (
+  2  	SYSDATE, 'N/A', 'HQ Table', 0,
+  3  	'All information is stored in city tables.');
+
+1 row created.
+
+SQL> 
+SQL> /* Create a display program, run as DEFINER. */
+SQL> CREATE OR REPLACE PROCEDURE show_victim (
+  2  	stolen_life IN stolen_life%ROWTYPE
+  3  	)
+  4    AUTHID DEFINER
+  5  AS
+  6  	v_count INTEGER;
+  7  BEGIN
+  8  	select count(*) into v_count from stolen_life;
+  9  	pl ('');
+ 10  	pl ('AUTHID DEFINER STOLEN_LIFE COUNT: ' || v_count);
+ 11  	pl (stolen_life.victim);
+ 12  	pl ('');
+ 13  	pl (stolen_life.description);
+ 14  	pl ('');
+ 15  END;
+ 16  /
+
+Procedure created.
+
+SQL> SHOW ERRORS
+No errors.
+SQL> 
+SQL> /* Create a central analysis program, run as INVOKER. */
+SQL> CREATE OR REPLACE PROCEDURE show_descriptions
+  2    AUTHID CURRENT_USER
+  3  AS
+  4  	v_count INTEGER;
+  5  BEGIN
+  6  	pl ('**** VICTIMS ****');
+  7  	pl ('');
+  8  	select count(*) into v_count from stolen_life;
+  9  	pl ('');
+ 10  	pl ('AUTHID CURRENT_USER STOLEN_LIFE COUNT: ' || v_count);
+ 11  
+ 12    FOR lifestolen IN (SELECT * FROM stolen_life)
+ 13    LOOP
+ 14  	  show_victim (lifestolen);
+ 15    END LOOP;
+ 16  END;
+ 17  /
+
+Procedure created.
+
+SQL> SHOW ERRORS
+No errors.
+SQL> 
+SQL> /* Grant execute to public and create public synonym */
+SQL> GRANT EXECUTE ON show_descriptions TO PUBLIC;
+
+Grant succeeded.
+
+SQL> DROP PUBLIC SYNONYM show_descriptions;
+
+Synonym dropped.
+
+SQL> CREATE PUBLIC SYNONYM show_descriptions FOR show_descriptions;
+
+Synonym created.
+
+SQL> 
+SQL> CONNECT newyork/newyork
+Connected.
+SQL> @ssoo
+SQL> Set serveroutput on size 1000000 format wrapped
+SQL> exec p.set_prefix (NULL);
+
+PL/SQL procedure successfully completed.
+
+SQL> exec dbms_java.SET_OUTPUT (1000000);
+
+PL/SQL procedure successfully completed.
+
+SQL> set linesize 120
+SQL> set pagesize 999
+SQL> set trimspool on
+SQL> 
+SQL> exec show_descriptions
+**** VICTIMS ****
+
+
+AUTHID CURRENT_USER STOLEN_LIFE COUNT: 4
+
+AUTHID DEFINER STOLEN_LIFE COUNT: 1
+Amadou Diallo
+
+Shot 19 times by four police officers outside his Bronx apartment. Diallo was a
+devout Muslim working 12 hour days selling CDs and tapes to earn money to finish
+ his bachelor's degree. He was unarmed.
+
+
+AUTHID DEFINER STOLEN_LIFE COUNT: 1
+Freddie Rivera
+
+Shot in the chest with dum-dum bullets and killed by an unidentified cop. The co
+p did not identify himself or yell Freeze!, Police!, Put your hands in the air!,
+ or any such thing. His family described him as a bright kid, always looking for
+ward to the future, who was about to start college in September.
+
+
+AUTHID DEFINER STOLEN_LIFE COUNT: 1
+Sherly Colon
+
+Sherly was pushed off the roof of the Clinton Houses, a housing project in East
+Harlem, by the police. She landed in a playground outside the building; witnesse
+s said the police threw a sheet over her body and then removed handcuffs from be
+hind her back; the cops claim they were removing her bracelets. Police claim she
+ committed suicide by jumping, but neighbors and her mother do not believe this.
+ There were several protest marches from the Clinton Houses to the 23rd Precinct
+ in the week after Sherly was killed. She left behind two children, ages 5 and 1
+4. Sherly was a community leader, well-known, well-liked, and respcted in the co
+mmunity.
+
+
+AUTHID DEFINER STOLEN_LIFE COUNT: 1
+Christopher T. Johnson
+
+Suffolk County Police Officers Robert A. McGee, Jr., and Samuel Barretto spotted
+ Chistopher, who was wanted on charges of driving without a license (a misdemean
+or), on Provost Avenue. The cops stepped out of their car and tried to arrest hi
+m at 9:43pm; Chris fled into the woods, and the officers chased after him, accor
+ding to the police. He was sprayed with pepper Mace while being arrested, handcu
+ffed, and brought out of the woods. He died as he was being transported to Brook
+haven Memorial Hospital for treatment for the pepper Mace. Chris was an automobi
+le mechanic, a married man with three children ranging in age from 15 months to
+13 years. His family said he had no history of repiratory or other medical probl
+ems. His lawyer said, Mr. Johnson was not a rapist or a murderer, or anything of
+ that nature. His only crime was using his car to get back and forth to work and
+ getting food for his family. The police are investigating. The family said they
+ would probably seek an independent autopsy.
+
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> CONNECT chicago/chicago
+Connected.
+SQL> @ssoo
+SQL> Set serveroutput on size 1000000 format wrapped
+SQL> exec p.set_prefix (NULL);
+
+PL/SQL procedure successfully completed.
+
+SQL> exec dbms_java.SET_OUTPUT (1000000);
+
+PL/SQL procedure successfully completed.
+
+SQL> set linesize 120
+SQL> set pagesize 999
+SQL> set trimspool on
+SQL> 
+SQL> exec show_descriptions
+**** VICTIMS ****
+
+
+AUTHID CURRENT_USER STOLEN_LIFE COUNT: 3
+
+AUTHID DEFINER STOLEN_LIFE COUNT: 1
+Bernard Solomon
+
+After years of police harassment, Solomon was told by police that they would kil
+l him. A few days later he was arrested. He was found hung in his cell at the 22
+59 S. Damen police station. Although police claim he hung himself with his shirt
+, when his body was examined by family members, he was found still wearing his s
+hirt on one arm.
+
+
+AUTHID DEFINER STOLEN_LIFE COUNT: 1
+Angel Castro, Jr.
+
+After being beaten, abused with racial epithets and told by police that he would
+ be killed if he did not move, Angel Castro’s family moved. Angel returned to th
+e neighborhood for a friend’s birthday party. After leaving the party, a police
+car rammed him as he rode his bike. As Angel tried to get on his knees, the poli
+ce shot and killed him
+
+
+AUTHID DEFINER STOLEN_LIFE COUNT: 1
+Eric Smith
+
+Smith's mom pulled her car off to the side of the expressway in order to better
+communicate with her son, a deaf mute. His grandmother was also in the car. Upse
+t, Eric ran off into traffic and was grazed by a passing car. Two cops from Fore
+st View, a Chicago suburb, pulled up. They trained a gun to Eric's head and brou
+ght him to the side of the road. Eric's attempts to sign were not understood. Th
+e cops beat Eric with metal batons and then shot him six times-including with ho
+llow point bullets. The final bullet was delivered while Eric lay on his back. F
+ollowing the shooting, Eric's mother and grandmother were handcuffed and taken t
+o the police station.
+
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> /* Now let's put access to the stolen_life table INSIDE
+DOC>   the DEFINER procedure. */
+SQL> 
+SQL> CONNECT hq/hq
+Connected.
+SQL> 
+SQL> /* Recreate a central analysis program, run as DEFINER. */
+SQL> CREATE OR REPLACE PROCEDURE show_descriptions
+  2    AUTHID DEFINER -- The default
+  3  AS
+  4  BEGIN
+  5    FOR lifestolen IN (SELECT * FROM stolen_life)
+  6    LOOP
+  7  	  show_victim (lifestolen);
+  8    END LOOP;
+  9  END;
+ 10  /
+
+Procedure created.
+
+SQL> SHOW ERRORS
+No errors.
+SQL> 
+SQL> /* Grant execute to public. */
+SQL> GRANT EXECUTE ON show_descriptions TO PUBLIC;
+
+Grant succeeded.
+
+SQL> 
+SQL> CONNECT newyork/newyork
+Connected.
+SQL> @ssoo
+SQL> Set serveroutput on size 1000000 format wrapped
+SQL> exec p.set_prefix (NULL);
+
+PL/SQL procedure successfully completed.
+
+SQL> exec dbms_java.SET_OUTPUT (1000000);
+
+PL/SQL procedure successfully completed.
+
+SQL> set linesize 120
+SQL> set pagesize 999
+SQL> set trimspool on
+SQL> 
+SQL> exec show_descriptions
+
+AUTHID DEFINER STOLEN_LIFE COUNT: 1
+HQ Table
+
+All information is stored in city tables.
+
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> CONNECT chicago/chicago
+Connected.
+SQL> @ssoo
+SQL> Set serveroutput on size 1000000 format wrapped
+SQL> exec p.set_prefix (NULL);
+
+PL/SQL procedure successfully completed.
+
+SQL> exec dbms_java.SET_OUTPUT (1000000);
+
+PL/SQL procedure successfully completed.
+
+SQL> set linesize 120
+SQL> set pagesize 999
+SQL> set trimspool on
+SQL> 
+SQL> exec show_descriptions
+
+AUTHID DEFINER STOLEN_LIFE COUNT: 1
+HQ Table
+
+All information is stored in city tables.
+
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> SPOOL OFF

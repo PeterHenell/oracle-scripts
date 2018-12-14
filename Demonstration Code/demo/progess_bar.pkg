@@ -1,0 +1,63 @@
+CREATE OR REPLACE PACKAGE progress_bar
+IS
+   PROCEDURE start_progress_bar (
+      NAME_IN IN VARCHAR2
+   );
+
+   PROCEDURE mark_progress (
+      NAME_IN IN VARCHAR2
+     ,percentage_in IN NUMBER
+   );
+
+   PROCEDURE mark_completed (
+      NAME_IN IN VARCHAR2
+   );
+
+   FUNCTION progress (
+      NAME_IN IN VARCHAR2
+   )
+      RETURN NUMBER;
+END progess_bar;
+/
+
+CREATE OR REPLACE PACKAGE BODY progress_bar
+IS
+   PROCEDURE start_progress_bar (
+      NAME_IN IN VARCHAR2
+   )
+   IS
+   BEGIN
+      -- Create database pipe with this name.
+      NULL;
+   END start_progress_bar;
+
+   PROCEDURE mark_progress (
+      NAME_IN IN VARCHAR2
+     ,percentage_in IN NUMBER
+   )
+   IS
+   BEGIN
+      -- Write this percentage out to the pipe.
+      NULL;
+   END mark_progress;
+
+   PROCEDURE mark_completed (
+      NAME_IN IN VARCHAR2
+   )
+   IS
+   BEGIN
+      -- Write this percentage out to the pipe.
+      NULL;
+   END mark_completed;
+
+   FUNCTION progress (
+      NAME_IN IN VARCHAR2
+   )
+      RETURN NUMBER
+   IS
+   BEGIN
+      -- Read next percentage from the pipe.
+      RETURN NULL;
+   END progress;
+END progess_bar;
+/

@@ -1,0 +1,16 @@
+CREATE OR REPLACE FUNCTION file_exists (loc_in IN VARCHAR2, file_in IN VARCHAR2)
+ 	RETURN BOOLEAN
+IS
+BEGIN
+	/* Open the file. */
+	file_handle := UTL_FILE.FOPEN (loc_in, file_in, 'R');
+
+	/* Return the result of a check with IS_OPEN. */
+	RETURN UTL_FILE.IS_OPEN (file_handle);
+
+EXCEPTION
+   WHEN OTHERS 
+	THEN
+		RETURN FALSE;
+END;
+/

@@ -1,0 +1,17 @@
+CREATE OR REPLACE FUNCTION fromNth2 (
+   str IN VARCHAR2,
+   onechar IN VARCHAR2, 
+   nth IN INTEGER)
+RETURN VARCHAR2
+IS
+   indx INTEGER;
+BEGIN
+   indx := INSTR (str, onechar, 1, nth);
+   IF indx > 0
+   THEN
+      RETURN SUBSTR (str, indx);
+   ELSE
+      RETURN NULL;
+   END IF;
+END;
+/

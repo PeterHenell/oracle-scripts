@@ -1,0 +1,14 @@
+CREATE OR REPLACE FUNCTION element_found (
+   collection_in    IN   DBMS_SQL.varchar2s
+  ,value_in         IN   VARCHAR2
+  ,start_index_in   IN   BINARY_INTEGER DEFAULT NULL
+  ,end_index_in     IN   BINARY_INTEGER DEFAULT NULL
+  ,nulls_eq_in      IN   BOOLEAN DEFAULT TRUE
+)
+   RETURN BOOLEAN
+   DETERMINISTIC  
+IS
+BEGIN
+   RETURN NULL;
+END element_found;
+/

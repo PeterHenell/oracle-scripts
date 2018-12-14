@@ -1,0 +1,27 @@
+CREATE OR REPLACE FUNCTION twice 
+   (string_in IN VARCHAR2, 
+    action_in IN VARCHAR2 := NULL)
+   RETURN VARCHAR2
+IS
+   v_action VARCHAR2(10) := UPPER (action_in);
+
+   v_retval PLV.max_varchar2%TYPE;
+BEGIN
+   PLV.assert (LENGTH (string_in) < 32767/2, 'Max!');
+   PLV.assert (v_action IN ('UL', 'LU', NULL), 'UL LU or NULL');
+
+   IF v_action = 'UL'
+	THEN
+      v_retval := UPPER (string_in) || LOWER (string_in);
+
+   ELSIF v_action = 'LU'
+	THEN
+      v_retval := LOWER (string_in) || UPPER (string_in);
+
+	ELSIF v_action IS NULL
+	THEN
+      v_retval := string_in || string_in;
+	END IF;
+	RETURN v_retval;
+END twice;
+/

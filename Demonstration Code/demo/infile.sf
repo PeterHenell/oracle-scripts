@@ -1,0 +1,139 @@
+CREATE OR REPLACE FUNCTION infile (
+   loc_in         IN VARCHAR2
+ , file_in        IN VARCHAR2
+ , text_in        IN VARCHAR2
+ , occurrence_in  IN INTEGER:= 1
+ , start_line_in  IN INTEGER:= 1
+ , end_line_in    IN INTEGER:= 0
+ , ignore_case_in IN BOOLEAN:= TRUE
+ , linesize_in    IN PLS_INTEGER DEFAULT 32767
+)
+   RETURN INTEGER
+/*
+|| An "INSTR" for operating system files. Returns the line number of
+|| a file in which a text string was found.
+*/
+IS
+   /* Handle to the file. Only will open if arguments are valid. */
+   file_handle     UTL_FILE.file_type;
+   /* Use local variable to hold this information. */
+   ignore_case     BOOLEAN := ignore_case_in;
+   /* Holds a line of text from the file. */
+   line_of_text    VARCHAR2 (1000);
+   text_loc        INTEGER;
+   found_count     INTEGER := 0;
+   /* Boolean to determine if there are more values to read */
+   no_more_lines   BOOLEAN := FALSE;
+   /* Function return value */
+   return_value    INTEGER := 0;
+
+   PROCEDURE get_nextline (file_in  IN     UTL_FILE.file_type
+                         , line_out    OUT VARCHAR2
+                         , eof_out     OUT BOOLEAN
+                          )
+   IS
+   BEGIN
+      UTL_FILE.get_line (file_in, line_out);
+      eof_out := FALSE;
+   EXCEPTION
+      WHEN NO_DATA_FOUND
+      THEN
+         line_out := NULL;
+         eof_out := TRUE;
+   END;
+
+   PROCEDURE recngo (str IN VARCHAR2)
+   IS
+   BEGIN
+      DBMS_OUTPUT.put_line ('UTL_FILE error: ' || str);
+      UTL_FILE.fclose (file_handle);
+   END;
+BEGIN
+   /* Assert valid arguments. If any fail, return NULL. */
+   IF    loc_in IS NULL
+      OR file_in IS NULL
+      OR text_in IS NULL
+      OR occurrence_in <= 0
+      OR start_line_in < 1
+      OR end_line_in < 0
+   THEN
+      return_value := NULL;
+   ELSE
+      /* All arguments are fine. Open and read through the file. */
+      file_handle :=
+         UTL_FILE.fopen (loc_in, file_in, 'R', max_linesize => linesize_in);
+
+      LOOP
+         /* Get next line and exit if at end of file. */
+         get_nextline (file_handle, line_of_text, no_more_lines);
+         EXIT WHEN no_more_lines;
+         /* Have another line from file. */
+         return_value := return_value + 1;
+
+         /* If this line is between the search range... */
+         IF (return_value BETWEEN start_line_in AND end_line_in)
+            OR (return_value >= start_line_in AND end_line_in = 0)
+         THEN
+            /* Use INSTR to see if text is present. */
+            IF ignore_case
+            THEN
+               text_loc := INSTR (line_of_text, text_in);
+            ELSE
+               text_loc := INSTR (UPPER (line_of_text), UPPER (text_in));
+            END IF;
+
+            /* If text location is positive, have a match. */
+            IF text_loc > 0
+            THEN
+               /* Increment found counter. Exit if matches request. */
+               found_count := found_count + 1;
+               EXIT WHEN found_count = occurrence_in;
+            END IF;
+         END IF;
+      END LOOP;
+
+      UTL_FILE.fclose (file_handle);
+   END IF;
+
+   IF no_more_lines
+   THEN
+      /* read through whole file without success. */
+      return_value := NULL;
+   END IF;
+
+   RETURN return_value;
+EXCEPTION
+   WHEN UTL_FILE.invalid_path
+   THEN
+      recngo ('invalid_path');
+      RETURN NULL;
+   WHEN UTL_FILE.invalid_mode
+   THEN
+      recngo ('invalid_mode');
+      RETURN NULL;
+   WHEN UTL_FILE.invalid_filehandle
+   THEN
+      recngo ('invalid_filehandle');
+      RETURN NULL;
+   WHEN UTL_FILE.invalid_operation
+   THEN
+      recngo ('invalid_operation');
+      RETURN NULL;
+   WHEN UTL_FILE.read_error
+   THEN
+      recngo ('read_error');
+      RETURN NULL;
+   WHEN UTL_FILE.write_error
+   THEN
+      recngo ('write_error');
+      RETURN NULL;
+   WHEN UTL_FILE.internal_error
+   THEN
+      recngo ('internal_error');
+      RETURN NULL;
+   WHEN OTHERS
+   THEN
+      recngo (SQLERRM);
+      RETURN NULL; /* TVP 9/2000 */
+END;
+/

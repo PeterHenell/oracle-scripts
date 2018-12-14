@@ -1,0 +1,69 @@
+/*
+The query hidden inside a package body....
+*/
+
+CREATE OR REPLACE PACKAGE emplu1
+IS
+   FUNCTION onerow (
+      employee_id_in IN employees.employee_id%TYPE)
+      RETURN employees%ROWTYPE;
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY emplu1
+IS
+   FUNCTION onerow (
+      employee_id_in IN employees.employee_id%TYPE)
+      RETURN employees%ROWTYPE
+   IS
+      onerow_rec   employees%ROWTYPE;
+   BEGIN
+      SELECT *
+        INTO onerow_rec
+        FROM employees
+       WHERE employee_id = employee_id_in;
+
+      RETURN onerow_rec;
+   END;
+END;
+/
+
+/*
+Adding a result cache to the function header....
+*/
+
+CREATE OR REPLACE PACKAGE emplu11g
+IS
+   FUNCTION onerow (
+      employee_id_in IN employees.employee_id%TYPE)
+      RETURN employees%ROWTYPE
+      RESULT_CACHE;
+END;
+/
+
+/*
+This result cache depends on the employees table, so...
+Whenever any session commits data to this table, all
+result caches so depended are invalidated. The next
+time data is requested, the function body will be
+executed, just like the first time.
+*/
+
+CREATE OR REPLACE PACKAGE BODY emplu11g
+IS
+   FUNCTION onerow (
+      employee_id_in IN employees.employee_id%TYPE)
+      RETURN employees%ROWTYPE
+      RESULT_CACHE /* Only needed for 11.1 relies_on (employees) */
+   IS
+      onerow_rec   employees%ROWTYPE;
+   BEGIN
+      SELECT *
+        INTO onerow_rec
+        FROM employees
+       WHERE employee_id = employee_id_in;
+
+      RETURN onerow_rec;
+   END;
+END;
+/

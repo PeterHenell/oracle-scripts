@@ -1,0 +1,39 @@
+CREATE OR REPLACE PACKAGE xfile
+IS
+   FUNCTION canRead (file IN VARCHAR2) RETURN BOOLEAN;
+   FUNCTION delete (file IN VARCHAR2) RETURN BOOLEAN;
+END;
+/
+CREATE OR REPLACE PACKAGE BODY xfile
+IS
+   c_true CONSTANT INTEGER := 1;
+   c_false CONSTANT INTEGER := 0;
+   
+   FUNCTION IcanRead (file IN VARCHAR2) RETURN NUMBER
+   AS LANGUAGE JAVA
+      NAME 'JFile1.canRead (java.lang.String) return int';
+      
+   FUNCTION canRead (file IN VARCHAR2) RETURN BOOLEAN
+   AS
+   BEGIN
+      RETURN IcanRead (file) = c_true;
+   END;
+   
+   FUNCTION IDelete (file IN VARCHAR2) RETURN NUMBER
+   AS LANGUAGE JAVA
+      NAME 'JFile1.delete (java.lang.String) return int';
+
+   FUNCTION delete (file IN VARCHAR2) RETURN BOOLEAN
+   AS
+   BEGIN
+      RETURN Idelete (file) = c_true;
+   EXCEPTION
+      WHEN OTHERS
+      THEN
+         p.l ('Error deleting: ' || SQLERRM);
+         RETURN FALSE;
+   END;
+   
+END;
+/
+

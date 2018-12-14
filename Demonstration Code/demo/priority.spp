@@ -1,0 +1,94 @@
+CREATE OR REPLACE PACKAGE priority
+IS
+   PROCEDURE enqueue_low (item IN VARCHAR2);
+
+   PROCEDURE enqueue_medium (item IN VARCHAR2);
+
+   PROCEDURE enqueue_high (item IN VARCHAR2);
+
+   PROCEDURE dequeue (item OUT VARCHAR2);
+END;
+/
+CREATE OR REPLACE PACKAGE BODY priority
+IS
+   c_qtable CONSTANT aq.name_type := 'priority_q_table';
+   c_queue CONSTANT aq.name_type := 'priority_q';
+
+   c_high CONSTANT   PLS_INTEGER := 1;
+   c_medium CONSTANT PLS_INTEGER := 1000;
+   c_low CONSTANT    PLS_INTEGER := 1000000;
+
+   g_msgid aq.msgid_type;
+
+   /* "Internal" enqueue that is used by each priority enqueue */
+
+   PROCEDURE enqueue (item IN VARCHAR2, priority IN PLS_INTEGER)
+   IS
+      queueopts DBMS_AQ.ENQUEUE_OPTIONS_T;
+      msgprops DBMS_AQ.MESSAGE_PROPERTIES_T;
+      item_obj message_type;
+   BEGIN
+      item_obj := message_type (priority, item);
+      queueopts.visibility := DBMS_AQ.IMMEDIATE;
+      msgprops.priority := priority;
+      DBMS_AQ.ENQUEUE (c_queue, queueopts, msgprops, item_obj, g_msgid);
+   END;
+
+   PROCEDURE enqueue_low (item IN VARCHAR2)
+   IS
+   BEGIN
+      enqueue (item, c_low);
+   END;
+
+   PROCEDURE enqueue_medium (item IN VARCHAR2)
+   IS
+   BEGIN
+      enqueue (item, c_medium);
+   END;
+
+   PROCEDURE enqueue_high (item IN VARCHAR2)
+   IS
+   BEGIN
+      enqueue (item, c_high);
+   END;
+
+   FUNCTION priority_name (priority IN PLS_INTEGER) RETURN VARCHAR2
+   IS
+      retval VARCHAR2(30);
+   BEGIN
+      IF    priority = c_high THEN retval := 'HIGH';
+      ELSIF priority = c_low THEN retval := 'LOW';
+      ELSIF priority = c_medium THEN retval := 'MEDIUM';
+      ELSE 
+         retval := 'Priority ' || TO_CHAR (priority);
+      END IF;
+      RETURN retval;
+   END;
+
+   PROCEDURE dequeue (item OUT VARCHAR2)
+   IS
+      queueopts DBMS_AQ.DEQUEUE_OPTIONS_T;
+      msgprops DBMS_AQ.MESSAGE_PROPERTIES_T;
+      item_obj message_type;
+   BEGIN
+      queueopts.wait := DBMS_AQ.NO_WAIT;
+      queueopts.visibility := DBMS_AQ.IMMEDIATE;
+      DBMS_AQ.DEQUEUE (
+         c_queue, queueopts, msgprops, item_obj, g_msgid);
+      item := priority_name (item_obj.title) || ': ' || item_obj.text;
+   EXCEPTION
+      /* Utrecht 2000 */
+      WHEN aq.dequeue_timeout
+      THEN
+         item := NULL;
+         
+      WHEN OTHERS
+      THEN
+         RAISE;
+   END;
+
+BEGIN
+   /* Create the queue table and queue as necessary. */
+   aq.create_priority_queue (c_qtable, 'message_type', c_queue);
+END;
+/

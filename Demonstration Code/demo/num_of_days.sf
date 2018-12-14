@@ -1,0 +1,35 @@
+CREATE OR REPLACE FUNCTION num_of_days (
+   start_in   IN   DATE,
+   end_in     IN   DATE DEFAULT SYSDATE,
+   day_in     IN   VARCHAR2 := NULL
+)
+   RETURN PLS_INTEGER
+IS
+   retval   PLS_INTEGER := 0;
+   l_date   DATE;
+   l_day    VARCHAR2 (100) := UPPER (day_in);
+BEGIN
+   IF day_in IS NULL
+   THEN
+      retval :=   end_in
+                - start_in;
+   ELSE
+      l_date := start_in;
+
+      LOOP
+         EXIT WHEN l_date > end_in;
+
+         IF TO_CHAR (l_date, 'DAY') = l_day
+         THEN
+            retval :=   retval
+                      + 1;
+         END IF;
+
+         l_date :=   l_date
+                   + 1;
+      END LOOP;
+   END IF;
+
+   RETURN retval;
+END num_of_days;
+/

@@ -1,0 +1,17 @@
+/*============PL/Vision Reverse Engineering ==============
+| Auto-Generated DDL (May 20, 1997 12:45:18)
+| --------------------------------------------------------
+| Table Generated For plvdba.emp
+|========================================================*/
+CREATE TABLE emppk
+ (
+  empno NUMBER(4) PRIMARY KEY,
+  ename VARCHAR2(10),
+  job VARCHAR2(9),
+  mgr NUMBER(4),
+  hiredate DATE,
+  sal NUMBER(7,2),
+  comm NUMBER(7,2),
+  deptno NUMBER(2) NOT NULL
+ )
+;

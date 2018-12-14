@@ -1,0 +1,184 @@
+CREATE OR REPLACE PACKAGE bidir
+IS
+   -- Iterate through INDEXs in the result set.
+   PROCEDURE set_index (
+      nth_in IN PLS_INTEGER
+   );
+
+   FUNCTION current_index
+      RETURN employee%ROWTYPE;
+
+   PROCEDURE goto_first_index;
+
+   PROCEDURE goto_last_index;
+
+   PROCEDURE goto_next_index;
+
+   PROCEDURE goto_prev_index;
+
+   PROCEDURE load_cache;
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY bidir
+IS
+   g_curr_index   PLS_INTEGER := NULL;
+
+   TYPE employee_tt IS TABLE OF employee%ROWTYPE
+      INDEX BY PLS_INTEGER;
+
+   employees      employee_tt;
+
+   PROCEDURE assert (
+      condition_in IN BOOLEAN
+     ,msg_in IN VARCHAR2
+   )
+   IS
+   BEGIN
+      IF NOT (NVL (condition_in, FALSE))
+      THEN
+         DBMS_OUTPUT.put_line (msg_in);
+         RAISE PROGRAM_ERROR;
+      END IF;
+   END assert;
+
+   PROCEDURE load_cache
+   IS
+      temp_cache   employee_tt;
+      l_index      PLS_INTEGER;
+   BEGIN
+      employees.DELETE;
+
+      SELECT *
+      BULK COLLECT INTO temp_cache
+        FROM employee;
+
+      l_index := temp_loadtab.FIRST;
+
+      WHILE (l_index IS NOT NULL)
+      LOOP
+         employees (temp_loadtab (l_index).employee_id) :=
+                                                         temp_cache (l_index);
+      END LOOP;
+
+      temp_cache.DELETE;
+   END load_cache;
+
+   /*FUNCTION nth_INDEX (
+      nth_in IN PLS_INTEGER
+   )
+      RETURN employee%rowtype
+   IS
+      l_nth_in   PLS_INTEGER             := 0;
+      l_INDEX      PLS_INTEGER;
+      retval     employee%rowtype;
+   BEGIN
+      if nth_in = 0 then
+     -- nothing to do.
+     null;
+     elsif abc (nth_in) > employees.count
+     then
+     -- set to the count
+     nth_in < 0
+     then
+     l_direction
+      IF direction_in = 1
+      THEN
+         l_INDEX := employees.FIRST;
+      ELSIF direction_in = -1
+      THEN
+         l_INDEX := employees.LAST;
+      ELSE
+         RAISE VALUE_ERROR;
+      END IF;
+
+      LOOP
+        -- nth_in must be out of range.
+         EXIT WHEN l_INDEX IS NULL;
+
+         IF l_nth_in = nth_in
+         THEN
+            retval := employees (l_INDEX);
+            EXIT;
+         ELSE
+            l_nth_in := l_nth_in + 1;
+
+            IF direction_in = 1
+            THEN
+               l_INDEX := employees.NEXT (l_INDEX);
+            ELSE
+               l_INDEX := employees.PRIOR (l_INDEX);
+            END IF;
+         END IF;
+      END LOOP;
+
+      RETURN retval;
+   END;
+   */
+   PROCEDURE init_curr_index (
+      index_in IN PLS_INTEGER DEFAULT NULL
+   )
+   IS
+   BEGIN
+      assert (index_in BETWEEN employees.FIRST AND employees.LAST
+             ,'init_curr_index: specified index is outside of range.'
+             );
+
+      IF index_in IS NULL
+      THEN
+         IF g_curr_index IS NULL
+         THEN
+            g_curr_index := 1;
+         END IF;
+      ELSE
+         g_curr_index := index_in;
+      END IF;
+   END;
+
+   PROCEDURE set_index (
+      nth_in IN PLS_INTEGER
+   )
+   IS
+   BEGIN
+      g_curr_index := nth_in;
+   END;
+
+   FUNCTION current_index
+      RETURN employee%ROWTYPE
+   IS
+   BEGIN
+      init_curr_index;
+      RETURN nth_index (g_curr_index);
+   END current_index;
+
+   PROCEDURE goto_first_index
+   IS
+   BEGIN
+      init_curr_index (employees.FIRST);
+      g_curr_index := employees.NEXT (employees.FIRST);
+   END goto_first_index;
+
+   PROCEDURE goto_last_index
+   IS
+   BEGIN
+      init_curr_index (employees.FIRST);
+      g_curr_index := employees.PRIOR (employees.FIRST);
+   END goto_last_index;
+
+   PROCEDURE goto_next_index
+   IS
+   BEGIN
+      init_curr_index;
+      g_curr_index := employees.NEXT (g_curr_index);
+   END goto_next_index;
+
+   PROCEDURE goto_prev_index
+   IS
+   BEGIN
+      init_curr_index;
+      g_curr_index := employees.PRIOR (g_curr_index);
+   END goto_prev_index;
+BEGIN
+   load_cache;
+END;
+/

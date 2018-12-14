@@ -1,0 +1,80 @@
+CREATE OR REPLACE FUNCTION is_subset (
+   superset_in   IN   DBMS_SQL.VARCHAR2S
+ , subset_in     IN   DBMS_SQL.VARCHAR2S
+)
+   RETURN BOOLEAN
+/*
+   Program name: is_subset
+ 
+   Original author: Steven Feuerstein, www.Qnxo.com
+ 
+   Qnxo Script ID: {D890809C-5D15-4A9E-9731-D44459A81F5D}
+ 
+   You are granted permission to use this code was generated
+   by a licensed user of Qnxo.
+ 
+   Overview:
+ 
+   Return true if the second collection is contained entirely
+   within the first collection (is a subset).
+ 
+   Parameters:
+ 
+      superset_in - the superset collection of type DBMS_SQL.VARCHAR2S
+ 
+      subset_in - the collection being tested for being a subset of superset_in
+                  The datatype of its element must be compatible with that of the
+                  superset collection.
+ 
+   Dependencies/Restrictions:
+ 
+   Exceptions raised:
+ 
+   Modification History:
+ 
+   >> Generated on July      27, 2005 19:11:51 in schema QNXO_REPOSITORY
+*/
+IS
+   l_subindex BINARY_INTEGER := subset_in.FIRST;
+   l_is_a_subset BOOLEAN DEFAULT TRUE;
+ 
+   -- Return the row in which the matching value is found.
+   FUNCTION matching_row (
+      collection_in   IN   DBMS_SQL.VARCHAR2S
+    , value_in        IN   VARCHAR2
+   )
+      RETURN PLS_INTEGER
+   IS
+      l_index   BINARY_INTEGER;
+      l_is_a_subset    BINARY_INTEGER;
+   BEGIN
+      l_index := collection_in.FIRST;
+ 
+      WHILE (l_index IS NOT NULL AND l_is_a_subset IS NULL)
+      LOOP
+         IF collection_in (l_index) = value_in
+         THEN
+            l_is_a_subset := l_index;
+         END IF;
+ 
+         l_index := collection_in.NEXT (l_index);
+      END LOOP;
+ 
+      RETURN l_is_a_subset;
+   END matching_row;
+BEGIN
+   -- If either list is empty, then we do NOT have a subset.
+   l_is_a_subset := NOT (l_subindex IS NULL OR superset_in.COUNT = 0);
+ 
+   -- Keep going until out of subset elements or a value was found
+   -- NOT to be in the superset collection.
+ 
+   WHILE (l_subindex IS NOT NULL AND l_is_a_subset)
+   LOOP
+      l_is_a_subset := matching_row (superset_in, subset_in (l_subindex)) IS NOT NULL;
+      l_subindex := subset_in.NEXT (l_subindex);
+   END LOOP;
+ 
+   RETURN l_is_a_subset;
+END is_subset;
+/

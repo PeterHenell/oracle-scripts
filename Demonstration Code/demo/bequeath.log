@@ -1,0 +1,177 @@
+SQL> 
+SQL> CONNECT hr/hr
+Connected.
+SQL> 
+SQL> CREATE TABLE c12_emps
+  2  (
+  3     employee_id     INTEGER,
+  4     department_id   INTEGER,
+  5     last_name       VARCHAR2 (100)
+  6  )
+  7  /
+
+Table created.
+
+SQL> 
+SQL> BEGIN
+  2     INSERT INTO c12_emps
+  3          VALUES (1, 100, 'abc');
+  4  
+  5     INSERT INTO c12_emps
+  6          VALUES (2, 100, 'def');
+  7  
+  8     INSERT INTO c12_emps
+  9          VALUES (3, 200, '123');
+ 10  
+ 11     COMMIT;
+ 12  END;
+ 13  /
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> CREATE OR REPLACE FUNCTION emps_count (
+  2     department_id_in IN INTEGER)
+  3     RETURN PLS_INTEGER
+  4     AUTHID CURRENT_USER
+  5  IS
+  6     l_count    PLS_INTEGER;
+  7     l_user     VARCHAR2 (100);
+  8     l_userid   VARCHAR2 (100);
+  9  BEGIN
+ 10     SELECT COUNT (*)
+ 11       INTO l_count
+ 12       FROM c12_emps
+ 13      WHERE department_id = department_id_in;
+ 14  
+ 15     /* Show who is invoking the function */
+ 16     SELECT ora_invoking_user INTO l_user FROM DUAL;
+ 17  
+ 18     SELECT ora_invoking_userid INTO l_userid FROM DUAL;
+ 19  
+ 20     DBMS_OUTPUT.put_line (l_user);
+ 21     DBMS_OUTPUT.put_line (l_userid);
+ 22  
+ 23     RETURN l_count;
+ 24  END;
+ 25  /
+
+Function created.
+
+SQL> 
+SQL> SHOW ERRORS
+No errors.
+SQL> 
+SQL> CREATE OR REPLACE VIEW emp_counts_v
+  2     BEQUEATH CURRENT_USER
+  3  AS
+  4     SELECT department_id, emps_count (department_id) emps_in_dept
+  5       FROM c12_emps
+  6  /
+
+View created.
+
+SQL> 
+SQL> GRANT SELECT ON emp_counts_v TO scott
+  2  /
+
+Grant succeeded.
+
+SQL> 
+SQL> SET SERVEROUTPUT ON
+SQL> 
+SQL> SELECT * FROM hr.emp_counts_v
+  2  /
+
+DEPARTMENT_ID EMPS_IN_DEPT                                                      
+------------- ------------                                                      
+          100            2                                                      
+          100            2                                                      
+          200            1                                                      
+
+HR                                                                              
+101                                                                             
+HR                                                                              
+101                                                                             
+HR                                                                              
+101                                                                             
+SQL> 
+SQL> CONNECT scott/tiger
+Connected.
+SQL> 
+SQL> SET SERVEROUTPUT ON
+SQL> 
+SQL> CREATE TABLE c12_emps
+  2  (
+  3     employee_id     INTEGER,
+  4     department_id   INTEGER,
+  5     last_name       VARCHAR2 (100)
+  6  )
+  7  /
+
+Table created.
+
+SQL> 
+SQL> BEGIN
+  2     INSERT INTO c12_emps
+  3          VALUES (1, 200, 'SCOTT.ABC');
+  4  
+  5     INSERT INTO c12_emps
+  6          VALUES (2, 200, 'SCOTT.DEF');
+  7  
+  8     INSERT INTO c12_emps
+  9          VALUES (3, 400, 'SCOTT.123');
+ 10  
+ 11     COMMIT;
+ 12  END;
+ 13  /
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> SELECT * FROM hr.emp_counts_v
+  2  /
+
+DEPARTMENT_ID EMPS_IN_DEPT                                                      
+------------- ------------                                                      
+          100            0                                                      
+          100            0                                                      
+          200            2                                                      
+
+SCOTT                                                                           
+107                                                                             
+SCOTT                                                                           
+107                                                                             
+SCOTT                                                                           
+107                                                                             
+SQL> 
+SQL> /* Clean up */
+SQL> 
+SQL> DROP TABLE c12_emps
+  2  /
+
+Table dropped.
+
+SQL> 
+SQL> CONNECT hr/hr
+Connected.
+SQL> 
+SQL> DROP FUNCTION emps_count
+  2  /
+
+Function dropped.
+
+SQL> 
+SQL> DROP TABLE c12_emps
+  2  /
+
+Table dropped.
+
+SQL> 
+SQL> DROP VIEW emp_counts_v
+  2  /
+
+View dropped.
+
+SQL> 
+SQL> SPOOL OFF
